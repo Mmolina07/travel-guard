@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../../trips/presentation/pages/home_screen_client.dart';
 
 class ClienteRegisterScreen extends StatefulWidget {
   const ClienteRegisterScreen({Key? key}) : super(key: key);
@@ -47,7 +47,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
         );
 
        //Cambiar la navegacion asi la home_screen_client.dart
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeHome()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreenClient()));
       });
     }
   }
