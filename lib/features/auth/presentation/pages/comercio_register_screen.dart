@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../places_map/presentation/home_screen_comercio.dart';
 
 class ComercioRegisterScreen extends StatefulWidget {
   const ComercioRegisterScreen({Key? key}) : super(key: key);
@@ -48,17 +49,28 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   }
 
   void _handleRegister() {
-    if (_validateForm()) {
-      setState(() => _isLoading = true);
+  if (_validateForm()) {
+    setState(() => _isLoading = true);
 
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Registro exitoso!')),
-        );
-      });
-    }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      // SnackBar de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Registro exitoso!')),
+      );
+
+      // Navegar SOLO si la validación pasó
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeScreenComercio(),
+        ),
+      );
+    });
   }
+}
 
   bool _validateForm() {
     if (_nitController.text.isEmpty) {

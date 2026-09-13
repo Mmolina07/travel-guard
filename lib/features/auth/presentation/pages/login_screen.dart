@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import "../pages/Register_Type_Screen.dart";
+import '../../../trips/presentation/pages/home_screen_client.dart';
+import '../../../places_map/presentation/home_screen_comercio.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -28,18 +30,25 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_validateForm()) {
-      setState(() => _isLoading = true);
+  void _handleLogin({required Widget destination}) {
+  if (_validateForm()) {
+    setState(() => _isLoading = true);
 
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Ingreso exitoso!')),
-        );
-      });
-    }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Ingreso exitoso!')),
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => destination),
+      );
+    });
   }
+}
 
   bool _validateForm() {
     if (_emailController.text.isEmpty) {
@@ -303,39 +312,76 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Botón Iniciar Sesión
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1A5F7A),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
+                          // Botones: iniciar sesion como turista y comercio
+                          Row(
+                            children: [
+                              // Botón iniciar sesion como turista 
+                              Expanded(
+                                child: SizedBox(
+                                  height: 56,
+                                  child: OutlinedButton(
+                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenClient()),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: Color(0xFF1A5F7A),
+                                        width: 2,
                                       ),
-                                    )
-                                  : const Text(
-                                      'Iniciar Sesión',
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Iniciar sesión como Turista',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: Color(0xFF1A5F7A),
                                       ),
                                     ),
-                            ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // Botón iniciar sesion como comercio
+                              Expanded(
+                                child: SizedBox(
+                                  height: 56,
+                                  child: ElevatedButton(
+                                    // Poner la navegacion al comercio 
+                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenComercio()),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1A5F7A),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Iniciar sesión como Comercio',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+
+                          const SizedBox(height: 40),
                           const SizedBox(height: 16),
 
                           Center(

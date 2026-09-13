@@ -428,7 +428,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {Navigator.push(context, MaterialPageRoute(builder: (context) => const MapScreen()));},
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
                       color: Color(0xFF1A5F7A),
