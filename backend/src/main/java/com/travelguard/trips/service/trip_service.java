@@ -5,6 +5,8 @@ import com.travelguard.trips.repository.ViajeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class ViajeService {
 
@@ -12,6 +14,11 @@ public class ViajeService {
 
     public ViajeService(ViajeRepository viajeRepository) {
         this.viajeRepository = viajeRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Viaje> obtenerViajesPorUsuario(Long usuarioId) {
+        return viajeRepository.findByUsuarioIdAndArchivadoFalse(usuarioId);
     }
 
     @Transactional

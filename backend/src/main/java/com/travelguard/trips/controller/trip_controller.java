@@ -5,6 +5,8 @@ import com.travelguard.trips.service.ViajeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/viajes")
 public class ViajeController {
@@ -13,6 +15,12 @@ public class ViajeController {
 
     public ViajeController(ViajeService viajeService) {
         this.viajeService = viajeService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Viaje>> obtenerViajes(@RequestParam Long usuarioId) {
+        List<Viaje> viajes = viajeService.obtenerViajesPorUsuario(usuarioId);
+        return ResponseEntity.ok(viajes);
     }
 
     @PatchMapping("/{id}/archivar")
