@@ -2,6 +2,7 @@ package com.travelguard.trips.controller;
 
 import com.travelguard.trips.domain.Viaje;
 import com.travelguard.trips.service.ViajeService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,12 @@ public class ViajeController {
 
     public ViajeController(ViajeService viajeService) {
         this.viajeService = viajeService;
+    }
+
+    @PostMapping
+    public ResponseEntity<Viaje> crearViaje(@RequestBody Viaje viaje) {
+        Viaje nuevoViaje = viajeService.crearViaje(viaje);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoViaje);
     }
 
     @GetMapping

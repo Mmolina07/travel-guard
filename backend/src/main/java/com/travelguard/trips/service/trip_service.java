@@ -16,6 +16,12 @@ public class ViajeService {
         this.viajeRepository = viajeRepository;
     }
 
+    @Transactional
+    public Viaje crearViaje(Viaje nuevoViaje) {
+        nuevoViaje.setArchivado(false); // Garantiza que nazca activo
+        return viajeRepository.save(nuevoViaje);
+    }
+
     @Transactional(readOnly = true)
     public List<Viaje> obtenerViajesPorUsuario(Long usuarioId) {
         return viajeRepository.findByUsuarioIdAndArchivadoFalse(usuarioId);
