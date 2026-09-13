@@ -78,6 +78,11 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     );
   }
 
+  // Método stub para la autenticación con Google (a implementar por tu compañero)
+  void _onGoogleSignUpPressed() {
+    // TODO: La funcionalidad de autenticación con Google la implementará otro compañero.
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,7 +180,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Form(
-                        key: _formKey, // <--- Conexión de la clave del formulario
+                        key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -276,7 +281,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                               width: double.infinity,
                               height: 56,
                               child: ElevatedButton(
-                                onPressed: _isLoading ? null : _submitForm, // <--- Ejecuta _submitForm
+                                onPressed: _isLoading ? null : _submitForm,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF1A5F7A),
                                   shape: RoundedRectangleBorder(
@@ -302,6 +307,56 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                                           color: Colors.white,
                                         ),
                                       ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Divisor "O continúa con"
+                            Row(
+                              children: [
+                                const Expanded(child: Divider(thickness: 1)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    'o continúa con',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(child: Divider(thickness: 1)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Botón Registrarse con Google
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: OutlinedButton.icon(
+                                onPressed: _isLoading ? null : _onGoogleSignUpPressed,
+                                icon: Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+                                  height: 24,
+                                  width: 24,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.g_mobiledata, size: 28, color: Color(0xFF1A5F7A)),
+                                ),
+                                label: const Text(
+                                  'Registrarse con Google',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A5F7A),
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF4A90A4), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -349,9 +404,9 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     required bool enabled,
-    required String? Function(String?) validator, // <--- Recibe el validador
+    required String? Function(String?) validator,
   }) {
-    return TextFormField( // <--- Se cambió a TextFormField
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
@@ -409,9 +464,9 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     required String hint,
     required VoidCallback onVisibilityChange,
     required bool enabled,
-    required String? Function(String?) validator, // <--- Recibe el validador
+    required String? Function(String?) validator,
   }) {
-    return TextFormField( // <--- Se cambió a TextFormField
+    return TextFormField(
       controller: controller,
       obscureText: !isVisible,
       validator: validator,
