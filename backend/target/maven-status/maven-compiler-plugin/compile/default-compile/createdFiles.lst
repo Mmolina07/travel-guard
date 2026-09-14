@@ -1,0 +1,10 @@
+com/travelguard/trips/controller/TripController.class
+com/travelguard/TravelGuardApplication.class
+com/travelguard/trips/dto/TripSummaryResponse.class
+com/travelguard/users/service/UsuarioService.class
+com/travelguard/users/controller/UsuarioController.class
+com/travelguard/users/exception/GlobalExceptionHandler.class
+com/travelguard/trips/service/TripService.class
+com/travelguard/trips/domain/Trip.class
+com/travelguard/trips/repository/TripRepository.class
+com/travelguard/users/dto/ClienteRegisterDTO.class
