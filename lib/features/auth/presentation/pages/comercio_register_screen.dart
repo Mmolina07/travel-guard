@@ -85,7 +85,10 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
     // SnackBar de éxito
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('¡Registro exitoso!')),
+      const SnackBar(
+        content: Text('¡Registro exitoso!'),
+        backgroundColor: Colors.green,
+      ),
     );
 
     // Navegar SOLO si la validación pasó
@@ -128,43 +131,43 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   }
 
   bool _validateForm() {
-    if (_nitController.text.isEmpty) {
-      _showError('Por favor ingresa el NIT');
+    // Escenario 6 de HU-02: campos obligatorios vacíos.
+    final camposVacios = _nitController.text.trim().isEmpty ||
+        _nameController.text.trim().isEmpty ||
+        _directionController.text.trim().isEmpty ||
+        _phoneController.text.trim().isEmpty ||
+        _sedeController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        (!_isGoogleAccount &&
+            (_passwordController.text.isEmpty ||
+                _confirmPasswordController.text.isEmpty));
+    if (camposVacios) {
+      _showError('Debe completar todos los campos obligatorios');
       return false;
     }
-    if (_nameController.text.isEmpty) {
-      _showError('Por favor ingresa el nombre del negocio');
+
+    // Escenario 4 de HU-02: formato de NIT (la duplicidad la valida el
+    // backend en AppAuthProvider.registerComercio).
+    if (!_isValidNit(_nitController.text)) {
+      _showError('NIT inválido o ya registrado');
       return false;
     }
-    if (_directionController.text.isEmpty) {
-      _showError('Por favor ingresa la dirección');
-      return false;
-    }
-    if (_phoneController.text.isEmpty) {
-      _showError('Por favor ingresa el número telefónico');
-      return false;
-    }
-    if (_sedeController.text.isEmpty) {
-      _showError('Por favor ingresa la sede');
-      return false;
-    }
-    if (_emailController.text.isEmpty) {
-      _showError('Por favor ingresa tu correo');
-      return false;
-    }
+
+    // Escenario 2 de HU-02: formato de email (la duplicidad la valida el
+    // backend en AppAuthProvider.registerComercio).
     if (!_isValidEmail(_emailController.text)) {
-      _showError('Correo inválido');
+      _showError('Email inválido o ya registrado');
       return false;
     }
+
     if (_isGoogleAccount) return true; // Ya autenticado, sin contraseña.
-    if (_passwordController.text.isEmpty) {
-      _showError('Por favor ingresa tu contraseña');
+
+    // HU-02 Escenario 1: mínimo 8 caracteres.
+    if (_passwordController.text.length < 8) {
+      _showError('La contraseña debe tener mínimo 8 caracteres');
       return false;
     }
-    if (_passwordController.text.length < 6) {
-      _showError('La contraseña debe tener al menos 6 caracteres');
-      return false;
-    }
+    // Escenario 3 de HU-02.
     if (_passwordController.text != _confirmPasswordController.text) {
       _showError('Las contraseñas no coinciden');
       return false;
@@ -176,7 +179,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     final RegExp emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    return emailRegex.hasMatch(email);
+    return emailRegex.hasMatch(email.trim());
+  }
+
+  bool _isValidNit(String nit) {
+    final RegExp nitRegex = RegExp(r'^\d{5,15}(-\d)?$');
+    return nitRegex.hasMatch(nit.trim());
   }
 
   void _showError(String message) {

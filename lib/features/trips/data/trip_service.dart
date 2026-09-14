@@ -1,4 +1,4 @@
-import 'http' as http;
+import 'package:http/http.dart' as http;
 
 class TripService {
   static const String baseUrl = 'http://localhost:8080/viajes'; // Ajustar la URL de tu backend

@@ -22,6 +22,14 @@ class ComercioRepository {
     return row == null ? null : ComercioModel.fromMap(row);
   }
 
+  /// Escenario 4 de HU-02: detectar NIT ya registrado antes de intentar
+  /// crear el perfil.
+  Future<ComercioModel?> findByNit(String nit) async {
+    final row =
+        await _client.from(_table).select().eq('nit', nit).maybeSingle();
+    return row == null ? null : ComercioModel.fromMap(row);
+  }
+
   Future<ComercioModel> createProfile({
     required int usuarioId,
     required String nit,

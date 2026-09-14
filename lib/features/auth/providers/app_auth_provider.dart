@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../data/auth_exception.dart';
 import '../data/comercio_repository.dart';
@@ -157,26 +158,61 @@ class AppAuthProvider extends ChangeNotifier {
     required String password,
   }) {
     return _runAuthAction(() async {
+      await _checkComercioDuplicates(nit: nit, email: email);
+
       final user = await _emailAuth.register(
         email: email,
         password: password,
         displayName: nombreComercio,
       );
-      final usuario =
-          await _usuarios.createLocal(email: email, tipoUsuario: 'comercio');
-      final comercio = await _comercios.createProfile(
-        usuarioId: usuario.id,
-        nit: nit,
-        nombreComercio: nombreComercio,
-        direccion: direccion,
-        telefonoContacto: telefono,
-        sede: sede,
-      );
-      _usuario = usuario;
-      _comercio = comercio;
-      _tourist = null;
-      _firebaseUser = user;
+      try {
+        final usuario = await _usuarios.createLocal(
+          email: email,
+          tipoUsuario: 'comercio',
+        );
+        final comercio = await _comercios.createProfile(
+          usuarioId: usuario.id,
+          nit: nit,
+          nombreComercio: nombreComercio,
+          direccion: direccion,
+          telefonoContacto: telefono,
+          sede: sede,
+        );
+        _usuario = usuario;
+        _comercio = comercio;
+        _tourist = null;
+        _firebaseUser = user;
+      } on PostgrestException catch (e) {
+        _rethrowComercioConstraintViolation(e);
+      }
     });
+  }
+
+  /// Escenarios 2 y 4 de HU-02: valida de forma anticipada que el email y
+  /// el NIT no estén ya registrados, con el mensaje exacto de cada caso.
+  Future<void> _checkComercioDuplicates({
+    required String nit,
+    required String email,
+  }) async {
+    if (await _comercios.findByNit(nit) != null) {
+      throw const AuthException('NIT inválido o ya registrado');
+    }
+    if (await _usuarios.findByEmail(email) != null) {
+      throw const AuthException('Email inválido o ya registrado');
+    }
+  }
+
+  /// Traduce violaciones de unicidad de Postgres (condición de carrera con
+  /// las validaciones anticipadas) a los mensajes de HU-02.
+  Never _rethrowComercioConstraintViolation(PostgrestException e) {
+    final detail = '${e.message} ${e.details ?? ''}'.toLowerCase();
+    if (detail.contains('nit')) {
+      throw const AuthException('NIT inválido o ya registrado');
+    }
+    if (detail.contains('email')) {
+      throw const AuthException('Email inválido o ya registrado');
+    }
+    throw e;
   }
 
   /// Login con email/contraseña (HU-03), validando que el rol de la
@@ -293,23 +329,29 @@ class AppAuthProvider extends ChangeNotifier {
       return Future.value(false);
     }
     return _runAuthAction(() async {
-      var usuario = await _usuarios.findByGoogleId(user.uid);
-      usuario ??= await _usuarios.createGoogle(
-        googleId: user.uid,
-        email: user.email ?? '',
-        tipoUsuario: 'comercio',
-      );
-      final comercio = await _comercios.createProfile(
-        usuarioId: usuario.id,
-        nit: nit,
-        nombreComercio: nombreComercio,
-        direccion: direccion,
-        telefonoContacto: telefono,
-        sede: sede,
-      );
-      _usuario = usuario;
-      _comercio = comercio;
-      _tourist = null;
+      await _checkComercioDuplicates(nit: nit, email: user.email ?? '');
+
+      try {
+        var usuario = await _usuarios.findByGoogleId(user.uid);
+        usuario ??= await _usuarios.createGoogle(
+          googleId: user.uid,
+          email: user.email ?? '',
+          tipoUsuario: 'comercio',
+        );
+        final comercio = await _comercios.createProfile(
+          usuarioId: usuario.id,
+          nit: nit,
+          nombreComercio: nombreComercio,
+          direccion: direccion,
+          telefonoContacto: telefono,
+          sede: sede,
+        );
+        _usuario = usuario;
+        _comercio = comercio;
+        _tourist = null;
+      } on PostgrestException catch (e) {
+        _rethrowComercioConstraintViolation(e);
+      }
     });
   }
 
