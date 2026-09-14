@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
 import '../presentation/create_activity_screen.dart';
 import '../presentation/create_menu_screen.dart';
 import '../presentation/menu_detail_screen.dart';
+import '../../auth/providers/app_auth_provider.dart';
 
 class HomeScreenComercio extends StatefulWidget {
   const HomeScreenComercio({Key? key}) : super(key: key);
@@ -13,7 +15,8 @@ class HomeScreenComercio extends StatefulWidget {
 
 class _HomeScreenComercioState extends State<HomeScreenComercio> {
   int _selectedIndex = 0;
-  final String businessName = 'Mi Negocio';
+
+  String get businessName => context.watch<AppAuthProvider>().displayName;
   final List<Map<String, dynamic>> _actividades = [];
   final List<Menu> _menus = [];  // ← AGREGAR LISTA DE MENÚS
 

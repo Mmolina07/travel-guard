@@ -1,9 +1,11 @@
-//pantalla principal del turista, crear viaje 
+//pantalla principal del turista, crear viaje
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../Pages/create_trip_screen.dart';
 import '../../../places_map/presentation/map_screen.dart';
 import '../Pages/trip_detail_screen.dart';
 import '../pages/trip_model.dart';
+import '../../../auth/providers/app_auth_provider.dart';
 
 
 class HomeScreenClient extends StatefulWidget {
@@ -15,9 +17,10 @@ class HomeScreenClient extends StatefulWidget {
 
 class _HomeScreenClientState extends State<HomeScreenClient> {
   int _selectedIndex = 0;
-  final String userName = 'Ana';
 
   final List<Trip> _trips = [];
+
+  String get userName => context.watch<AppAuthProvider>().displayName;
 
   @override
   Widget build(BuildContext context) {

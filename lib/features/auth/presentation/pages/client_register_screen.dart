@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../trips/presentation/pages/home_screen_client.dart';
+import '../../providers/app_auth_provider.dart';
 
 class ClienteRegisterScreen extends StatefulWidget {
   const ClienteRegisterScreen({Key? key}) : super(key: key);
@@ -36,20 +38,52 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_validateForm()) {
-      setState(() => _isLoading = true);
+  void _handleRegister() async {
+    if (!_validateForm()) return;
 
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Registro exitoso!')),
-        );
+    setState(() => _isLoading = true);
 
-       //Cambiar la navegacion asi la home_screen_client.dart
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreenClient()));
-      });
+    final auth = context.read<AppAuthProvider>();
+    final success = await auth.registerTourist(
+      nombre: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (!success) {
+      _showError(auth.errorMessage ?? 'No se pudo completar el registro.');
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Registro exitoso!')),
+    );
+
+    //Cambiar la navegacion asi la home_screen_client.dart
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreenClient()));
+  }
+
+  void _handleGoogleRegister() async {
+    setState(() => _isLoading = true);
+
+    final auth = context.read<AppAuthProvider>();
+    final success = await auth.signInWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (!success) {
+      if (auth.errorMessage != null) _showError(auth.errorMessage!);
+      return; // Cancelado por el usuario: no hay error que mostrar.
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Registro exitoso!')),
+    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreenClient()));
   }
 
   bool _validateForm() {
@@ -280,6 +314,59 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                                         color: Colors.white,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Separador "o"
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12),
+                                child: Text(
+                                  'o',
+                                  style: TextStyle(
+                                    color: const Color(0xFF757575),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Botón Registrarse con Google
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  _isLoading ? null : _handleGoogleRegister,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFF4A90A4),
+                                  width: 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.g_mobiledata,
+                                size: 28,
+                                color: Color(0xFF1A5F7A),
+                              ),
+                              label: const Text(
+                                'Registrarse con Google',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A5F7A),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),

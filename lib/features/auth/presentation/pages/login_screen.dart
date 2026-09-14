@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import "../pages/Register_Type_Screen.dart";
 import '../../../trips/presentation/pages/home_screen_client.dart';
 import '../../../places_map/presentation/home_screen_comercio.dart';
+import '../../providers/app_auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -30,25 +32,65 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin({required Widget destination}) {
-  if (_validateForm()) {
+  void _handleLogin({
+    required Widget destination,
+    required String tipoUsuario,
+  }) async {
+    if (!_validateForm()) return;
+
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+    final auth = context.read<AppAuthProvider>();
+    final success = await auth.signInWithEmail(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      expectedTipoUsuario: tipoUsuario,
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Ingreso exitoso!')),
-      );
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => destination),
-      );
-    });
+    if (!success) {
+      _showError(auth.errorMessage ?? 'No se pudo iniciar sesión.');
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Ingreso exitoso!')),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => destination),
+    );
   }
-}
+
+  void _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+
+    final auth = context.read<AppAuthProvider>();
+    final success = await auth.signInWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (!success) {
+      if (auth.errorMessage != null) _showError(auth.errorMessage!);
+      return; // Cancelado por el usuario: no hay error que mostrar.
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Ingreso exitoso!')),
+    );
+
+    final destination = auth.usuario?.tipoUsuario == 'comercio'
+        ? const HomeScreenComercio()
+        : const HomeScreenClient();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => destination),
+    );
+  }
 
   bool _validateForm() {
     if (_emailController.text.isEmpty) {
@@ -312,6 +354,59 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
 
+                          // Botón Continuar con Google
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  _isLoading ? null : _handleGoogleLogin,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFF4A90A4),
+                                  width: 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.g_mobiledata,
+                                size: 28,
+                                color: Color(0xFF1A5F7A),
+                              ),
+                              label: const Text(
+                                'Continuar con Google',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A5F7A),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Separador "o"
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12),
+                                child: Text(
+                                  'o',
+                                  style: TextStyle(
+                                    color: const Color(0xFF757575),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
                           // Botones: iniciar sesion como turista y comercio
                           Row(
                             children: [
@@ -320,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: SizedBox(
                                   height: 56,
                                   child: OutlinedButton(
-                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenClient()),
+                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenClient(), tipoUsuario: 'turista'),
                                     style: OutlinedButton.styleFrom(
                                       side: const BorderSide(
                                         color: Color(0xFF1A5F7A),
@@ -350,7 +445,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   height: 56,
                                   child: ElevatedButton(
                                     // Poner la navegacion al comercio 
-                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenComercio()),
+                                    onPressed: _isLoading ? null : () => _handleLogin(destination: const HomeScreenComercio(), tipoUsuario: 'comercio'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF1A5F7A),
                                       shape: RoundedRectangleBorder(

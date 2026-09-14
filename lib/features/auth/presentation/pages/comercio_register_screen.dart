@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../places_map/presentation/home_screen_comercio.dart';
+import '../../providers/app_auth_provider.dart';
 
 class ComercioRegisterScreen extends StatefulWidget {
   const ComercioRegisterScreen({Key? key}) : super(key: key);
@@ -21,6 +23,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isGoogleAccount = false;
 
   @override
   void initState() {
@@ -48,29 +51,81 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() {
-  if (_validateForm()) {
+  void _handleRegister() async {
+    if (!_validateForm()) return;
+
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+    final auth = context.read<AppAuthProvider>();
+    final success = _isGoogleAccount
+        ? await auth.completeComercioGoogleRegistration(
+            nombreComercio: _nameController.text.trim(),
+            nit: _nitController.text.trim(),
+            direccion: _directionController.text.trim(),
+            telefono: _phoneController.text.trim(),
+            sede: _sedeController.text.trim(),
+          )
+        : await auth.registerComercio(
+            nombreComercio: _nameController.text.trim(),
+            nit: _nitController.text.trim(),
+            direccion: _directionController.text.trim(),
+            telefono: _phoneController.text.trim(),
+            sede: _sedeController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
-      // SnackBar de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Registro exitoso!')),
-      );
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-      // Navegar SOLO si la validación pasó
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeScreenComercio(),
-        ),
-      );
-    });
+    if (!success) {
+      _showError(auth.errorMessage ?? 'No se pudo completar el registro.');
+      return;
+    }
+
+    // SnackBar de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Registro exitoso!')),
+    );
+
+    // Navegar SOLO si la validación pasó
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomeScreenComercio(),
+      ),
+    );
   }
-}
+
+  void _handleGoogleRegister() async {
+    setState(() => _isLoading = true);
+
+    final auth = context.read<AppAuthProvider>();
+    final user = await auth.beginGoogleSignIn();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (user == null) {
+      if (auth.errorMessage != null) _showError(auth.errorMessage!);
+      return; // Cancelado por el usuario: no hay error que mostrar.
+    }
+
+    setState(() {
+      _isGoogleAccount = true;
+      _nameController.text = user.displayName ?? _nameController.text;
+      _emailController.text = user.email ?? _emailController.text;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Cuenta de Google verificada. Completa los datos del negocio '
+          'y presiona "Registrarse" para terminar.',
+        ),
+      ),
+    );
+  }
 
   bool _validateForm() {
     if (_nitController.text.isEmpty) {
@@ -101,6 +156,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       _showError('Correo inválido');
       return false;
     }
+    if (_isGoogleAccount) return true; // Ya autenticado, sin contraseña.
     if (_passwordController.text.isEmpty) {
       _showError('Por favor ingresa tu contraseña');
       return false;
@@ -360,6 +416,63 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                                         color: Colors.white,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Separador "o"
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12),
+                                child: Text(
+                                  'o',
+                                  style: TextStyle(
+                                    color: const Color(0xFF757575),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Botón Registrarse con Google: solo autentica
+                          // (nombre/correo); NIT, dirección, teléfono y
+                          // sede se completan en este mismo formulario.
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  _isLoading ? null : _handleGoogleRegister,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFF4A90A4),
+                                  width: 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.g_mobiledata,
+                                size: 28,
+                                color: Color(0xFF1A5F7A),
+                              ),
+                              label: Text(
+                                _isGoogleAccount
+                                    ? 'Cuenta de Google verificada'
+                                    : 'Verificar con Google',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A5F7A),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
