@@ -15,6 +15,7 @@ class TripDetailScreen extends StatefulWidget {
 
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late Trip trip;
+  final List<Expense> _extraExpenses = [];
 
   @override
   void initState() {
@@ -22,8 +23,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     trip = widget.trip;
   }
 
+  double get _extraExpensesTotal {
+  return _extraExpenses.fold(0.0, (sum, e) => sum + e.amount);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final double totalSpent = trip.getTotalSpent() + _extraExpensesTotal;
+    final double remaining = trip.maxBudget - totalSpent;
+    final double percentage = trip.maxBudget > 0
+      ? (totalSpent / trip.maxBudget) * 100
+      : 0;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -198,6 +208,80 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       '\$${trip.emergencyMoney.toStringAsFixed(0)}',
                       isAmount: true,
                     ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _handleAddExpense,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar gasto'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF1A5F7A),
+                          side: const BorderSide(color: Color(0xFF1A5F7A)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    if (_extraExpenses.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _buildSectionSubtitle('Gastos Agregados'),
+                      const SizedBox(height: 8),
+                      ..._extraExpenses.map((expense) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.circle,
+                                      size: 8,
+                                      color: Color(0xFF1A5F7A),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      expense.category,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF757575),
+                                      ),
+                                    ),
+                                    if (expense.description.isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          '- ${expense.description}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF9E9E9E),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '\$${expense.amount.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A5F7A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   const SizedBox(height: 24),
 
                   // SECCIÓN 5: RESUMEN PRESUPUESTARIO
@@ -221,24 +305,24 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         const SizedBox(height: 12),
                         _buildBudgetRow(
                           'Total Gastado',
-                          '\$${trip.getTotalSpent().toStringAsFixed(0)}',
+                          '\$${totalSpent.toStringAsFixed(0)}',   // ← variable
                           isSpent: true,
                         ),
                         const SizedBox(height: 12),
                         _buildBudgetRow(
                           'Presupuesto Disponible',
-                          '\$${trip.getRemainingBudget().toStringAsFixed(0)}',
+                          '\$${remaining.toStringAsFixed(0)}',    // ← variable
                           isAvailable: true,
                         ),
                         const SizedBox(height: 16),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: trip.getBudgetPercentage() / 100,
+                            value: (percentage / 100).clamp(0.0, 1.0),   // ← variable
                             minHeight: 10,
                             backgroundColor: const Color(0xFFE0EEF7),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              trip.getRemainingBudget() > 0
+                              remaining > 0                                // ← variable
                                   ? const Color(0xFF2D8659)
                                   : const Color(0xFFD32F2F),
                             ),
@@ -246,7 +330,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '${trip.getBudgetPercentage().toStringAsFixed(1)}% del presupuesto utilizado',
+                          '${percentage.toStringAsFixed(1)}% del presupuesto utilizado',   // ← variable
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF757575),
@@ -401,64 +485,84 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildExpenseBreakdown() {
-    final expenses = [
-      ('Pagos Anticipados', trip.advancePayment),
-      ('Hospedaje', trip.lodgingCost),
-      ('Tours', trip.tours),
-      ('Restaurantes', trip.restaurants),
-      ('Discotecas', trip.discotheque),
-      ('Souvenirs', trip.souvenirs),
-      ('Actividades', trip.paidActivities),
-      ('Emergencias', trip.emergencyMoney),
-    ];
+  // Agrupamos los gastos extra por categoría
+  final Map<String, double> extrasByCategory = {};
+  for (final expense in _extraExpenses) {
+    extrasByCategory[expense.category] =
+        (extrasByCategory[expense.category] ?? 0) + expense.amount;
+  }
 
-    return Column(
-      children: expenses
-          .where((e) => e.$2 > 0)
-          .map((expense) {
-        final percentage = (expense.$2 / trip.maxBudget) * 100;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    expense.$1,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF757575),
-                    ),
-                  ),
-                  Text(
-                    '\$${expense.$2.toStringAsFixed(0)} (${percentage.toStringAsFixed(1)}%)',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A5F7A),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: percentage / 100,
-                  minHeight: 6,
-                  backgroundColor: const Color(0xFFE0EEF7),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFF1A5F7A),
+  // Base fija del viaje + extras agrupados
+  final expenses = <(String, double)>[
+    ('Pagos Anticipados', trip.advancePayment),
+    ('Hospedaje', trip.lodgingCost),
+    ('Tours', trip.tours),
+    ('Restaurantes', trip.restaurants),
+    ('Discotecas', trip.discotheque),
+    ('Souvenirs', trip.souvenirs),
+    ('Actividades', trip.paidActivities),
+    ('Emergencias', trip.emergencyMoney),
+    ...extrasByCategory.entries.map((e) => (e.key, e.value)),
+  ];
+
+  // Filtramos los que son 0 para no mostrar filas vacías
+  final filtered = expenses.where((e) => e.$2 > 0).toList();
+
+  if (filtered.isEmpty) {
+    return const Text(
+      'No hay gastos registrados aún.',
+      style: TextStyle(fontSize: 13, color: Color(0xFF757575)),
+    );
+  }
+
+  return Column(
+    children: filtered.map((expense) {
+      final percentage = trip.maxBudget > 0
+          ? (expense.$2 / trip.maxBudget) * 100
+          : 0.0;
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  expense.$1,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF757575),
                   ),
                 ),
+                Text(
+                  '\$${expense.$2.toStringAsFixed(0)} (${percentage.toStringAsFixed(1)}%)',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A5F7A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (percentage / 100).clamp(0.0, 1.0),
+                minHeight: 6,
+                backgroundColor: const Color(0xFFE0EEF7),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF1A5F7A),
+                ),
               ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
+            ),
+          ],
+        ),
+      );
+    }).toList(),
+  );
   }
 
   void _showDeleteDialog() {
@@ -510,4 +614,274 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       },
     );
   }
+
+  Future<Map<String, dynamic>?> _showAddExpenseSheet() async {
+  // Controladores y estado local del sheet
+  String selectedCategory = 'Comida';
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+
+  // Lista de categorías alineadas con las que ya usas en el viaje
+  const categories = [
+    'Comida',
+    'Transporte',
+    'Hospedaje',
+    'Tours',
+    'Entretenimiento',
+    'Compras',
+    'Emergencias',
+    'Otro',
+  ];
+
+  return showModalBottomSheet<Map<String, dynamic>>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setStateSheet) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle superior
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Título
+                const Text(
+                  'Agregar gasto',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A5F7A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Registra un nuevo gasto para este viaje',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Categoría
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Categoría',
+                    prefixIcon: const Icon(
+                      Icons.category_outlined,
+                      color: Color(0xFF1A5F7A),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1A5F7A),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  items: categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setStateSheet(() => selectedCategory = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Monto
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Monto',
+                    hintText: 'Ej. 50000',
+                    prefixIcon: const Icon(
+                      Icons.attach_money,
+                      color: Color(0xFF1A5F7A),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1A5F7A),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Descripción (opcional)
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Descripción (opcional)',
+                    hintText: 'Ej. Cena en el centro',
+                    prefixIcon: const Icon(
+                      Icons.description_outlined,
+                      color: Color(0xFF1A5F7A),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1A5F7A),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Botones
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF1A5F7A),
+                          side: const BorderSide(color: Color(0xFF1A5F7A)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancelar',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final amount =
+                              double.tryParse(amountController.text.trim());
+
+                          // Validación
+                          if (amount == null || amount <= 0) {
+                            ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              const SnackBar(
+                                content: Text('Ingresa un monto válido'),
+                                backgroundColor: Color(0xFFD32F2F),
+                              ),
+                            );
+                            return;
+                          }
+
+                          Navigator.pop(sheetContext, {
+                            'category': selectedCategory,
+                            'amount': amount,
+                            'description':
+                                descriptionController.text.trim(),
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A5F7A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Agregar',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+  Future<void> _handleAddExpense() async {
+  final expense = await _showAddExpenseSheet();
+
+  if (!mounted) return;
+
+  if (expense != null) {
+    setState(() {
+      _extraExpenses.add(
+        Expense(
+          category: expense['category'] as String,
+          amount: expense['amount'] as double,
+          description: expense['description'] as String? ?? '',
+        ),
+      );
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Gasto de \$${(expense['amount'] as double).toStringAsFixed(0)} '
+          'en ${expense['category']} agregado',
+        ),
+        backgroundColor: const Color(0xFF1A5F7A),
+      ),
+    );
+  }
+}
 }

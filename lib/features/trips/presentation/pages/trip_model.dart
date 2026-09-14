@@ -56,3 +56,15 @@ class Trip {
     return (getTotalSpent() / maxBudget * 100);
   }
 }
+
+class Expense {
+  final String category;
+  final double amount;
+  final String description;
+
+  Expense({
+    required this.category,
+    required this.amount,
+    this.description = '',
+  });
+}

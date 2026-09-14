@@ -4,6 +4,7 @@ import '../Pages/create_trip_screen.dart';
 import '../../../places_map/presentation/map_screen.dart';
 import '../Pages/trip_detail_screen.dart';
 import '../pages/trip_model.dart';
+import '../../../places_map/presentation/comercios_cercanos_screen.dart';
 
 
 class HomeScreenClient extends StatefulWidget {
@@ -30,10 +31,6 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             floating: false,
             pinned: true,
             backgroundColor: const Color(0xFF1A5F7A),
-            leading: IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () {},
-            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.notifications_none, color: Colors.white),
@@ -281,7 +278,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             case 3:
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CreateTripScreen()),
+                MaterialPageRoute(builder: (context) => const ComerciosCercanosScreen()),
               );
               break;
           }
