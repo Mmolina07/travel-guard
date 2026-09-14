@@ -1,5 +1,6 @@
 // lib/models/trip_model.dart
 class Trip {
+  final int? id;
   final String name;
   final String destination;
   final String startDate;
@@ -19,8 +20,11 @@ class Trip {
   final double souvenirs;
   final double paidActivities;
   final double emergencyMoney;
+  // TG-141 / HU-05 Escenarios 8-9: si se creó con campos opcionales vacíos.
+  final bool datosCompletos;
 
   Trip({
+    this.id,
     required this.name,
     required this.destination,
     required this.startDate,
@@ -40,11 +44,38 @@ class Trip {
     required this.souvenirs,
     required this.paidActivities,
     required this.emergencyMoney,
+    this.datosCompletos = true,
   });
 
+  Trip copyWith({int? id}) {
+    return Trip(
+      id: id ?? this.id,
+      name: name,
+      destination: destination,
+      startDate: startDate,
+      endDate: endDate,
+      persons: persons,
+      tripType: tripType,
+      maxBudget: maxBudget,
+      advancePayment: advancePayment,
+      lodgingType: lodgingType,
+      lodgingCost: lodgingCost,
+      includedServices: includedServices,
+      startTransport: startTransport,
+      duringTransport: duringTransport,
+      tours: tours,
+      restaurants: restaurants,
+      discotheque: discotheque,
+      souvenirs: souvenirs,
+      paidActivities: paidActivities,
+      emergencyMoney: emergencyMoney,
+      datosCompletos: datosCompletos,
+    );
+  }
+
   double getTotalSpent() {
-    return advancePayment + lodgingCost + tours + 
-           restaurants + discotheque + souvenirs + 
+    return advancePayment + lodgingCost + tours +
+           restaurants + discotheque + souvenirs +
            paidActivities + emergencyMoney;
   }
 
@@ -55,4 +86,16 @@ class Trip {
   double getBudgetPercentage() {
     return (getTotalSpent() / maxBudget * 100);
   }
+}
+
+class Expense {
+  final String category;
+  final double amount;
+  final String description;
+
+  Expense({
+    required this.category,
+    required this.amount,
+    this.description = '',
+  });
 }

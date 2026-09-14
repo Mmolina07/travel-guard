@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+import '../../../auth/providers/app_auth_provider.dart';
+import '../../data/trip_repository.dart';
 import '../pages/trip_model.dart';
+import '../pages/trip_detail_screen.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({Key? key}) : super(key: key);
@@ -40,6 +46,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   bool _isLoading = false;
 
+  final TripRepository _tripRepository = TripRepository();
+
   @override
   void initState() {
     super.initState();
@@ -78,12 +86,36 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     super.dispose();
   }
 
-  Future<void> _selectDate(TextEditingController controller) async {
+  static final DateTime _today = DateTime.now();
+  static final DateTime _maxSelectableDate =
+      DateTime(_today.year + 2, _today.month, _today.day);
+
+  static final List<TextInputFormatter> _digitsOnlyFormatters = [
+    FilteringTextInputFormatter.digitsOnly,
+  ];
+  static final List<TextInputFormatter> _moneyFormatters = [
+    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+  ];
+
+  Future<void> _pickDate({
+    required TextEditingController controller,
+    required DateTime firstDate,
+    DateTime? initialDate,
+  }) async {
+    // El propio rango puede quedar invertido si, p.ej., la fecha de
+    // inicio elegida ya pasó `_maxSelectableDate` (caso extremo, pero
+    // evita el "!lastDate.isBefore(firstDate)" del date picker).
+    final lastDate =
+        firstDate.isAfter(_maxSelectableDate) ? firstDate : _maxSelectableDate;
+    var initial = initialDate ?? firstDate;
+    if (initial.isBefore(firstDate)) initial = firstDate;
+    if (initial.isAfter(lastDate)) initial = lastDate;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2026),
+      initialDate: initial,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -97,99 +129,288 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     );
 
     if (picked != null) {
-      controller.text = DateFormat('dd/MM/yyyy').format(picked);
+      setState(() => controller.text = DateFormat('dd/MM/yyyy').format(picked));
     }
   }
 
-  void _handleCreateTrip() {
-  if (_validateForm()) {
+  Future<void> _selectStartDate() async {
+    await _pickDate(
+      controller: _startDateController,
+      firstDate: _today,
+      initialDate: _parseDate(_startDateController.text),
+    );
+
+    // Si la fecha de fin ya elegida quedó antes/igual a la nueva fecha
+    // de inicio, la limpiamos para no dejar el formulario en un estado
+    // inválido sin que el usuario lo note.
+    final start = _parseDate(_startDateController.text);
+    final end = _parseDate(_endDateController.text);
+    if (start != null && end != null && !end.isAfter(start)) {
+      setState(() => _endDateController.clear());
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final start = _parseDate(_startDateController.text);
+    if (start == null) {
+      _showError('Primero selecciona la fecha de inicio');
+      return;
+    }
+    await _pickDate(
+      controller: _endDateController,
+      firstDate: start.add(const Duration(days: 1)),
+      initialDate: _parseDate(_endDateController.text),
+    );
+  }
+
+  /// Duración del viaje en días, o `null` si las fechas aún no son válidas.
+  int? get _tripDurationInDays {
+    final start = _parseDate(_startDateController.text);
+    final end = _parseDate(_endDateController.text);
+    if (start == null || end == null || !end.isAfter(start)) return null;
+    return end.difference(start).inDays;
+  }
+
+  void _handleCreateTrip() async {
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+
+    // Escenario 8/9 de HU-05: datos opcionales incompletos.
+    final datosCompletos = !_hasIncompleteOptionalFields();
+    if (!datosCompletos) {
+      final continuar = await _confirmPartialData();
+      if (continuar != true) return;
+    }
+
+    await _saveTrip(datosCompletos: datosCompletos);
+  }
+
+  /// Escenarios 2-7 de HU-05, con los mensajes exactos de la historia.
+  String? _validateForm() {
+    final camposBasicosVacios = _nameController.text.trim().isEmpty ||
+        _destinationController.text.trim().isEmpty ||
+        _startDateController.text.trim().isEmpty ||
+        _endDateController.text.trim().isEmpty ||
+        _personsController.text.trim().isEmpty ||
+        _maxBudgetController.text.trim().isEmpty;
+    if (camposBasicosVacios) {
+      return 'Debe completar todos los campos obligatorios';
+    }
+
+    final persons = int.tryParse(_personsController.text.trim());
+    if (persons == null || persons <= 0) {
+      return 'Debe haber mínimo 1 persona';
+    }
+
+    final maxBudget = double.tryParse(_maxBudgetController.text.trim());
+    if (maxBudget == null || maxBudget <= 0) {
+      return 'El presupuesto debe ser mayor a 0';
+    }
+
+    final startDate = _parseDate(_startDateController.text);
+    final endDate = _parseDate(_endDateController.text);
+    if (startDate == null || endDate == null) {
+      return 'Las fechas ingresadas no son válidas';
+    }
+    if (!endDate.isAfter(startDate)) {
+      return 'La fecha de fin debe ser posterior a la fecha de inicio';
+    }
+
+    if (_lodgingCostController.text.trim().isNotEmpty) {
+      final lodgingCost = double.tryParse(_lodgingCostController.text.trim());
+      if (lodgingCost == null || lodgingCost <= 0) {
+        return 'El costo debe ser mayor a 0';
+      }
+    }
+
+    if (_emergencyMoneyController.text.trim().isNotEmpty) {
+      final emergencyMoney =
+          double.tryParse(_emergencyMoneyController.text.trim());
+      if (emergencyMoney == null || emergencyMoney <= 0) {
+        return 'El monto debe ser mayor a 0';
+      }
+    }
+
+    return null;
+  }
+
+  DateTime? _parseDate(String value) {
+    try {
+      return DateFormat('dd/MM/yyyy').parseStrict(value.trim());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Escenario 8 de HU-05: campos opcionales (no básicos) sin completar.
+  bool _hasIncompleteOptionalFields() {
+    final sinServiciosIncluidos = !_includeBreakfast &&
+        !_includeLunch &&
+        !_includeDinner &&
+        !_includeTransfer;
+    return _advancePaymentController.text.trim().isEmpty ||
+        _lodgingCostController.text.trim().isEmpty ||
+        sinServiciosIncluidos ||
+        _toursController.text.trim().isEmpty ||
+        _restaurantsController.text.trim().isEmpty ||
+        _discothequeController.text.trim().isEmpty ||
+        _souvenirsController.text.trim().isEmpty ||
+        _paidActivitiesController.text.trim().isEmpty ||
+        _emergencyMoneyController.text.trim().isEmpty;
+  }
+
+  Future<bool?> _confirmPartialData() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Datos incompletos'),
+        content: const Text(
+          'La estimación será menos precisa. ¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A5F7A),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sí, crear viaje'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// TG-141: guarda el viaje en la tabla `viajes` de Supabase.
+  Future<void> _saveTrip({required bool datosCompletos}) async {
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-
+    final auth = context.read<AppAuthProvider>();
+    final turistaId = auth.usuario?.id;
+    if (turistaId == null) {
       setState(() => _isLoading = false);
+      _showError('Debes iniciar sesión como turista para crear un viaje.');
+      return;
+    }
 
-      final Trip trip = Trip(
-        name: _nameController.text,
-        destination: _destinationController.text,
-        startDate: _startDateController.text,
-        endDate: _endDateController.text,
+    final trip = Trip(
+      name: _nameController.text.trim(),
+      destination: _destinationController.text.trim(),
+      startDate: _startDateController.text.trim(),
+      endDate: _endDateController.text.trim(),
+      persons: int.parse(_personsController.text.trim()),
+      tripType: _tripType,
+      maxBudget: double.parse(_maxBudgetController.text.trim()),
+      advancePayment: double.tryParse(_advancePaymentController.text) ?? 0,
+      lodgingType: _lodgingType,
+      lodgingCost: double.tryParse(_lodgingCostController.text) ?? 0,
+      includedServices: [
+        if (_includeBreakfast) 'Desayuno',
+        if (_includeLunch) 'Almuerzo',
+        if (_includeDinner) 'Cena',
+        if (_includeTransfer) 'Traslado',
+      ],
+      startTransport: _startTransport,
+      duringTransport: _duringTransport,
+      tours: double.tryParse(_toursController.text) ?? 0,
+      restaurants: double.tryParse(_restaurantsController.text) ?? 0,
+      discotheque: double.tryParse(_discothequeController.text) ?? 0,
+      souvenirs: double.tryParse(_souvenirsController.text) ?? 0,
+      paidActivities: double.tryParse(_paidActivitiesController.text) ?? 0,
+      emergencyMoney: double.tryParse(_emergencyMoneyController.text) ?? 0,
+      datosCompletos: datosCompletos,
+    );
 
-        persons: int.tryParse(_personsController.text) ?? 1,
-
-        tripType: _tripType,
-
-        maxBudget: double.tryParse(_maxBudgetController.text) ?? 0,
-
-        advancePayment:
-            double.tryParse(_advancePaymentController.text) ?? 0,
-
-        lodgingType: _lodgingType,
-
-        lodgingCost:
-            double.tryParse(_lodgingCostController.text) ?? 0,
-
-        includedServices: [
-          if (_includeBreakfast) 'Desayuno',
-          if (_includeLunch) 'Almuerzo',
-          if (_includeDinner) 'Cena',
-          if (_includeTransfer) 'Traslado',
-        ],
-
-        startTransport: _startTransport,
-
-        duringTransport: _duringTransport,
-
-        tours: double.tryParse(_toursController.text) ?? 0,
-
-        restaurants:
-            double.tryParse(_restaurantsController.text) ?? 0,
-
-        discotheque:
-            double.tryParse(_discothequeController.text) ?? 0,
-
-        souvenirs:
-            double.tryParse(_souvenirsController.text) ?? 0,
-
-        paidActivities:
-            double.tryParse(_paidActivitiesController.text) ?? 0,
-
-        emergencyMoney:
-            double.tryParse(_emergencyMoneyController.text) ?? 0,
+    try {
+      final saved = await _tripRepository.createTrip(
+        turistaId: turistaId,
+        trip: trip,
       );
 
-      Navigator.pop(context, trip);
-    });
-  }
-}
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-  bool _validateForm() {
-    if (_nameController.text.isEmpty) {
-      _showError('Por favor ingresa el nombre del viaje');
-      return false;
+      // Escenario 1 de HU-05: feedback de éxito con presupuesto total.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '¡Viaje creado! Presupuesto total: '
+            '\$${_formatMoney(saved.maxBudget)}',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Muestra el resumen con presupuesto total (Escenario 1).
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => TripDetailScreen(trip: saved)),
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context, saved);
+    } on PostgrestException catch (e, st) {
+      debugPrint('CreateTripScreen._saveTrip PostgrestException: '
+          '${e.message} (code: ${e.code})\n$st');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError(_mapSaveTripError(e));
+    } catch (e, st) {
+      debugPrint('CreateTripScreen._saveTrip error: $e\n$st');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError('No se pudo guardar el viaje. Intenta nuevamente.');
     }
-    if (_destinationController.text.isEmpty) {
-      _showError('Por favor ingresa el destino');
-      return false;
+  }
+
+  /// Traduce errores comunes de Postgres/Supabase a un mensaje claro,
+  /// y deja el detalle real en consola (`debugPrint`) para depurar.
+  String _mapSaveTripError(PostgrestException e) {
+    final detalle = '${e.message} ${e.details ?? ''}'.toLowerCase();
+    if (e.code == '42P01' || detalle.contains('does not exist')) {
+      return 'La base de datos no está actualizada para guardar el viaje '
+          '(falta una columna o tabla). Revisa docs/db/hu05_viajes_costos.sql.';
     }
-    if (_startDateController.text.isEmpty) {
-      _showError('Por favor selecciona la fecha de inicio');
-      return false;
+    if (e.code == '42501') {
+      return 'No tienes permiso para guardar el viaje (revisa las '
+          'políticas de seguridad de la tabla viajes en Supabase).';
     }
-    if (_endDateController.text.isEmpty) {
-      _showError('Por favor selecciona la fecha de fin');
-      return false;
+    if (e.code == '23503') {
+      return 'Tu usuario no está registrado como turista todavía.';
     }
-    if (_personsController.text.isEmpty) {
-      _showError('Por favor ingresa el número de personas');
-      return false;
-    }
-    if (_maxBudgetController.text.isEmpty) {
-      _showError('Por favor ingresa el presupuesto máximo');
-      return false;
-    }
-    return true;
+    return 'No se pudo guardar el viaje. Intenta nuevamente.';
+  }
+
+  /// Escenario 10 de HU-05: confirmar antes de descartar el formulario.
+  Future<void> _handleCancel() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Estás seguro?'),
+        content: const Text('Se descartarán los datos ingresados.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD32F2F),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sí, descartar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true && mounted) Navigator.pop(context);
   }
 
   void _showError(String message) {
@@ -209,7 +430,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isLoading ? null : _handleCancel,
         ),
         title: const Text(
           'Crear Viaje',
@@ -254,7 +475,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     child: _buildDateField(
                       controller: _startDateController,
                       label: 'Fecha inicio',
-                      onTap: () => _selectDate(_startDateController),
+                      onTap: _selectStartDate,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -262,11 +483,33 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     child: _buildDateField(
                       controller: _endDateController,
                       label: 'Fecha fin',
-                      onTap: () => _selectDate(_endDateController),
+                      onTap: _selectEndDate,
                     ),
                   ),
                 ],
               ),
+              if (_tripDurationInDays != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.event_available,
+                      size: 16,
+                      color: Color(0xFF4A90A4),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Duración: $_tripDurationInDays '
+                      '${_tripDurationInDays == 1 ? 'día' : 'días'}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4A90A4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
 
               _buildTextField(
@@ -275,6 +518,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 hint: 'Ej: 4',
                 icon: Icons.people_outline,
                 keyboardType: TextInputType.number,
+                inputFormatters: _digitsOnlyFormatters,
               ),
               const SizedBox(height: 32),
 
@@ -301,7 +545,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Presupuesto máximo',
                 hint: 'Ej: 5000000',
                 icon: Icons.attach_money,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -310,7 +556,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Pagos anticipados',
                 hint: 'Ej: 1500000',
                 icon: Icons.credit_card,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 32),
 
@@ -333,7 +581,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Costo hospedaje',
                 hint: 'Ej: 2000000',
                 icon: Icons.hotel_outlined,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 20),
 
@@ -403,7 +653,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Tours con guía',
                 hint: 'Ej: 500000',
                 icon: Icons.tour,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -412,7 +664,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Restaurantes',
                 hint: 'Ej: 1500000',
                 icon: Icons.restaurant_outlined,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -421,7 +675,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Discotecas',
                 hint: 'Ej: 300000',
                 icon: Icons.music_note_outlined,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -430,7 +686,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Souvenirs',
                 hint: 'Ej: 200000',
                 icon: Icons.card_giftcard,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -439,7 +697,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Actividades pagas',
                 hint: 'Ej: 800000',
                 icon: Icons.sports_basketball_outlined,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
               const SizedBox(height: 16),
 
@@ -448,8 +708,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 label: 'Dinero emergencias',
                 hint: 'Ej: 500000',
                 icon: Icons.health_and_safety_outlined,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
               ),
+              const SizedBox(height: 24),
+
+              _buildBudgetSummaryCard(),
               const SizedBox(height: 40),
 
               // Botón Crear Viaje
@@ -461,7 +726,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     child: SizedBox(
                       height: 56,
                       child: OutlinedButton(
-                        onPressed: _isLoading ? null : () => Navigator.pop(context),
+                        onPressed: _isLoading ? null : _handleCancel,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
                             color: Color(0xFF1A5F7A),
@@ -551,12 +816,174 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     );
   }
 
+  double _parsedOrZero(TextEditingController controller) =>
+      double.tryParse(controller.text.trim()) ?? 0;
+
+  /// Formatea con separador de miles ('.') estilo colombiano, sin
+  /// depender de datos de locale de `intl` (evita fallos en tiempo de
+  /// ejecución si el locale no está inicializado).
+  String _formatMoney(double value) {
+    final rounded = value.round();
+    final digits = rounded.abs().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(digits[i]);
+    }
+    return (rounded < 0 ? '-' : '') + buffer.toString();
+  }
+
+  /// Resumen de presupuesto en vivo: se recalcula con cada cambio en los
+  /// campos de dinero gracias a `triggerRebuild: true` en `_buildTextField`.
+  Widget _buildBudgetSummaryCard() {
+    final maxBudget = _parsedOrZero(_maxBudgetController);
+    final estimatedSpent = _parsedOrZero(_advancePaymentController) +
+        _parsedOrZero(_lodgingCostController) +
+        _parsedOrZero(_toursController) +
+        _parsedOrZero(_restaurantsController) +
+        _parsedOrZero(_discothequeController) +
+        _parsedOrZero(_souvenirsController) +
+        _parsedOrZero(_paidActivitiesController) +
+        _parsedOrZero(_emergencyMoneyController);
+
+    if (maxBudget <= 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F7FC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0EEF7)),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.info_outline, color: Color(0xFF4A90A4), size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Ingresa el presupuesto máximo para ver aquí el resumen.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF757575)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final remaining = maxBudget - estimatedSpent;
+    final percentage = (estimatedSpent / maxBudget * 100).clamp(0, 999);
+    final overBudget = remaining < 0;
+    final barColor = overBudget
+        ? const Color(0xFFD32F2F)
+        : percentage >= 90
+            ? const Color(0xFFF9A825)
+            : const Color(0xFF1A5F7A);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0EEF7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Resumen de presupuesto',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A5F7A),
+                ),
+              ),
+              Text(
+                '${percentage.toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: (percentage / 100).clamp(0, 1).toDouble(),
+              minHeight: 8,
+              backgroundColor: const Color(0xFFE0EEF7),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildBudgetRow('Estimado (con lo ingresado)',
+              '\$${_formatMoney(estimatedSpent)}'),
+          const SizedBox(height: 4),
+          _buildBudgetRow(
+            overBudget ? 'Te excedes por' : 'Disponible',
+            '\$${_formatMoney(remaining.abs())}',
+            valueColor: overBudget ? const Color(0xFFD32F2F) : Colors.green,
+          ),
+          if (overBudget) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: const [
+                Icon(Icons.warning_amber_rounded,
+                    size: 16, color: Color(0xFFD32F2F)),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Lo estimado supera tu presupuesto máximo.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFD32F2F)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: valueColor ?? const Color(0xFF1A5F7A),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    bool triggerRebuild = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,6 +1000,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          onChanged: triggerRebuild ? (_) => setState(() {}) : null,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon),
@@ -629,7 +1058,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          readOnly: false,
+          readOnly: true,
           onTap: onTap,
           decoration: InputDecoration(
             hintText: 'DD/MM/YYYY',

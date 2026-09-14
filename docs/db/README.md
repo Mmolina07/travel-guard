@@ -16,6 +16,11 @@ código Dart actual:
    (`dev_open_access_*`) en cada tabla. Sin políticas, Postgres bloquea
    todo acceso con el error `42501` ("row-level security policy") — la
    causa de los fallos al registrar turista y comercio.
+3. (HU-05/TG-141) Se agregaron `costo_tours`, `costo_restaurantes`,
+   `costo_discotecas`, `costo_souvenirs` a `viajes` — el formulario de
+   crear viaje captura un monto para cada uno, pero el esquema original
+   solo tenía flags booleanos. Si ya tenías `viajes` creada, corre
+   `docs/db/hu05_viajes_costos.sql` (aditivo) en vez de resetear todo.
 
 Para dejar la base de datos limpia y consistente:
 
@@ -148,6 +153,38 @@ exactos de `docs/hu/hu-02.md`:
   con Google (`signInWithGoogle`) que por defecto asume `'turista'` para
   cuentas nuevas.
 - Contraseña mínima ajustada de 6 a 8 caracteres, según el Escenario 1.
+
+## HU-05 (TG-139, TG-141): crear viaje conectado a Supabase
+
+`create_trip_screen.dart` simulaba la creación con `Future.delayed` y
+nunca guardaba nada. Ahora:
+
+- Nuevo `lib/features/trips/data/trip_repository.dart`
+  (`TripRepository.createTrip`) inserta en `viajes`, usando
+  `AppAuthProvider.usuario.id` como `turista_id`. Mapea los campos en
+  inglés del formulario (`Trip` en `presentation/pages/trip_model.dart`)
+  a las columnas en español de la tabla, incluyendo la conversión de
+  fecha `dd/MM/yyyy` → `yyyy-MM-dd` y de los valores de los dropdowns
+  (`'Transporte público'` → `'transporte_publico'`, etc.) a los enums de
+  Postgres.
+- `Trip` ganó `id` (asignado por Supabase tras el insert, vía
+  `copyWith`) y `datosCompletos` (Escenarios 8-9 de HU-05).
+- `_validateForm()` en `create_trip_screen.dart` ahora usa los mensajes
+  exactos de `docs/hu/hu-05.md`: campos obligatorios vacíos, personas ≤
+  0, presupuesto ≤ 0, costo de hospedaje ≤ 0 (si se ingresó), dinero de
+  emergencias ≤ 0 (si se ingresó), y fecha fin no posterior a fecha
+  inicio.
+- Si los campos opcionales quedan vacíos, se muestra un diálogo
+  ("La estimación será menos precisa. ¿Deseas continuar?") antes de
+  guardar con `datos_completos = false` (Escenarios 8-9).
+- El botón "Cancelar" y la flecha de volver del AppBar ahora piden
+  confirmación ("¿Estás seguro?") antes de descartar el formulario
+  (Escenario 10).
+- Al crear el viaje con éxito: SnackBar verde con el presupuesto total
+  (Escenario 1) y navegación a `TripDetailScreen` (la vista de resumen
+  con presupuesto que ya existía) antes de volver a `HomeScreenClient`.
+- **Fuera de alcance de TG-139/141** (no se tocó): eliminar un viaje
+  (Escenario 11) pertenece a HU-16 (gestión de viajes), no a HU-05.
 
 ## Qué NO se tocó
 

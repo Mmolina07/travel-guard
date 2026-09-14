@@ -21,6 +21,14 @@
 --    publishable key — sirve para desarrollo, no para producción. La
 --    alternativa correcta es configurar "Third-Party Auth" de Supabase
 --    para Firebase y usar políticas basadas en auth.jwt()->>'sub'.
+--
+-- 3) Se agregaron columnas costo_tours / costo_restaurantes /
+--    costo_discotecas / costo_souvenirs a `viajes` (HU-05, TG-141): el
+--    formulario de crear viaje captura un monto para cada una, pero el
+--    esquema original solo tenía flags booleanos (incluye_tours_guia,
+--    etc.), lo que perdía esos datos. Si ya corriste este schema.sql
+--    antes de este cambio, usa la migración incremental
+--    hu05_viajes_costos.sql en vez de repetir todo el reset.
 -- =====================================================================
 
 BEGIN;
@@ -117,10 +125,15 @@ CREATE TABLE viajes (
   transporte_inicio     tipo_transporte_enum,
   transporte_durante    tipo_transporte_enum,
   incluye_tours_guia    BOOLEAN NOT NULL DEFAULT FALSE,
+  costo_tours           NUMERIC(12,2),
   incluye_restaurantes  BOOLEAN NOT NULL DEFAULT FALSE,
+  costo_restaurantes    NUMERIC(12,2),
   incluye_discotecas    BOOLEAN NOT NULL DEFAULT FALSE,
+  costo_discotecas      NUMERIC(12,2),
   incluye_souvenirs     BOOLEAN NOT NULL DEFAULT FALSE,
+  costo_souvenirs       NUMERIC(12,2),
   incluye_actividades_pagas BOOLEAN NOT NULL DEFAULT FALSE,
+  costo_actividades_pagas NUMERIC(12,2),
   dinero_emergencias    NUMERIC(12,2) DEFAULT 0,
   datos_completos       BOOLEAN NOT NULL DEFAULT TRUE,
   estado                estado_viaje_enum NOT NULL DEFAULT 'activo',
