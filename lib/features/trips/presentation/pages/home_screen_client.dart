@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import '../Pages/create_trip_screen.dart';
 import '../../../places_map/presentation/map_screen.dart';
+import '../Pages/trip_detail_screen.dart';
+import '../pages/trip_model.dart';
+
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({Key? key}) : super(key: key);
@@ -14,7 +17,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   int _selectedIndex = 0;
   final String userName = 'Ana';
 
-  Map<String, String>? _newTrip;
+  final List<Trip> _trips = [];
 
   @override
   Widget build(BuildContext context) {
@@ -125,10 +128,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                         'Organiza tu próxima aventura, establece tu presupuesto y descubre los mejores destinos.',
                     buttonText: '+ Crear viaje',
                     onButtonPressed: () async {
-                      final trip = await Navigator.push<Map<String, String>>(context, MaterialPageRoute(builder: (context) => const CreateTripScreen()));
+                      final trip = await Navigator.push<Trip>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateTripScreen(),
+                        ),
+                      );
+                      
+                      if (!mounted) return;
+
                       if (trip != null) {
                         setState(() {
-                          _newTrip = trip;
+                          _trips.add(trip);
                         });
                       }
                     },
@@ -163,7 +174,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   // Lista de viajes
                   SizedBox(
                     height: 220,
-                    child: _newTrip == null
+                    child: _trips.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -194,17 +205,29 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                               ],
                             ),
                           )
-                        : ListView(
+                        : ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            children: [
-                              _buildTripCard(
+                            itemCount: _trips.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 16),
+                            itemBuilder: (context, index) {
+                              final trip = _trips[index];
+                              return _buildTripCard(
                                 image: '',
-                                title: _newTrip!['name']!,
-                                dates:
-                                    '${_newTrip!['startDate']} - ${_newTrip!['endDate']}',
-                                location: _newTrip!['destination']!,
-                              ),
-                            ],
+                                title: trip.name,
+                                dates: '${trip.startDate} - ${trip.endDate}',
+                                location: trip.destination,
+                                onViewDetails: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TripDetailScreen(
+                                        trip: trip,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           ),
                   ),
                   const SizedBox(height: 30),
@@ -221,40 +244,44 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
 
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+        onTap: (index) async {
+          setState(() => _selectedIndex = index);
 
           switch (index) {
             case 0:
-              // Inicio
+              // Inicio: no hace nada
               break;
 
             case 1:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MapScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const MapScreen()),
               );
               break;
 
-            case 2:
-              Navigator.push(
+            case 2: {
+              final trip = await Navigator.push<Trip>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const CreateTripScreen(),
                 ),
               );
+
+              if (!mounted) return;
+
+              if (trip != null) {
+                setState(() {
+                  _trips.add(trip);  
+                  _selectedIndex = 0;
+                });
+              }
               break;
+            }
 
             case 3:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateTripScreen(), // Cambia esto a la pantalla de comercios cuando esté disponible
-                ),
+                MaterialPageRoute(builder: (context) => const CreateTripScreen()),
               );
               break;
           }
@@ -507,116 +534,165 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   }
 
   // Widget para tarjeta de viaje
-  Widget _buildTripCard({
-    required String image,
-    required String title,
-    required String dates,
-    required String location,
-  }) {
-    return Container(
-      width: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen
-          Container(
-            width: double.infinity,
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              color: const Color(0xFFE8F4F8),
+ Widget _buildTripCard({
+  required String image,
+  required String title,
+  required String dates,
+  required String location,
+  required VoidCallback onViewDetails,
+}) {
+  return Container(
+    width: 200,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Imagen o espacio superior de la tarjeta.
+        Container(
+          width: double.infinity,
+          height: 120,
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(12),
             ),
-            child: Stack(
-              children: [
-                // Placeholder de imagen
-                Container(
-                  color: const Color(0xFFB0D9E8),
-                ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: PopupMenuButton(
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(child: Text('Ver detalles')),
-                      const PopupMenuItem(child: Text('Editar')),
-                      const PopupMenuItem(child: Text('Eliminar')),
-                    ],
+            color: Color(0xFFE8F4F8),
+          ),
+          child: Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFB0D9E8),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(12),
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Contenido
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                child: const Center(
+                  child: Icon(
+                    Icons.luggage_outlined,
+                    size: 48,
                     color: Color(0xFF1A5F7A),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today_outlined,
-                      size: 14,
-                      color: Color(0xFF757575),
+              ),
+
+              Positioned(
+                right: 8,
+                top: 8,
+                child: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'details') {
+                      onViewDetails();
+                    }
+
+                    if (value == 'edit') {
+                      // Aquí puedes agregar la navegación
+                      // hacia la pantalla de edición.
+                    }
+
+                    if (value == 'delete') {
+                      // Aquí puedes agregar la lógica
+                      // para eliminar el viaje.
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem<String>(
+                      value: 'details',
+                      child: Text('Ver detalles'),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Text('Editar'),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('Eliminar'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Información del viaje.
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A5F7A),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 14,
+                    color: Color(0xFF757575),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
                       dates,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF757575),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: Color(0xFF757575),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF757575),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 6),
+
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 14,
+                    color: Color(0xFF757575),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      location,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF757575),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

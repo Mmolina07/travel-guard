@@ -266,19 +266,36 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       // Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
+        onTap: (index) async {
           setState(() => _selectedIndex = index);
 
           if (index == 0) {
             // Inicio - ya estamos aquí
           } else if (index == 1) {
             // Crear Actividad
-            Navigator.push(
+            final activity = await Navigator.push<Map<String, dynamic>>(
               context,
               MaterialPageRoute(
                 builder: (context) => const CreateActivityScreen(),
               ),
             );
+            if (!mounted) return; 
+
+            if (activity != null) {
+              setState(() {
+                _actividades.add(activity);
+                _selectedIndex = 0;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Actividad "${activity['name']}" creada'),
+                  backgroundColor: const Color(0xFF1A5F7A),
+                ),
+              );
+            }
+
+              
           } else if (index == 2) {
               // Menú
               if (_menus.isNotEmpty) {

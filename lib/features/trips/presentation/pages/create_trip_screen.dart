@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../pages/trip_model.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({Key? key}) : super(key: key);
@@ -101,22 +102,67 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   }
 
   void _handleCreateTrip() {
-    if (_validateForm()) {
-      setState(() => _isLoading = true);
+  if (_validateForm()) {
+    setState(() => _isLoading = true);
 
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => _isLoading = false);
-        
-        final trip = {
-          'name': _nameController.text,
-          'destination': _destinationController.text,
-          'startDate': _startDateController.text,
-          'endDate': _endDateController.text,
-        };
-        Navigator.pop(context, trip);
-      });
-    }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      final Trip trip = Trip(
+        name: _nameController.text,
+        destination: _destinationController.text,
+        startDate: _startDateController.text,
+        endDate: _endDateController.text,
+
+        persons: int.tryParse(_personsController.text) ?? 1,
+
+        tripType: _tripType,
+
+        maxBudget: double.tryParse(_maxBudgetController.text) ?? 0,
+
+        advancePayment:
+            double.tryParse(_advancePaymentController.text) ?? 0,
+
+        lodgingType: _lodgingType,
+
+        lodgingCost:
+            double.tryParse(_lodgingCostController.text) ?? 0,
+
+        includedServices: [
+          if (_includeBreakfast) 'Desayuno',
+          if (_includeLunch) 'Almuerzo',
+          if (_includeDinner) 'Cena',
+          if (_includeTransfer) 'Traslado',
+        ],
+
+        startTransport: _startTransport,
+
+        duringTransport: _duringTransport,
+
+        tours: double.tryParse(_toursController.text) ?? 0,
+
+        restaurants:
+            double.tryParse(_restaurantsController.text) ?? 0,
+
+        discotheque:
+            double.tryParse(_discothequeController.text) ?? 0,
+
+        souvenirs:
+            double.tryParse(_souvenirsController.text) ?? 0,
+
+        paidActivities:
+            double.tryParse(_paidActivitiesController.text) ?? 0,
+
+        emergencyMoney:
+            double.tryParse(_emergencyMoneyController.text) ?? 0,
+      );
+
+      Navigator.pop(context, trip);
+    });
   }
+}
 
   bool _validateForm() {
     if (_nameController.text.isEmpty) {
