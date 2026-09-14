@@ -1,6 +1,7 @@
 package com.travelguard.trips.service;
 
 import com.travelguard.trips.domain.Viaje;
+import com.travelguard.trips.dto.TripSummaryResponse;
 import com.travelguard.trips.repository.ViajeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,13 @@ public class ViajeService {
     @Transactional(readOnly = true)
     public List<Viaje> obtenerViajesPorUsuario(Long usuarioId) {
         return viajeRepository.findByUsuarioIdAndArchivadoFalse(usuarioId);
+    }
+
+    @Transactional(readOnly = true)
+    public TripSummaryResponse obtenerResumenViaje(Long id) {
+        Viaje viaje = viajeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Viaje no encontrado con el id: " + id));
+        return new TripSummaryResponse(viaje);
     }
 
     @Transactional

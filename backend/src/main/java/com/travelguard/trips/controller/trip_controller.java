@@ -1,6 +1,7 @@
 package com.travelguard.trips.controller;
 
 import com.travelguard.trips.domain.Viaje;
+import com.travelguard.trips.dto.TripSummaryResponse;
 import com.travelguard.trips.service.ViajeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,12 @@ public class ViajeController {
     public ResponseEntity<List<Viaje>> obtenerViajes(@RequestParam Long usuarioId) {
         List<Viaje> viajes = viajeService.obtenerViajesPorUsuario(usuarioId);
         return ResponseEntity.ok(viajes);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TripSummaryResponse> obtenerResumenViaje(@PathVariable Long id) {
+        TripSummaryResponse resumen = viajeService.obtenerResumenViaje(id);
+        return ResponseEntity.ok(resumen);
     }
 
     @PatchMapping("/{id}/archivar")
