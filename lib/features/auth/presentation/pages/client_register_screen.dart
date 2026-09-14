@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:provider/provider.dart';
 import '../../../trips/presentation/pages/home_screen_client.dart';
 import '../../providers/app_auth_provider.dart';
+=======
+import '../../../trips/presentation/pages/home_screen_client.dart';
+>>>>>>> origin/simon
 
 class ClienteRegisterScreen extends StatefulWidget {
   const ClienteRegisterScreen({Key? key}) : super(key: key);
@@ -12,6 +16,15 @@ class ClienteRegisterScreen extends StatefulWidget {
 }
 
 class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
+<<<<<<< HEAD
+=======
+  final _formKey = GlobalKey<FormState>();
+  final List<String> _registeredEmails = [
+    'test@correo.com',
+    'usuario@travelguard.com'
+  ];
+
+>>>>>>> origin/simon
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
@@ -38,6 +51,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     super.dispose();
   }
 
+<<<<<<< HEAD
   void _handleRegister() async {
     if (!_validateForm()) return;
 
@@ -128,19 +142,69 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
         backgroundColor: const Color(0xFFD32F2F),
       ),
     );
+=======
+  void _submitForm() async {
+    // Activa las validaciones visuales del Form
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simular respuesta del servidor
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    // Feedback visual verde
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registro exitoso'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // Redireccionar a Home
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomeScreenClient(),
+      ),
+    );
+  }
+
+  // Método stub para la autenticación con Google (a implementar por tu compañero)
+  void _onGoogleSignUpPressed() {
+    // TODO: La funcionalidad de autenticación con Google la implementará otro compañero.
+>>>>>>> origin/simon
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+<<<<<<< HEAD
         decoration: BoxDecoration(
+=======
+        decoration: const BoxDecoration(
+>>>>>>> origin/simon
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+<<<<<<< HEAD
               const Color(0xFF1A5F7A),
               const Color(0xFF0F4C5F),
+=======
+              Color(0xFF1A5F7A),
+              Color(0xFF0F4C5F),
+>>>>>>> origin/simon
             ],
           ),
         ),
@@ -226,6 +290,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                       ),
+<<<<<<< HEAD
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -385,6 +450,204 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                           const SizedBox(height: 12),
 
                         ],
+=======
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Campo Nombre
+                            _buildLabel('Nombre completo'),
+                            const SizedBox(height: 8),
+                            _buildTextField(
+                              controller: _nameController,
+                              hint: 'Ingresa tu nombre',
+                              icon: Icons.person,
+                              enabled: !_isLoading,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Por favor ingresa tu nombre';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Campo Email
+                            _buildLabel('Correo electrónico'),
+                            const SizedBox(height: 8),
+                            _buildTextField(
+                              controller: _emailController,
+                              hint: 'ejemplo@correo.com',
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              enabled: !_isLoading,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Por favor ingresa tu correo';
+                                }
+                                final emailRegex = RegExp(
+                                  r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                );
+                                if (!emailRegex.hasMatch(value.trim())) {
+                                  return 'Correo inválido';
+                                }
+                                if (_registeredEmails.contains(value.trim().toLowerCase())) {
+                                  return 'Este correo ya está registrado';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Campo Contraseña
+                            _buildLabel('Contraseña'),
+                            const SizedBox(height: 8),
+                            _buildPasswordField(
+                              controller: _passwordController,
+                              isVisible: _isPasswordVisible,
+                              hint: '••••••••',
+                              onVisibilityChange: () {
+                                setState(() =>
+                                    _isPasswordVisible = !_isPasswordVisible);
+                              },
+                              enabled: !_isLoading,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Por favor ingresa tu contraseña';
+                                }
+                                if (value.length < 6) {
+                                  return 'La contraseña debe tener al menos 6 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Campo Confirmar Contraseña
+                            _buildLabel('Confirmar Contraseña'),
+                            const SizedBox(height: 8),
+                            _buildPasswordField(
+                              controller: _confirmPasswordController,
+                              isVisible: _isPasswordVisible,
+                              hint: '••••••••',
+                              onVisibilityChange: () {
+                                setState(() =>
+                                    _isPasswordVisible = !_isPasswordVisible);
+                              },
+                              enabled: !_isLoading,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Por favor confirma tu contraseña';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Las contraseñas no coinciden';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Botón Registrarse
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1A5F7A),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Registrarse',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Divisor "O continúa con"
+                            Row(
+                              children: [
+                                const Expanded(child: Divider(thickness: 1)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    'o continúa con',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(child: Divider(thickness: 1)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Botón Registrarse con Google
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: OutlinedButton.icon(
+                                onPressed: _isLoading ? null : _onGoogleSignUpPressed,
+                                icon: Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+                                  height: 24,
+                                  width: 24,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.g_mobiledata, size: 28, color: Color(0xFF1A5F7A)),
+                                ),
+                                label: const Text(
+                                  'Registrarse con Google',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A5F7A),
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF4A90A4), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Términos y condiciones
+                            const Center(
+                              child: Text(
+                                'Al registrarte aceptas nuestros Términos y Condiciones',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF757575),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+>>>>>>> origin/simon
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -402,9 +665,15 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     return Text(
       text,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+<<<<<<< HEAD
         color: const Color(0xFF1A5F7A),
         fontWeight: FontWeight.w600,
       ),
+=======
+            color: const Color(0xFF1A5F7A),
+            fontWeight: FontWeight.w600,
+          ),
+>>>>>>> origin/simon
     );
   }
 
@@ -414,10 +683,19 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     required bool enabled,
+<<<<<<< HEAD
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+=======
+    required String? Function(String?) validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+>>>>>>> origin/simon
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
@@ -443,6 +721,23 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
             width: 2,
           ),
         ),
+<<<<<<< HEAD
+=======
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
+>>>>>>> origin/simon
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
@@ -458,10 +753,19 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     required String hint,
     required VoidCallback onVisibilityChange,
     required bool enabled,
+<<<<<<< HEAD
   }) {
     return TextField(
       controller: controller,
       obscureText: !isVisible,
+=======
+    required String? Function(String?) validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: !isVisible,
+      validator: validator,
+>>>>>>> origin/simon
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: const Icon(Icons.lock_outline),
@@ -496,6 +800,23 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
             width: 2,
           ),
         ),
+<<<<<<< HEAD
+=======
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
+>>>>>>> origin/simon
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,

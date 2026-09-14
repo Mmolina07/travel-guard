@@ -1,0 +1,10 @@
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/trips/dto/TripSummaryResponse.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/trips/controller/TripController.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/trips/service/TripService.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/users/exception/GlobalExceptionHandler.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/users/service/UsuarioService.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/TravelGuardApplication.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/users/controller/UsuarioController.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/trips/domain/Trip.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/users/dto/ClienteRegisterDTO.java
+/workspaces/travel-guard/backend/src/main/java/com/travelguard/trips/repository/TripRepository.java
