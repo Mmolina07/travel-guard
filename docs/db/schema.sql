@@ -96,6 +96,7 @@ CREATE TABLE comercios (
   longitud          NUMERIC(9,6),
   horario_apertura  TIME,
   horario_cierre    TIME,
+  foto_url          TEXT,
   estado            estado_usuario_enum NOT NULL DEFAULT 'activo',
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -189,6 +190,7 @@ CREATE TABLE lugares_interes (
   longitud      NUMERIC(9,6) NOT NULL,
   horario_apertura TIME,
   horario_cierre   TIME,
+  foto_url      TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -215,6 +217,29 @@ CREATE TRIGGER trg_actividades_updated_at BEFORE UPDATE ON actividades
   FOR EACH ROW EXECUTE FUNCTION set_timestamp();
 CREATE INDEX idx_actividades_comercio ON actividades(comercio_id);
 
+-- HU-05 (mejora "gestor de presupuesto"): categorías de presupuesto
+-- personalizables por viaje, en vez de las 5 columnas fijas que tenía
+-- `viajes` (costo_tours/costo_restaurantes/costo_discotecas/
+-- costo_souvenirs/costo_actividades_pagas, que siguen ahí sin usarse
+-- desde la app). Ver docs/db/hu05_presupuesto_categorias.sql.
+CREATE TABLE presupuesto_categorias (
+  id                  BIGSERIAL PRIMARY KEY,
+  viaje_id            BIGINT NOT NULL REFERENCES viajes(id) ON DELETE CASCADE,
+  nombre              VARCHAR(80) NOT NULL,
+  monto               NUMERIC(12,2) NOT NULL DEFAULT 0,
+  orden               INT NOT NULL DEFAULT 0,
+  -- HU-13 (mejora "gestor de presupuesto", punto 3): vínculo opcional a
+  -- la categoría de gasto real, para comparar estimado vs. gastado por
+  -- categoría (los nombres de `presupuesto_categorias` son libres; los
+  -- de `categorias_gasto` son una lista fija, no coinciden por texto).
+  categoria_gasto_id  INT REFERENCES categorias_gasto(id),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TRIGGER trg_presupuesto_categorias_updated_at BEFORE UPDATE ON presupuesto_categorias
+  FOR EACH ROW EXECUTE FUNCTION set_timestamp();
+CREATE INDEX idx_presupuesto_categorias_viaje ON presupuesto_categorias(viaje_id);
+
 COMMIT;
 
 INSERT INTO categorias_gasto (nombre) VALUES
@@ -240,6 +265,7 @@ ALTER TABLE gastos              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categorias_lugar    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lugares_interes     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE actividades         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presupuesto_categorias ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "dev_open_access_usuarios"            ON usuarios            FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_turistas"            ON turistas            FOR ALL USING (true) WITH CHECK (true);
@@ -251,6 +277,7 @@ CREATE POLICY "dev_open_access_gastos"              ON gastos              FOR A
 CREATE POLICY "dev_open_access_categorias_lugar"    ON categorias_lugar    FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_lugares_interes"     ON lugares_interes     FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_actividades"         ON actividades         FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "dev_open_access_presupuesto_categorias" ON presupuesto_categorias FOR ALL USING (true) WITH CHECK (true);
 
 -- =====================================================================
 -- FIN

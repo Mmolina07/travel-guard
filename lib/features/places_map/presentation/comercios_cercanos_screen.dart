@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
+import '../data/location_service.dart';
+import '../data/models/category_visuals.dart';
+import '../data/models/map_place.dart';
+import '../data/places_map_repository.dart';
+import 'widgets/place_details_sheet.dart';
+import '../../../core/theme/app_theme.dart';
+
+/// HU-07: comercios y lugares de interés cercanos, con datos reales de
+/// Supabase y distancia real a la ubicación actual del turista — nada
+/// quemado (antes esta pantalla tenía una lista fija de Cartagena).
 class ComerciosCercanosScreen extends StatefulWidget {
   const ComerciosCercanosScreen({Key? key}) : super(key: key);
 
@@ -9,66 +20,78 @@ class ComerciosCercanosScreen extends StatefulWidget {
 }
 
 class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
+  static const Color _primary = Color(0xFF1A5F7A);
+
+  final PlacesMapRepository _repository = PlacesMapRepository();
+  final LocationService _locationService = LocationService();
+
+  bool _isLoading = true;
+  List<MapPlace> _places = [];
+  Position? _userPosition;
   String _selectedCategory = 'Todos';
 
-  // Datos de prueba
-  final List<Map<String, dynamic>> _comercios = [
-    {
-      'name': 'Restaurante La Cevichería',
-      'category': 'Comida',
-      'description':
-          'La mejor cevichería del centro histórico, especialidad en mariscos frescos.',
-      'rating': 4.7,
-      'distance': '500m',
-      'address': 'Centro histórico, Cartagena',
-      'isOpen': true,
-      'schedule': 'hasta 22:00',
-    },
-    {
-      'name': 'Hotel Casa San Agustín',
-      'category': 'Hospedaje',
-      'description':
-          'Hotel boutique en el corazón de Getsemaní. Piscina y desayuno incluido.',
-      'rating': 4.9,
-      'distance': '1.2km',
-      'address': 'Getsemaní, Cartagena',
-      'isOpen': true,
-      'schedule': '24 horas',
-    },
-    {
-      'name': 'Tour Nocturno por la Muralla',
-      'category': 'Tours',
-      'description':
-          'Recorrido guiado por la muralla y el centro amurallado de noche.',
-      'rating': 4.8,
-      'distance': '800m',
-      'address': 'Plaza de la Aduana',
-      'isOpen': false,
-      'schedule': 'Abre a las 19:00',
-    },
-    {
-      'name': 'Café del Mar',
-      'category': 'Comida',
-      'description':
-          'Café con vista al mar, ideal para atardeceres. Especialidad en café de altura.',
-      'rating': 4.5,
-      'distance': '300m',
-      'address': 'Bocagrande, Cartagena',
-      'isOpen': true,
-      'schedule': 'hasta 20:00',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
-  List<Map<String, dynamic>> get _filteredComercios {
-    if (_selectedCategory == 'Todos') return _comercios;
-    return _comercios
-        .where((c) => c['category'] == _selectedCategory)
-        .toList();
+  Future<void> _load() async {
+    final results = await Future.wait([
+      _repository.fetchNearbyPlaces(),
+      _locationService.getCurrentPosition(),
+    ]);
+    if (!mounted) return;
+
+    final places = results[0] as List<MapPlace>;
+    final locationResult = results[1] as LocationResult;
+
+    setState(() {
+      _places = places;
+      _userPosition = locationResult.position;
+      _isLoading = false;
+    });
+  }
+
+  double? _distanceMeters(MapPlace place) {
+    final user = _userPosition;
+    if (user == null) return null;
+    return Geolocator.distanceBetween(
+      user.latitude,
+      user.longitude,
+      place.latitud,
+      place.longitud,
+    );
+  }
+
+  String? _formatDistance(double? meters) {
+    if (meters == null) return null;
+    if (meters < 1000) return '${meters.round()} m';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  List<String> get _categories {
+    final categorias = _places.map((p) => p.categoria).toSet().toList()
+      ..sort();
+    return ['Todos', ...categorias];
+  }
+
+  List<MapPlace> get _filteredPlaces {
+    final filtered = _selectedCategory == 'Todos'
+        ? _places
+        : _places.where((p) => p.categoria == _selectedCategory).toList();
+    final sorted = [...filtered]
+      ..sort((a, b) {
+        final da = _distanceMeters(a) ?? double.infinity;
+        final db = _distanceMeters(b) ?? double.infinity;
+        return da.compareTo(db);
+      });
+    return sorted;
   }
 
   @override
   Widget build(BuildContext context) {
-    final comercios = _filteredComercios;
+    final comercios = _filteredPlaces;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -77,105 +100,92 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
           'Comercios cercanos',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF1A5F7A),
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Búsqueda en desarrollo')),
-              );
-            },
-          ),
-        ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Encabezado con ubicación y contador
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            color: const Color(0xFF1A5F7A),
-            child: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: _primary))
+          : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Cartagena, Colombia',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                // Encabezado con ubicación y contador
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  color: _primary,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _userPosition != null
+                                ? 'Cerca de tu ubicación actual'
+                                : 'Ubicación no disponible',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${comercios.length} comercios encontrados',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
+                      const SizedBox(height: 4),
+                      Text(
+                        '${comercios.length} lugar(es) encontrados',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
 
-          // Filtros por categoría
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildFilterChip('Todos'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Comida'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Hospedaje'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Tours'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Entretenimiento'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Compras'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Lista de comercios
-          Expanded(
-            child: comercios.isEmpty
-                ? _buildEmptyState()
-                : ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: comercios.length,
+                // Filtros por categoría (dinámicos: los que realmente
+                // existen en los datos, no una lista fija).
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _categories.length,
                     separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      return _buildComercioCard(comercios[index]);
-                    },
+                        const SizedBox(width: 8),
+                    itemBuilder: (context, index) =>
+                        _buildFilterChip(_categories[index]),
                   ),
-          ),
-        ],
-      ),
+                ),
+                const SizedBox(height: 16),
+
+                // Lista de lugares
+                Expanded(
+                  child: comercios.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: comercios.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            return _buildPlaceCard(comercios[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -187,12 +197,10 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A5F7A) : Colors.white,
+          color: isSelected ? _primary : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF1A5F7A)
-                : const Color(0xFFD7E8EF),
+            color: isSelected ? _primary : const Color(0xFFD7E8EF),
             width: 1.5,
           ),
         ),
@@ -201,16 +209,45 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF1A5F7A),
+            color: isSelected ? Colors.white : _primary,
           ),
         ),
       ),
     );
   }
 
-  // ─── Tarjeta de comercio ───
-  Widget _buildComercioCard(Map<String, dynamic> comercio) {
-    final bool isOpen = comercio['isOpen'] as bool;
+  // ─── Fallback: degradado + ícono según categoría (sin foto real) ───
+  Widget _buildCategoryHeader(CategoryVisual visual, {bool loading = false}) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [visual.color, visual.color.withOpacity(0.65)],
+        ),
+      ),
+      child: Center(
+        child: loading
+            ? const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Icon(visual.icon, size: 48, color: Colors.white),
+      ),
+    );
+  }
+
+  // ─── Tarjeta de lugar (comercio o lugar de interés) ───
+  Widget _buildPlaceCard(MapPlace place) {
+    final distancia = _formatDistance(_distanceMeters(place));
+    final isComercio = place.type == MapPlaceType.comercio;
+    final visual = CategoryVisual.forCategory(place.categoria);
 
     return Container(
       decoration: BoxDecoration(
@@ -218,7 +255,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -227,28 +264,28 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen + chip + favorito
+          // Encabezado: foto real del lugar si hay, si no degradado + ícono
           Stack(
             children: [
-              // Imagen placeholder
-              Container(
-                width: double.infinity,
-                height: 160,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  color: Color(0xFFB0D9E8),
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.storefront,
-                    size: 50,
-                    color: Colors.white70,
-                  ),
-                ),
+                child: place.fotoUrl != null
+                    ? Image.network(
+                        place.fotoUrl!,
+                        width: double.infinity,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return _buildCategoryHeader(visual, loading: true);
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildCategoryHeader(visual),
+                      )
+                    : _buildCategoryHeader(visual),
               ),
-              // Chip de categoría
               Positioned(
                 left: 12,
                 top: 12,
@@ -262,29 +299,45 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    comercio['category'],
-                    style: const TextStyle(
+                    place.categoria,
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A5F7A),
+                      color: visual.color,
                     ),
                   ),
                 ),
               ),
-              // Botón favorito
               Positioned(
                 right: 12,
                 top: 12,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                  child: const Icon(
-                    Icons.favorite_border,
-                    size: 20,
-                    color: Color(0xFF1A5F7A),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isComercio ? Icons.storefront : Icons.place,
+                        size: 13,
+                        color: _primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isComercio ? 'Comercio' : 'Lugar',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -297,192 +350,86 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Nombre
                 Text(
-                  comercio['name'],
+                  place.nombre,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
+                    color: _primary,
                   ),
                 ),
-                const SizedBox(height: 8),
-
-                // Rating + distancia
-                Row(
-                  children: [
-                    const Icon(Icons.star, size: 16, color: Color(0xFFFFB300)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${comercio['rating']}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A5F7A),
+                if (distancia != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.near_me_outlined,
+                          size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'A $distancia de ti',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFBDBDBD),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.near_me_outlined,
-                      size: 14,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      comercio['distance'],
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Descripción
-                Text(
-                  comercio['description'],
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF757575),
-                    height: 1.4,
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-
-                // Dirección
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: Color(0xFF757575),
+                ],
+                if (place.descripcion != null &&
+                    place.descripcion!.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    place.descripcion!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondaryLight,
+                      height: 1.4,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        comercio['address'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF757575),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (place.direccion != null) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 14, color: AppColors.textSecondaryLight),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          place.direccion!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-
-                // Estado + horario
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isOpen
-                            ? const Color(0xFF2D8659)
-                            : const Color(0xFFD32F2F),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isOpen ? 'Abierto' : 'Cerrado',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isOpen
-                            ? const Color(0xFF2D8659)
-                            : const Color(0xFFD32F2F),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '· ${comercio['schedule']}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF757575),
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
-
-                // Botones
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Detalles de ${comercio['name']}',
-                              ),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1A5F7A),
-                          side: const BorderSide(color: Color(0xFF1A5F7A)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Ver detalles',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => PlaceDetailsSheet.show(
+                      context,
+                      place: place,
+                      repository: _repository,
+                      distanceLabel: distancia ?? '',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _primary,
+                      side: const BorderSide(color: _primary),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Cómo llegar a ${comercio['name']}',
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.directions, size: 16),
-                        label: const Text(
-                          'Cómo llegar',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A5F7A),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+                    child: const Text(
+                      'Ver detalles',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -495,30 +442,36 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
   // ─── Estado vacío ───
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.storefront_outlined,
-            size: 60,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No hay comercios en esta categoría',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.storefront_outlined,
+              size: 60,
+              color: Colors.grey[400],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Prueba con otra categoría o amplía tu búsqueda.',
-            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              _selectedCategory == 'Todos'
+                  ? 'Todavía no hay comercios ni lugares registrados'
+                  : 'No hay lugares en esta categoría',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Prueba con otra categoría o vuelve más tarde.',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

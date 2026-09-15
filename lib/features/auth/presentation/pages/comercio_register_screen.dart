@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../../places_map/data/geocoding_service.dart';
 import '../../../places_map/presentation/home_screen_comercio.dart';
+import '../../../places_map/presentation/widgets/location_picker_field.dart';
 import '../../providers/app_auth_provider.dart';
 
 class ComercioRegisterScreen extends StatefulWidget {
@@ -24,6 +27,9 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _isGoogleAccount = false;
+  bool _isGeocoding = false;
+  LatLng? _comercioLocation;
+  final GeocodingService _geocodingService = GeocodingService();
 
   @override
   void initState() {
@@ -64,6 +70,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             direccion: _directionController.text.trim(),
             telefono: _phoneController.text.trim(),
             sede: _sedeController.text.trim(),
+            latitud: _comercioLocation?.latitude,
+            longitud: _comercioLocation?.longitude,
           )
         : await auth.registerComercio(
             nombreComercio: _nameController.text.trim(),
@@ -73,6 +81,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             sede: _sedeController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
+            latitud: _comercioLocation?.latitude,
+            longitud: _comercioLocation?.longitude,
           );
 
     if (!mounted) return;
@@ -104,7 +114,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     setState(() => _isLoading = true);
 
     final auth = context.read<AppAuthProvider>();
-    final user = await auth.beginGoogleSignIn();
+    final user = await auth.beginGoogleSignIn(context);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -114,9 +124,11 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       return; // Cancelado por el usuario: no hay error que mostrar.
     }
 
+    final displayName = user.userMetadata?['full_name'] as String? ??
+        user.userMetadata?['name'] as String?;
     setState(() {
       _isGoogleAccount = true;
-      _nameController.text = user.displayName ?? _nameController.text;
+      _nameController.text = displayName ?? _nameController.text;
       _emailController.text = user.email ?? _emailController.text;
     });
 
@@ -143,6 +155,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                 _confirmPasswordController.text.isEmpty));
     if (camposVacios) {
       _showError('Debe completar todos los campos obligatorios');
+      return false;
+    }
+
+    // HU-07: sin ubicación, el comercio nunca aparece en el mapa.
+    if (_comercioLocation == null) {
+      _showError('Selecciona la ubicación de tu negocio en el mapa');
       return false;
     }
 
@@ -325,6 +343,37 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                             hint: 'Ingresa la dirección',
                             icon: Icons.location_on_outlined,
                             enabled: !_isLoading,
+                            onSubmitted: _geocodeAddress,
+                            suffixIcon: IconButton(
+                              icon: _isGeocoding
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFF1A5F7A),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.my_location,
+                                      color: Color(0xFF1A5F7A),
+                                    ),
+                              tooltip: 'Buscar esta dirección en el mapa',
+                              onPressed: _isLoading || _isGeocoding
+                                  ? null
+                                  : () => _geocodeAddress(
+                                      _directionController.text),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Escribe la dirección y toca el ícono de '
+                            'ubicación (o presiona Enter) para verla en '
+                            'el mapa de abajo.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF757575),
+                            ),
                           ),
                           const SizedBox(height: 20),
 
@@ -348,6 +397,16 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                             hint: 'Ingresa la sede',
                             icon: Icons.business,
                             enabled: !_isLoading,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // HU-07: ubicación del negocio para el mapa
+                          _buildLabel('Ubicación del negocio'),
+                          const SizedBox(height: 8),
+                          LocationPickerField(
+                            initialLocation: _comercioLocation,
+                            onLocationSelected: (latLng) =>
+                                setState(() => _comercioLocation = latLng),
                           ),
                           const SizedBox(height: 20),
 
@@ -522,20 +581,57 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     );
   }
 
+  /// Busca [address] con [GeocodingService] y, si encuentra un punto,
+  /// mueve el mapa de "Ubicación del negocio" ahí solo (HU-02 + HU-07):
+  /// sin esto, el comercio tenía que buscar manualmente su ubicación en
+  /// el mapa aunque ya hubiera escrito la dirección completa.
+  Future<void> _geocodeAddress(String address) async {
+    if (address.trim().isEmpty || _isGeocoding) return;
+    setState(() => _isGeocoding = true);
+    final location = await _geocodingService.geocodeAddress(address);
+    if (!mounted) return;
+    setState(() => _isGeocoding = false);
+
+    if (location == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se encontró esa dirección en el mapa. Ubica tu negocio '
+            'manualmente tocando el mapa de abajo.',
+          ),
+          backgroundColor: Color(0xFFD32F2F),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _comercioLocation = location);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ubicación encontrada — ajusta el marcador si hace falta.'),
+        backgroundColor: Color(0xFF1A5F7A),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     required bool enabled,
+    Widget? suffixIcon,
+    ValueChanged<String>? onSubmitted,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      onSubmitted: onSubmitted,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
         prefixIconColor: const Color(0xFF1A5F7A),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(

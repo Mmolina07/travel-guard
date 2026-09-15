@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../presentation/menu_model.dart';
+import '../../../core/theme/app_theme.dart';
 
 class MenuDetailScreen extends StatefulWidget {
   final Menu menu;
@@ -138,7 +139,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       menu.description,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF757575),
+                        color: AppColors.textSecondaryLight,
                         height: 1.6,
                       ),
                     ),
@@ -338,7 +339,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: Color(0xFF757575),
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],
@@ -407,7 +408,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF757575),
+                    color: AppColors.textSecondaryLight,
                     fontSize: 13,
                     height: 1.4,
                   ),

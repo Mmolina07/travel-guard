@@ -1,13 +1,17 @@
 //pantalla principal del turista, crear viaje
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Pages/create_trip_screen.dart';
+import '../pages/create_trip_screen.dart';
 import '../../../places_map/presentation/map_screen.dart';
-import '../Pages/trip_detail_screen.dart';
+import '../pages/trip_detail_screen.dart';
+import 'edit_trip_budget_screen.dart';
 import '../pages/trip_model.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../../places_map/presentation/comercios_cercanos_screen.dart';
 import '../../data/trip_repository.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/fade_slide_in.dart';
+import '../../../../core/widgets/responsive_center.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({Key? key}) : super(key: key);
@@ -42,15 +46,19 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       'tipoUsuario=${auth.usuario?.tipoUsuario} status=${auth.status}',
     );
     if (turistaId == null) {
-      debugPrint('HomeScreenClient._loadTrips: sin usuario, no se puede '
-          'cargar viajes todavía.');
+      debugPrint(
+        'HomeScreenClient._loadTrips: sin usuario, no se puede '
+        'cargar viajes todavía.',
+      );
       setState(() => _isLoadingTrips = false);
       return;
     }
     try {
       final trips = await _tripRepository.fetchTripsByTurista(turistaId);
-      debugPrint('HomeScreenClient._loadTrips: ${trips.length} viaje(s) '
-          'encontrados para turista_id=$turistaId');
+      debugPrint(
+        'HomeScreenClient._loadTrips: ${trips.length} viaje(s) '
+        'encontrados para turista_id=$turistaId',
+      );
       if (!mounted) return;
       setState(() {
         _trips
@@ -62,6 +70,38 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       debugPrint('HomeScreenClient._loadTrips error: $e\n$st');
       if (!mounted) return;
       setState(() => _isLoadingTrips = false);
+    }
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      await context.read<AppAuthProvider>().signOut();
+      // `AuthGate` (main.dart) reacciona al cambio de estado y ya
+      // muestra `WelcomeHome` de fondo, pero esta pantalla se abrió con
+      // `Navigator.push` desde el login — sin este pop, sigue encima
+      // en la pila y el usuario ve la sesión "sin cerrar" hasta que
+      // presiona atrás.
+      if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     }
   }
 
@@ -79,10 +119,6 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.notifications_none, color: Colors.white),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.person_outline, color: Colors.white),
                 onPressed: () {},
               ),
             ],
@@ -127,6 +163,39 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              onTap: () => _confirmSignOut(context),
+                              borderRadius: BorderRadius.circular(20),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.logout,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Cerrar sesión',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
                           Text(
                             '¡Hola, $userName!',
                             style: const TextStyle(
@@ -154,39 +223,45 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
           // Contenido
           SliverToBoxAdapter(
-            child: Padding(
+            child: ResponsiveCenter(
+              maxWidth: 760,
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Tarjeta "Crear un viaje"
-                  _buildFeatureCard(
-                    icon: Icons.luggage_outlined,
-                    title: 'Crear un viaje',
-                    description:
-                        'Organiza tu próxima aventura, establece tu presupuesto y descubre los mejores destinos.',
-                    buttonText: '+ Crear viaje',
-                    onButtonPressed: () async {
-                      final trip = await Navigator.push<Trip>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateTripScreen(),
-                        ),
-                      );
+                  FadeSlideIn(
+                    child: _buildFeatureCard(
+                      icon: Icons.luggage_outlined,
+                      title: 'Crear un viaje',
+                      description:
+                          'Organiza tu próxima aventura, establece tu presupuesto y descubre los mejores destinos.',
+                      buttonText: '+ Crear viaje',
+                      onButtonPressed: () async {
+                        final trip = await Navigator.push<Trip>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateTripScreen(),
+                          ),
+                        );
 
-                      if (!mounted) return;
+                        if (!mounted) return;
 
-                      if (trip != null) {
-                        setState(() {
-                          _trips.add(trip);
-                        });
-                      }
-                    },
+                        if (trip != null) {
+                          setState(() {
+                            _trips.add(trip);
+                          });
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Tarjeta "Mapa"
-                  _buildMapCard(),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 80),
+                    child: _buildMapCard(),
+                  ),
                   const SizedBox(height: 40),
 
                   // Sección "Mis viajes"
@@ -243,7 +318,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF757575),
+                                    color: AppColors.textSecondaryLight,
                                   ),
                                 ),
                               ],
@@ -256,20 +331,34 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                                 const SizedBox(width: 16),
                             itemBuilder: (context, index) {
                               final trip = _trips[index];
-                              return _buildTripCard(
-                                image: '',
-                                title: trip.name,
-                                dates: '${trip.startDate} - ${trip.endDate}',
-                                location: trip.destination,
-                                onViewDetails: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          TripDetailScreen(trip: trip),
-                                    ),
-                                  );
-                                },
+                              return FadeSlideIn(
+                                delay: Duration(milliseconds: 70 * index),
+                                offset: const Offset(0.12, 0),
+                                child: _buildTripCard(
+                                  image: '',
+                                  title: trip.name,
+                                  dates: '${trip.startDate} - ${trip.endDate}',
+                                  location: trip.destination,
+                                  onViewDetails: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TripDetailScreen(trip: trip),
+                                      ),
+                                    );
+                                  },
+                                  onEdit: () async {
+                                    final updated = await Navigator.push<Trip>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            EditTripBudgetScreen(trip: trip),
+                                      ),
+                                    );
+                                    if (updated != null) _loadTrips();
+                                  },
+                                ),
                               );
                             },
                           ),
@@ -339,7 +428,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
         selectedItemColor: const Color(0xFF1A5F7A),
 
-        unselectedItemColor: const Color(0xFF9E9E9E),
+        unselectedItemColor: AppColors.textSecondaryLight,
 
         items: const [
           BottomNavigationBarItem(
@@ -409,7 +498,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   description,
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF757575),
+                    color: AppColors.textSecondaryLight,
                     height: 1.5,
                   ),
                 ),
@@ -481,7 +570,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   'Explora destinos, encuentra comercios seguros y planifica tu ruta.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF757575),
+                    color: AppColors.textSecondaryLight,
                     height: 1.5,
                   ),
                 ),
@@ -572,6 +661,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     required String dates,
     required String location,
     required VoidCallback onViewDetails,
+    required VoidCallback onEdit,
   }) {
     return Container(
       width: 200,
@@ -586,142 +676,148 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen o espacio superior de la tarjeta.
-          Container(
-            width: double.infinity,
-            height: 120,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              color: Color(0xFFE8F4F8),
-            ),
-            child: Stack(
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFB0D9E8),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.luggage_outlined,
-                      size: 48,
-                      color: Color(0xFF1A5F7A),
-                    ),
-                  ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onViewDetails,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Imagen o espacio superior de la tarjeta.
+              Container(
+                width: double.infinity,
+                height: 120,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  color: Color(0xFFE8F4F8),
                 ),
-
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'details') {
-                        onViewDetails();
-                      }
-
-                      if (value == 'edit') {
-                        // Aquí puedes agregar la navegación
-                        // hacia la pantalla de edición.
-                      }
-
-                      if (value == 'delete') {
-                        // Aquí puedes agregar la lógica
-                        // para eliminar el viaje.
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem<String>(
-                        value: 'details',
-                        child: Text('Ver detalles'),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'edit',
-                        child: Text('Editar'),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Text('Eliminar'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Información del viaje.
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Row(
+                child: Stack(
                   children: [
-                    const Icon(
-                      Icons.calendar_today_outlined,
-                      size: 14,
-                      color: Color(0xFF757575),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        dates,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF757575),
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFB0D9E8),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12),
                         ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.luggage_outlined,
+                          size: 48,
+                          color: Color(0xFF1A5F7A),
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'details') {
+                            onViewDetails();
+                          }
+
+                          if (value == 'edit') {
+                            onEdit();
+                          }
+
+                          if (value == 'delete') {
+                            // Aquí puedes agregar la lógica
+                            // para eliminar el viaje.
+                          }
+                        },
+                        itemBuilder: (context) => const [
+                          PopupMenuItem<String>(
+                            value: 'details',
+                            child: Text('Ver detalles'),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Text('Editar'),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Text('Eliminar'),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 6),
-
-                Row(
+              // Información del viaje.
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: Color(0xFF757575),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF757575),
-                        ),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A5F7A),
                       ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 14,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            dates,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

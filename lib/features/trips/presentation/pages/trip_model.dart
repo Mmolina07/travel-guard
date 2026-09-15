@@ -1,4 +1,7 @@
 // lib/models/trip_model.dart
+import '../../data/models/trip_budget_category.dart';
+import '../../utils/budget_calculator.dart';
+
 class Trip {
   final int? id;
   final String name;
@@ -14,11 +17,10 @@ class Trip {
   final List<String> includedServices;
   final String startTransport;
   final String duringTransport;
-  final double tours;
-  final double restaurants;
-  final double discotheque;
-  final double souvenirs;
-  final double paidActivities;
+  // Categorías de presupuesto personalizables (antes eran 5 campos fijos:
+  // tours/restaurants/discotheque/souvenirs/paidActivities). El usuario
+  // puede agregar, renombrar o quitar categorías libremente.
+  final List<TripBudgetCategory> categories;
   final double emergencyMoney;
   // TG-141 / HU-05 Escenarios 8-9: si se creó con campos opcionales vacíos.
   final bool datosCompletos;
@@ -38,16 +40,19 @@ class Trip {
     required this.includedServices,
     required this.startTransport,
     required this.duringTransport,
-    required this.tours,
-    required this.restaurants,
-    required this.discotheque,
-    required this.souvenirs,
-    required this.paidActivities,
+    this.categories = const [],
     required this.emergencyMoney,
     this.datosCompletos = true,
   });
 
-  Trip copyWith({int? id}) {
+  Trip copyWith({
+    int? id,
+    double? maxBudget,
+    double? advancePayment,
+    double? lodgingCost,
+    List<TripBudgetCategory>? categories,
+    double? emergencyMoney,
+  }) {
     return Trip(
       id: id ?? this.id,
       name: name,
@@ -56,27 +61,24 @@ class Trip {
       endDate: endDate,
       persons: persons,
       tripType: tripType,
-      maxBudget: maxBudget,
-      advancePayment: advancePayment,
+      maxBudget: maxBudget ?? this.maxBudget,
+      advancePayment: advancePayment ?? this.advancePayment,
       lodgingType: lodgingType,
-      lodgingCost: lodgingCost,
+      lodgingCost: lodgingCost ?? this.lodgingCost,
       includedServices: includedServices,
       startTransport: startTransport,
       duringTransport: duringTransport,
-      tours: tours,
-      restaurants: restaurants,
-      discotheque: discotheque,
-      souvenirs: souvenirs,
-      paidActivities: paidActivities,
-      emergencyMoney: emergencyMoney,
+      categories: categories ?? this.categories,
+      emergencyMoney: emergencyMoney ?? this.emergencyMoney,
       datosCompletos: datosCompletos,
     );
   }
 
+  double get categoriesTotal =>
+      categories.fold(0.0, (sum, c) => sum + c.monto);
+
   double getTotalSpent() {
-    return advancePayment + lodgingCost + tours +
-           restaurants + discotheque + souvenirs +
-           paidActivities + emergencyMoney;
+    return advancePayment + lodgingCost + categoriesTotal + emergencyMoney;
   }
 
   double getRemainingBudget() {
@@ -86,16 +88,14 @@ class Trip {
   double getBudgetPercentage() {
     return (getTotalSpent() / maxBudget * 100);
   }
-}
 
-class Expense {
-  final String category;
-  final double amount;
-  final String description;
-
-  Expense({
-    required this.category,
-    required this.amount,
-    this.description = '',
-  });
+  /// Presupuesto disponible por día / por persona (mejora "gestor de
+  /// presupuesto"): calculado sobre lo que aún queda libre, no sobre el
+  /// total, para que sea útil una vez el viaje ya tiene gastos.
+  BudgetBreakdown get budgetBreakdown => calculateBudgetBreakdown(
+        maxBudget: getRemainingBudget(),
+        start: parseDdMmYyyy(startDate),
+        end: parseDdMmYyyy(endDate),
+        persons: persons,
+      );
 }

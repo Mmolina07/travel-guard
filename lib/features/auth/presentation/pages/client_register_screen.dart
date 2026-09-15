@@ -81,7 +81,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     setState(() => _isLoading = true);
 
     final auth = context.read<AppAuthProvider>();
-    final success = await auth.signInWithGoogle();
+    final success = await auth.signInWithGoogle(context);
 
     if (!mounted) return;
     setState(() => _isLoading = false);

@@ -55,6 +55,15 @@ class EmailAuthService {
     }
   }
 
+  Future<void> signOut() => _firebaseAuth.signOut();
+
+  fb.User? get currentUser => _firebaseAuth.currentUser;
+
+  /// Gestión de sesión (TG-102) para email/contraseña. Google ya no pasa
+  /// por Firebase — ver `GoogleAuthService`, que ahora usa la
+  /// autenticación nativa de Supabase.
+  Stream<fb.User?> authStateChanges() => _firebaseAuth.authStateChanges();
+
   String _mapError(fb.FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':

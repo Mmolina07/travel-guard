@@ -5,6 +5,9 @@ import '../presentation/create_activity_screen.dart';
 import '../presentation/create_menu_screen.dart';
 import '../presentation/menu_detail_screen.dart';
 import '../../auth/providers/app_auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/fade_slide_in.dart';
+import '../../../core/widgets/responsive_center.dart';
 
 class HomeScreenComercio extends StatefulWidget {
   const HomeScreenComercio({Key? key}) : super(key: key);
@@ -18,7 +21,39 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
   String get businessName => context.watch<AppAuthProvider>().displayName;
   final List<Map<String, dynamic>> _actividades = [];
-  final List<Menu> _menus = [];  // ← AGREGAR LISTA DE MENÚS
+  final List<Menu> _menus = []; // ← AGREGAR LISTA DE MENÚS
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      await context.read<AppAuthProvider>().signOut();
+      // `AuthGate` (main.dart) reacciona al cambio de estado y ya
+      // muestra `WelcomeHome` de fondo, pero esta pantalla se abrió con
+      // `Navigator.push` desde el login — sin este pop, sigue encima
+      // en la pila y el usuario ve la sesión "sin cerrar" hasta que
+      // presiona atrás.
+      if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +82,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF1A5F7A),
-                      const Color(0xFF0F4C5F),
-                    ],
+                    colors: [const Color(0xFF1A5F7A), const Color(0xFF0F4C5F)],
                   ),
                 ),
                 child: Stack(
@@ -83,6 +115,39 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              onTap: () => _confirmSignOut(context),
+                              borderRadius: BorderRadius.circular(20),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.logout,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Cerrar sesión',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
                           Text(
                             '¡Hola, $businessName!',
                             style: const TextStyle(
@@ -110,79 +175,90 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
           // Contenido
           SliverToBoxAdapter(
-            child: Padding(
+            child: ResponsiveCenter(
+              maxWidth: 760,
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Tarjeta "Agregar Menú"
-                  _buildFeatureCard(
-                    icon: Icons.restaurant_menu,
-                    title: 'Agregar Menú',
-                    description:
-                        'Crea y gestiona los platos, bebidas y servicios que ofrece tu negocio.',
-                    buttonText: '+ Menú',
-                    onButtonPressed: () async {
-                      // ← CAMBIO: Agregar menú como con actividades
-                      final Menu? newMenu = await Navigator.push<Menu>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateMenuScreen(),
-                        ),
-                      );
-
-                      if (newMenu != null) {
-                        setState(() {
-                          _menus.add(newMenu);
-                        });
-
-                        // Mostrar detalles del menú creado
-                        Navigator.push(
+                  FadeSlideIn(
+                    child: _buildFeatureCard(
+                      icon: Icons.restaurant_menu,
+                      title: 'Agregar Menú',
+                      description:
+                          'Crea y gestiona los platos, bebidas y servicios que ofrece tu negocio.',
+                      buttonText: '+ Menú',
+                      onButtonPressed: () async {
+                        // ← CAMBIO: Agregar menú como con actividades
+                        final Menu? newMenu = await Navigator.push<Menu>(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MenuDetailScreen(menu: newMenu),
+                            builder: (context) => const CreateMenuScreen(),
                           ),
                         );
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Menú "${newMenu.name}" creado'),
-                            backgroundColor: const Color(0xFF1A5F7A),
-                          ),
-                        );
-                      }
-                    },
+                        if (newMenu != null) {
+                          setState(() {
+                            _menus.add(newMenu);
+                          });
+
+                          // Mostrar detalles del menú creado
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MenuDetailScreen(menu: newMenu),
+                            ),
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Menú "${newMenu.name}" creado'),
+                              backgroundColor: const Color(0xFF1A5F7A),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Tarjeta "Crear Actividad"
-                  _buildFeatureCard(
-                    icon: Icons.event_note,
-                    title: 'Crear Actividad',
-                    description:
-                        'Organiza eventos, promociones y actividades especiales para tus clientes.',
-                    buttonText: '+ Actividad',
-                    onButtonPressed: () async {
-                      final activity = await Navigator.push<Map<String, dynamic>>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateActivityScreen(),
-                        ),
-                      );
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 80),
+                    child: _buildFeatureCard(
+                      icon: Icons.event_note,
+                      title: 'Crear Actividad',
+                      description:
+                          'Organiza eventos, promociones y actividades especiales para tus clientes.',
+                      buttonText: '+ Actividad',
+                      onButtonPressed: () async {
+                        final activity =
+                            await Navigator.push<Map<String, dynamic>>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const CreateActivityScreen(),
+                              ),
+                            );
 
-                      if (activity != null) {
-                        setState(() {
-                          _actividades.add(activity);
-                        });
+                        if (activity != null) {
+                          setState(() {
+                            _actividades.add(activity);
+                          });
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Actividad "${activity['name']}" creada'),
-                            backgroundColor: const Color(0xFF1A5F7A),
-                          ),
-                        );
-                      }
-                    },
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Actividad "${activity['name']}" creada',
+                              ),
+                              backgroundColor: const Color(0xFF1A5F7A),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: 40),
 
@@ -234,7 +310,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF757575),
+                                    color: AppColors.textSecondaryLight,
                                   ),
                                 ),
                               ],
@@ -247,13 +323,19 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                                 const SizedBox(width: 16),
                             itemBuilder: (context, index) {
                               final activity = _actividades[index];
-                              return _buildActivityCard(
-                                title: activity['name'] ?? 'Sin nombre',
-                                description: activity['description'] ?? '',
-                                date: activity['hasNoEndDate'] == true
-                                    ? (activity['startDate'] ?? '')
-                                    : '${activity['startDate']} - ${activity['endDate']}',
-                                color: _colorForCategory(activity['category']),
+                              return FadeSlideIn(
+                                delay: Duration(milliseconds: 70 * index),
+                                offset: const Offset(0.12, 0),
+                                child: _buildActivityCard(
+                                  title: activity['name'] ?? 'Sin nombre',
+                                  description: activity['description'] ?? '',
+                                  date: activity['hasNoEndDate'] == true
+                                      ? (activity['startDate'] ?? '')
+                                      : '${activity['startDate']} - ${activity['endDate']}',
+                                  color: _colorForCategory(
+                                    activity['category'],
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -282,7 +364,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                 builder: (context) => const CreateActivityScreen(),
               ),
             );
-            if (!mounted) return; 
+            if (!mounted) return;
 
             if (activity != null) {
               setState(() {
@@ -297,31 +379,29 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                 ),
               );
             }
-
-              
           } else if (index == 2) {
-              // Menú
-              if (_menus.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MenuDetailScreen(menu: _menus[0]),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Crea tu primer menú'),
-                    backgroundColor: Color(0xFF1A5F7A),
-                  ),
-                );
-              }
+            // Menú
+            if (_menus.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MenuDetailScreen(menu: _menus[0]),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Crea tu primer menú'),
+                  backgroundColor: Color(0xFF1A5F7A),
+                ),
+              );
             }
+          }
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF1A5F7A),
-        unselectedItemColor: const Color(0xFF9E9E9E),
+        unselectedItemColor: AppColors.textSecondaryLight,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -352,10 +432,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       decoration: BoxDecoration(
         color: const Color(0xFFF0F7FC),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE0EEF7),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE0EEF7), width: 1),
       ),
       child: Row(
         children: [
@@ -365,11 +442,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
               color: const Color(0xFFD4E8F0),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 32,
-              color: const Color(0xFF1A5F7A),
-            ),
+            child: Icon(icon, size: 32, color: const Color(0xFF1A5F7A)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -389,7 +462,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   description,
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF757575),
+                    color: AppColors.textSecondaryLight,
                     height: 1.5,
                   ),
                 ),
@@ -404,10 +477,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             child: Text(
               buttonText,
@@ -464,7 +534,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   description,
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF757575),
+                    color: AppColors.textSecondaryLight,
                     height: 1.5,
                   ),
                   maxLines: 2,

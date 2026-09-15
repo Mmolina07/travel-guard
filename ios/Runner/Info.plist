@@ -26,6 +26,9 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- HU-07 / TG-145: requerido por geolocator para pedir permiso de ubicación -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TravelGuard usa tu ubicación para mostrarte comercios y lugares de interés cercanos en el mapa.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

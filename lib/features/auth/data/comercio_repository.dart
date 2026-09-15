@@ -37,6 +37,8 @@ class ComercioRepository {
     required String direccion,
     required String telefonoContacto,
     String? sede,
+    double? latitud,
+    double? longitud,
   }) async {
     final row = await _client
         .from(_table)
@@ -47,6 +49,10 @@ class ComercioRepository {
           'direccion': direccion,
           'telefono_contacto': telefonoContacto,
           if (sede != null && sede.isNotEmpty) 'sede': sede,
+          // HU-07: sin esto el comercio nunca aparece en el mapa
+          // (PlacesMapRepository solo trae comercios con lat/lng).
+          if (latitud != null) 'latitud': latitud,
+          if (longitud != null) 'longitud': longitud,
         })
         .select()
         .single();

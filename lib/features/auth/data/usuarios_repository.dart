@@ -79,6 +79,24 @@ class UsuariosRepository {
     return UsuarioModel.fromMap(row);
   }
 
+  /// Actualiza `google_id`. Sirve para "reparar" cuentas que se
+  /// registraron con Google cuando ese flujo todavía pasaba por
+  /// Firebase (google_id = uid de Firebase) y ahora deben enlazarse con
+  /// el id de la sesión nativa de Supabase, sin duplicar la fila por
+  /// `email` (que sigue siendo el mismo).
+  Future<UsuarioModel> updateGoogleId({
+    required int id,
+    required String googleId,
+  }) async {
+    final row = await _client
+        .from(table)
+        .update({'google_id': googleId})
+        .eq('id', id)
+        .select()
+        .single();
+    return UsuarioModel.fromMap(row);
+  }
+
   Future<UsuarioModel> touchLastLogin(int id) async {
     final row = await _client
         .from(table)

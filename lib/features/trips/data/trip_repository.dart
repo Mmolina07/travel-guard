@@ -2,16 +2,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/supabase_client.dart';
 import '../presentation/pages/trip_model.dart';
+import 'models/trip_budget_category.dart';
 
 /// Persistencia de HU-05 (Crear Viaje, TG-141) en la tabla `viajes` de
 /// Supabase. `turista_id` es el `usuarios.id` (int8) del turista dueño
 /// del viaje — ver [AppAuthProvider.usuario].
+///
+/// Las categorías de presupuesto ahora son personalizables (antes eran
+/// 5 columnas fijas en `viajes`: costo_tours/costo_restaurantes/etc.) y
+/// viven en su propia tabla, `presupuesto_categorias`, una fila por
+/// categoría — así el turista puede agregar o quitar las que quiera.
 class TripRepository {
   TripRepository({SupabaseClient? client})
       : _client = client ?? SupabaseConfig.client;
 
   final SupabaseClient _client;
   static const String _table = 'viajes';
+  static const String _categoriesTable = 'presupuesto_categorias';
 
   Future<Trip> createTrip({
     required int turistaId,
@@ -37,23 +44,82 @@ class TripRepository {
           'incluye_traslado': trip.includedServices.contains('Traslado'),
           'transporte_inicio': _mapTransporte(trip.startTransport),
           'transporte_durante': _mapTransporte(trip.duringTransport),
-          'incluye_tours_guia': trip.tours > 0,
-          'costo_tours': _positiveOrNull(trip.tours),
-          'incluye_restaurantes': trip.restaurants > 0,
-          'costo_restaurantes': _positiveOrNull(trip.restaurants),
-          'incluye_discotecas': trip.discotheque > 0,
-          'costo_discotecas': _positiveOrNull(trip.discotheque),
-          'incluye_souvenirs': trip.souvenirs > 0,
-          'costo_souvenirs': _positiveOrNull(trip.souvenirs),
-          'incluye_actividades_pagas': trip.paidActivities > 0,
-          'costo_actividades_pagas': _positiveOrNull(trip.paidActivities),
           'dinero_emergencias': _positiveOrNull(trip.emergencyMoney),
           'datos_completos': trip.datosCompletos,
         })
         .select()
         .single();
 
-    return trip.copyWith(id: row['id'] as int);
+    final tripId = row['id'] as int;
+    final savedCategories = await _replaceCategories(tripId, trip.categories);
+
+    return trip.copyWith(id: tripId, categories: savedCategories);
+  }
+
+  /// Actualiza solo los campos de presupuesto de un viaje ya creado
+  /// (mejora "gestor de presupuesto": antes esto se definía una sola
+  /// vez al crear el viaje y no se podía ajustar después) y reemplaza
+  /// por completo sus categorías personalizadas.
+  Future<Trip> updateTripBudget({
+    required Trip trip,
+  }) async {
+    final tripId = trip.id;
+    if (tripId == null) {
+      throw ArgumentError('No se puede actualizar un viaje sin id.');
+    }
+
+    await _client.from(_table).update({
+      'presupuesto_maximo': trip.maxBudget,
+      'pagos_anticipados': trip.advancePayment,
+      'costo_hospedaje': _positiveOrNull(trip.lodgingCost),
+      'dinero_emergencias': _positiveOrNull(trip.emergencyMoney),
+    }).eq('id', tripId);
+
+    final savedCategories = await _replaceCategories(tripId, trip.categories);
+    return trip.copyWith(categories: savedCategories);
+  }
+
+  /// Borra las categorías existentes del viaje y crea las nuevas —
+  /// más simple y confiable que calcular un diff fila por fila para
+  /// una lista tan corta.
+  Future<List<TripBudgetCategory>> _replaceCategories(
+    int tripId,
+    List<TripBudgetCategory> categories,
+  ) async {
+    await _client.from(_categoriesTable).delete().eq('viaje_id', tripId);
+
+    final withAmount = categories.where((c) => c.monto > 0).toList();
+    if (withAmount.isEmpty) return const [];
+
+    final rows = await _client
+        .from(_categoriesTable)
+        .insert([
+          for (var i = 0; i < withAmount.length; i++)
+            {
+              'viaje_id': tripId,
+              'nombre': withAmount[i].nombre,
+              'monto': withAmount[i].monto,
+              'orden': i,
+              if (withAmount[i].categoriaGastoId != null)
+                'categoria_gasto_id': withAmount[i].categoriaGastoId,
+            },
+        ])
+        .select('*, categorias_gasto(nombre)');
+
+    return (rows as List)
+        .map((row) => _categoryFromRow(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  TripBudgetCategory _categoryFromRow(Map<String, dynamic> row) {
+    final categoriaGasto = row['categorias_gasto'] as Map<String, dynamic>?;
+    return TripBudgetCategory(
+      id: row['id'] as int,
+      nombre: row['nombre'] as String,
+      monto: (row['monto'] as num).toDouble(),
+      categoriaGastoId: row['categoria_gasto_id'] as int?,
+      categoriaGastoNombre: categoriaGasto?['nombre'] as String?,
+    );
   }
 
   /// Viajes del turista, más recientes primero (excluye archivados).
@@ -63,7 +129,7 @@ class TripRepository {
   Future<List<Trip>> fetchTripsByTurista(int turistaId) async {
     final rows = await _client
         .from(_table)
-        .select()
+        .select('*, $_categoriesTable(*, categorias_gasto(nombre))')
         .eq('turista_id', turistaId)
         .neq('estado', 'archivado')
         .order('created_at', ascending: false);
@@ -74,6 +140,13 @@ class TripRepository {
   }
 
   Trip _fromRow(Map<String, dynamic> row) {
+    final categoryRows =
+        (row[_categoriesTable] as List<dynamic>?) ?? const [];
+    final categories = categoryRows
+        .map((c) => _categoryFromRow(c as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => (a.id ?? 0).compareTo(b.id ?? 0));
+
     return Trip(
       id: row['id'] as int,
       name: row['nombre'] as String,
@@ -94,12 +167,7 @@ class TripRepository {
       ],
       startTransport: _unmapTransporte(row['transporte_inicio'] as String?),
       duringTransport: _unmapTransporte(row['transporte_durante'] as String?),
-      tours: (row['costo_tours'] as num?)?.toDouble() ?? 0,
-      restaurants: (row['costo_restaurantes'] as num?)?.toDouble() ?? 0,
-      discotheque: (row['costo_discotecas'] as num?)?.toDouble() ?? 0,
-      souvenirs: (row['costo_souvenirs'] as num?)?.toDouble() ?? 0,
-      paidActivities:
-          (row['costo_actividades_pagas'] as num?)?.toDouble() ?? 0,
+      categories: categories,
       emergencyMoney: (row['dinero_emergencias'] as num?)?.toDouble() ?? 0,
       datosCompletos: row['datos_completos'] as bool? ?? true,
     );

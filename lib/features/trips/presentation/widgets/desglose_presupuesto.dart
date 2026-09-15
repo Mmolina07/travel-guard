@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/trip_model.dart'; // Ajustar la ruta según la estructura
 
 class DesglosePresupuesto extends StatelessWidget {
@@ -86,7 +87,7 @@ class DesglosePresupuesto extends StatelessWidget {
               titulo: 'Comidas',
               monto: viaje.presupuestoComidas,
               icon: Icons.restaurant,
-              color: Colors.green,
+              color: AppColors.accentLight,
             ),
             _buildItemCategoria(
               context,

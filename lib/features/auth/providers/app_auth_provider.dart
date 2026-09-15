@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+import 'package:flutter/widgets.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show PostgrestException, User;
 
 import '../data/auth_exception.dart';
 import '../data/comercio_repository.dart';
@@ -19,17 +20,15 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 /// Provider de sesión global para turista y comercio (TG-92, TG-97,
 /// TG-102, TG-123, TG-124).
 ///
-/// Responsabilidades:
-/// - Registro/login con email+contraseña y con Google, usando Firebase
-///   Authentication como backend de autenticación.
-/// - Mantener y exponer el estado de sesión actual (`ChangeNotifier` +
-///   `authStateChanges` de Firebase) para toda la app (p.ej. el nombre
-///   dinámico en los home de turista/comercio).
-/// - Sincronizar `usuarios` + `turistas`/`comercios` en Supabase (TG-92).
+/// La app usa **dos backends de sesión a propósito**:
+/// - Email/contraseña -> Firebase Authentication (`EmailAuthService`).
+/// - Google -> autenticación nativa de Supabase (`GoogleAuthService`,
+///   `signInWithIdToken`), para tener una sesión real de Supabase Auth
+///   con Google en vez de depender de Firebase para ese proveedor.
 ///
-/// No depende de ninguna pantalla existente: las pantallas de
-/// presentación consumen esto con `context.read/watch<AppAuthProvider>()`
-/// sin que este archivo modifique su maquetación.
+/// Este provider escucha ambos streams y los combina en un solo estado
+/// de sesión + perfil (`usuarios`/`turistas`/`comercios`), sin que las
+/// pantallas necesiten saber cuál de los dos autenticó al usuario.
 class AppAuthProvider extends ChangeNotifier {
   AppAuthProvider({
     GoogleAuthService? googleAuthService,
@@ -42,7 +41,9 @@ class AppAuthProvider extends ChangeNotifier {
         _usuarios = usuariosRepository ?? UsuariosRepository(),
         _turistas = touristRepository ?? TouristRepository(),
         _comercios = comercioRepository ?? ComercioRepository() {
-    _authSub = _googleAuth.authStateChanges().listen(_onAuthChanged);
+    _firebaseAuthSub =
+        _emailAuth.authStateChanges().listen(_onFirebaseAuthChanged);
+    _googleAuthSub = _googleAuth.authStateChanges().listen(_onGoogleAuthChanged);
   }
 
   final GoogleAuthService _googleAuth;
@@ -50,10 +51,12 @@ class AppAuthProvider extends ChangeNotifier {
   final UsuariosRepository _usuarios;
   final TouristRepository _turistas;
   final ComercioRepository _comercios;
-  late final StreamSubscription<fb.User?> _authSub;
+  late final StreamSubscription<fb.User?> _firebaseAuthSub;
+  late final StreamSubscription<User?> _googleAuthSub;
 
   AuthStatus _status = AuthStatus.unknown;
-  fb.User? _firebaseUser;
+  fb.User? _firebaseUser; // sesión de email/contraseña (Firebase).
+  User? _googleUser; // sesión de Google (Supabase Auth nativo).
   UsuarioModel? _usuario;
   TouristModel? _tourist;
   ComercioModel? _comercio;
@@ -62,6 +65,7 @@ class AppAuthProvider extends ChangeNotifier {
 
   AuthStatus get status => _status;
   fb.User? get firebaseUser => _firebaseUser;
+  User? get googleUser => _googleUser;
   UsuarioModel? get usuario => _usuario;
   TouristModel? get tourist => _tourist;
   ComercioModel? get comercio => _comercio;
@@ -74,36 +78,50 @@ class AppAuthProvider extends ChangeNotifier {
   String get displayName {
     if (_tourist != null) return _tourist!.nombreCompleto;
     if (_comercio != null) return _comercio!.nombreComercio;
-    final email = _usuario?.email ?? _firebaseUser?.email;
+    final email = _usuario?.email ?? _firebaseUser?.email ?? _googleUser?.email;
     if (email != null && email.contains('@')) return email.split('@').first;
     return 'Usuario';
   }
 
-  Future<void> _onAuthChanged(fb.User? user) async {
+  Future<void> _onFirebaseAuthChanged(fb.User? user) async {
     _firebaseUser = user;
+    await _syncSessionState(
+      hasSession: user != null || _googleUser != null,
+      resolveUsuario: user == null
+          ? null
+          : () => _usuarios.findByEmail(user.email ?? ''),
+    );
+  }
+
+  Future<void> _onGoogleAuthChanged(User? user) async {
+    _googleUser = user;
+    await _syncSessionState(
+      hasSession: user != null || _firebaseUser != null,
+      resolveUsuario:
+          user == null ? null : () => _usuarios.findByGoogleId(user.id),
+    );
+  }
+
+  Future<void> _syncSessionState({
+    required bool hasSession,
+    Future<UsuarioModel?> Function()? resolveUsuario,
+  }) async {
     _status =
-        user == null ? AuthStatus.unauthenticated : AuthStatus.authenticated;
-    if (user != null) {
+        hasSession ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+    if (resolveUsuario != null) {
       try {
-        final usuario = await _resolveUsuario(user);
-        await _loadProfile(usuario);
+        await _loadProfile(await resolveUsuario());
       } catch (e, st) {
-        // La sesión de Firebase sigue siendo válida aunque falle Supabase;
-        // se reintenta la sincronización en el próximo login/registro.
-        debugPrint('AppAuthProvider._onAuthChanged Supabase error: $e\n$st');
+        // La sesión sigue siendo válida aunque falle Supabase; se
+        // reintenta la sincronización en el próximo login/registro.
+        debugPrint('AppAuthProvider._syncSessionState error: $e\n$st');
       }
-    } else {
+    } else if (!hasSession) {
       _usuario = null;
       _tourist = null;
       _comercio = null;
     }
     notifyListeners();
-  }
-
-  Future<UsuarioModel?> _resolveUsuario(fb.User user) {
-    final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
-    if (isGoogle) return _usuarios.findByGoogleId(user.uid);
-    return _usuarios.findByEmail(user.email ?? '');
   }
 
   Future<void> _loadProfile(UsuarioModel? usuario) async {
@@ -120,6 +138,30 @@ class AppAuthProvider extends ChangeNotifier {
       _tourist = await _turistas.find(usuario.id);
       _comercio = null;
     }
+  }
+
+  /// Busca el `usuarios` enlazado a esta cuenta de Google (por
+  /// `google_id`); si no existe, intenta enlazarlo por `email` (cuenta
+  /// que se había registrado con Google cuando ese flujo pasaba por
+  /// Firebase, con un `google_id` distinto) antes de crear uno nuevo.
+  Future<UsuarioModel> _findOrLinkGoogleUsuario({
+    required String googleId,
+    required String email,
+    required String tipoUsuario,
+  }) async {
+    final existingByGoogleId = await _usuarios.findByGoogleId(googleId);
+    if (existingByGoogleId != null) return existingByGoogleId;
+
+    final existingByEmail = await _usuarios.findByEmail(email);
+    if (existingByEmail != null) {
+      return _usuarios.updateGoogleId(id: existingByEmail.id, googleId: googleId);
+    }
+
+    return _usuarios.createGoogle(
+      googleId: googleId,
+      email: email,
+      tipoUsuario: tipoUsuario,
+    );
   }
 
   /// Escenarios 1-4 de HU-01: registro de turista con email/contraseña.
@@ -156,6 +198,8 @@ class AppAuthProvider extends ChangeNotifier {
     required String? sede,
     required String email,
     required String password,
+    double? latitud,
+    double? longitud,
   }) {
     return _runAuthAction(() async {
       await _checkComercioDuplicates(nit: nit, email: email);
@@ -177,6 +221,8 @@ class AppAuthProvider extends ChangeNotifier {
           direccion: direccion,
           telefonoContacto: telefono,
           sede: sede,
+          latitud: latitud,
+          longitud: longitud,
         );
         _usuario = usuario;
         _comercio = comercio;
@@ -240,40 +286,41 @@ class AppAuthProvider extends ChangeNotifier {
     });
   }
 
-  /// Escenario 5 de HU-01 (TG-123/TG-124): registro/login con Google.
-  /// Solo aplica a turistas: el perfil de comercio exige NIT, dirección y
-  /// teléfono, datos que Google no provee.
+  /// Escenario 5 de HU-01 (TG-123/TG-124): registro/login con Google,
+  /// vía Supabase Auth nativo. Solo aplica a turistas: el perfil de
+  /// comercio exige NIT, dirección y teléfono, datos que Google no provee.
   ///
   /// Retorna `false` tanto si el usuario cancela el flujo como si ocurre
   /// un error (en el primer caso [errorMessage] queda en `null`).
-  Future<bool> signInWithGoogle() async {
+  ///
+  /// [context] es obligatorio en Web (el SDK de Google exige mostrar su
+  /// propio botón real ahí, ver [GoogleAuthService]); en otras
+  /// plataformas se ignora.
+  Future<bool> signInWithGoogle([BuildContext? context]) async {
     _setLoading(true);
     _errorMessage = null;
     try {
-      final user = await _googleAuth.signInWithGoogle();
+      final user = await _googleAuth.signInWithGoogle(context: context);
       if (user == null) return false; // Cancelado por el usuario.
 
-      var usuario = await _usuarios.findByGoogleId(user.uid);
-      if (usuario == null) {
-        usuario = await _usuarios.createGoogle(
-          googleId: user.uid,
-          email: user.email ?? '',
-          tipoUsuario: 'turista',
-        );
-      } else {
-        usuario = await _usuarios.touchLastLogin(usuario.id);
-      }
+      var usuario = await _findOrLinkGoogleUsuario(
+        googleId: user.id,
+        email: user.email ?? '',
+        tipoUsuario: 'turista',
+      );
+      usuario = await _usuarios.touchLastLogin(usuario.id);
 
       var tourist = await _turistas.find(usuario.id);
       tourist ??= await _turistas.createProfile(
         usuarioId: usuario.id,
-        displayName: user.displayName,
+        displayName: _googleDisplayName(user),
       );
 
       _usuario = usuario;
       _tourist = tourist;
       _comercio = null;
-      _firebaseUser = user;
+      _googleUser = user;
+      _status = AuthStatus.authenticated;
       return true;
     } on AuthException catch (e) {
       _errorMessage = e.message;
@@ -288,18 +335,18 @@ class AppAuthProvider extends ChangeNotifier {
   }
 
   /// Paso 1 del registro de comercio con Google (TG-123/TG-124): solo
-  /// autentica con Firebase y retorna el usuario, sin tocar Supabase
+  /// autentica con Supabase y retorna el usuario, sin crear el perfil
   /// todavía (el perfil de comercio necesita datos que Google no provee
   /// — NIT, dirección, teléfono — y se completan con el formulario).
   ///
   /// Retorna `null` tanto si el usuario cancela como si ocurre un error
   /// (en el primer caso [errorMessage] queda en `null`).
-  Future<fb.User?> beginGoogleSignIn() async {
+  Future<User?> beginGoogleSignIn([BuildContext? context]) async {
     _setLoading(true);
     _errorMessage = null;
     try {
-      final user = await _googleAuth.signInWithGoogle();
-      if (user != null) _firebaseUser = user;
+      final user = await _googleAuth.signInWithGoogle(context: context);
+      if (user != null) _googleUser = user;
       return user;
     } on AuthException catch (e) {
       _errorMessage = e.message;
@@ -313,16 +360,23 @@ class AppAuthProvider extends ChangeNotifier {
     }
   }
 
+  String? _googleDisplayName(User user) {
+    final metadata = user.userMetadata;
+    return metadata?['full_name'] as String? ?? metadata?['name'] as String?;
+  }
+
   /// Paso 2: crea `usuarios` (proveedor_auth='google') + `comercios` para
-  /// el usuario de Firebase ya autenticado con [beginGoogleSignIn].
+  /// el usuario ya autenticado con [beginGoogleSignIn].
   Future<bool> completeComercioGoogleRegistration({
     required String nombreComercio,
     required String nit,
     required String direccion,
     required String telefono,
     String? sede,
+    double? latitud,
+    double? longitud,
   }) {
-    final user = _firebaseUser;
+    final user = _googleUser;
     if (user == null) {
       _errorMessage = 'Primero inicia sesión con Google.';
       notifyListeners();
@@ -332,9 +386,8 @@ class AppAuthProvider extends ChangeNotifier {
       await _checkComercioDuplicates(nit: nit, email: user.email ?? '');
 
       try {
-        var usuario = await _usuarios.findByGoogleId(user.uid);
-        usuario ??= await _usuarios.createGoogle(
-          googleId: user.uid,
+        final usuario = await _findOrLinkGoogleUsuario(
+          googleId: user.id,
           email: user.email ?? '',
           tipoUsuario: 'comercio',
         );
@@ -345,6 +398,8 @@ class AppAuthProvider extends ChangeNotifier {
           direccion: direccion,
           telefonoContacto: telefono,
           sede: sede,
+          latitud: latitud,
+          longitud: longitud,
         );
         _usuario = usuario;
         _comercio = comercio;
@@ -356,7 +411,10 @@ class AppAuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _googleAuth.signOut();
+    await Future.wait([
+      _emailAuth.signOut(),
+      _googleAuth.signOut(),
+    ]);
   }
 
   /// Centraliza loading + manejo de errores para las acciones de auth.
@@ -385,7 +443,8 @@ class AppAuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _authSub.cancel();
+    _firebaseAuthSub.cancel();
+    _googleAuthSub.cancel();
     super.dispose();
   }
 }
