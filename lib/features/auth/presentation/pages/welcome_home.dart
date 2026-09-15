@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/route_pattern_background.dart';
+import '../../../../core/widgets/travel_guard_badge.dart';
 import "../Pages/Register_Type_Screen.dart";
 import "../Pages/login_screen.dart";
 
@@ -94,6 +96,7 @@ class _WelcomeHomeState extends State<WelcomeHome>
         ),
         child: Stack(
           children: [
+            const RoutePatternBackground(opacity: 0.10),
             _AmbientGlow(controller: _loopController),
             SafeArea(
               child: LayoutBuilder(
@@ -123,9 +126,7 @@ class _WelcomeHomeState extends State<WelcomeHome>
                                   _staggered(
                                     start: 0.0,
                                     end: 0.65,
-                                    child: _TravelGuardBadge(
-                                      loopController: _loopController,
-                                    ),
+                                    child: const TravelGuardBadge(size: 140),
                                   ),
                                   const SizedBox(height: 28),
                                   _staggered(
@@ -331,121 +332,3 @@ class _AmbientGlow extends StatelessWidget {
   }
 }
 
-/// Insignia distintiva de la marca: un anillo punteado en órbita lenta
-/// (ruta de vuelo), un avión que flota suavemente dentro, y una medalla
-/// de "escudo" superpuesta — Travel + Guard en un solo elemento visual,
-/// en vez de la foto de stock pixelada que había antes.
-class _TravelGuardBadge extends StatelessWidget {
-  const _TravelGuardBadge({required this.loopController});
-
-  final AnimationController loopController;
-
-  static const double _size = 140;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: _size,
-      height: _size,
-      child: AnimatedBuilder(
-        animation: loopController,
-        builder: (context, _) {
-          final t = loopController.value;
-          final floatOffset = math.sin(t * 2 * math.pi) * 6;
-          final orbitAngle = t * 2 * math.pi;
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              Transform.rotate(
-                angle: orbitAngle,
-                child: CustomPaint(
-                  size: const Size(_size, _size),
-                  painter: _DashedOrbitPainter(
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
-                ),
-              ),
-              Container(
-                width: _size - 40,
-                height: _size - 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    width: 2,
-                  ),
-                ),
-              ),
-              Transform.translate(
-                offset: Offset(0, floatOffset),
-                child: Transform.rotate(
-                  angle: -math.pi / 4,
-                  child: const Icon(
-                    Icons.flight,
-                    size: 46,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.accentLight,
-                    border: Border.all(
-                      color: const Color(0xFF0F3D50),
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.shield,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Anillo punteado — evoca una ruta de vuelo alrededor de la insignia.
-class _DashedOrbitPainter extends CustomPainter {
-  _DashedOrbitPainter({required this.color});
-
-  final Color color;
-  static const int _dashCount = 22;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 2;
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    for (var i = 0; i < _dashCount; i++) {
-      final startAngle = (i / _dashCount) * 2 * math.pi;
-      final sweep = (2 * math.pi / _dashCount) * 0.55;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweep,
-        false,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedOrbitPainter oldDelegate) =>
-      oldDelegate.color != color;
-}

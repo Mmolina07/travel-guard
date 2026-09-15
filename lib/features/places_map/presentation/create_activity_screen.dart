@@ -192,6 +192,15 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         backgroundColor: const Color(0xFF1A5F7A),
         foregroundColor: Colors.white,
         elevation: 0,
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: Form(

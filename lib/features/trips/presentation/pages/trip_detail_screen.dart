@@ -12,6 +12,8 @@ import 'edit_trip_budget_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/responsive_center.dart';
+import '../../../../core/widgets/route_pattern_background.dart';
+import '../../../../core/widgets/travel_guard_badge.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final Trip trip;
@@ -231,6 +233,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         backgroundColor: const Color(0xFF1A5F7A),
         foregroundColor: Colors.white,
         elevation: 0,
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -251,18 +262,37 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             FadeSlideIn(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(color: Color(0xFF1A5F7A)),
-                child: Column(
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    const RoutePatternBackground(opacity: 0.10),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      trip.name,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            trip.name,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const TravelGuardBadge(size: 40, animate: false),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -299,6 +329,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           ),
                         ),
                       ],
+                    ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

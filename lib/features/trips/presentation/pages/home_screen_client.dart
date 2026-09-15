@@ -9,9 +9,14 @@ import '../pages/trip_model.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../../places_map/presentation/comercios_cercanos_screen.dart';
 import '../../data/trip_repository.dart';
+import '../../utils/budget_calculator.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/widgets/boarding_pass_card.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/responsive_center.dart';
+import '../../../../core/widgets/route_pattern_background.dart';
+import '../../../../core/widgets/travel_guard_badge.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({Key? key}) : super(key: key);
@@ -27,7 +32,34 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   final TripRepository _tripRepository = TripRepository();
   bool _isLoadingTrips = true;
 
+  static const _monthAbbrs = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+  ];
+
   String get userName => context.watch<AppAuthProvider>().displayName;
+
+  /// Viaje más próximo por `startDate`; si ninguno tiene fecha futura
+  /// parseable, cae al primero con fecha válida y luego al primero de
+  /// la lista — nunca deja el strip de estadísticas vacío teniendo datos.
+  Trip? get _nextTrip {
+    if (_trips.isEmpty) return null;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final withDates = _trips
+        .map((t) => MapEntry(t, parseDdMmYyyy(t.startDate)))
+        .where((e) => e.value != null)
+        .toList()
+      ..sort((a, b) => a.value!.compareTo(b.value!));
+    final upcoming =
+        withDates.where((e) => !e.value!.isBefore(todayDate)).toList();
+    if (upcoming.isNotEmpty) return upcoming.first.key;
+    if (withDates.isNotEmpty) return withDates.first.key;
+    return _trips.first;
+  }
+
+  double get _totalBudget =>
+      _trips.fold(0.0, (sum, t) => sum + t.maxBudget);
 
   @override
   void initState() {
@@ -105,131 +137,62 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     }
   }
 
+  Future<void> _handleBottomNavTap(int index) async {
+    setState(() => _selectedIndex = index);
+
+    switch (index) {
+      case 0:
+        // Inicio: no hace nada.
+        break;
+
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MapScreen()),
+        );
+        break;
+
+      case 2:
+        final trip = await Navigator.push<Trip>(
+          context,
+          MaterialPageRoute(builder: (context) => const CreateTripScreen()),
+        );
+        if (!mounted) return;
+        if (trip != null) {
+          setState(() {
+            _trips.add(trip);
+            _selectedIndex = 0;
+          });
+        }
+        break;
+
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ComerciosCercanosScreen(),
+          ),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // AppBar personalizado
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            backgroundColor: const Color(0xFF1A5F7A),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.white),
-                onPressed: () {},
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [const Color(0xFF1A5F7A), const Color(0xFF0F4C5F)],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Elementos decorativos
-                    Positioned(
-                      right: 20,
-                      top: 40,
-                      child: Icon(
-                        Icons.flight,
-                        size: 80,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    Positioned(
-                      left: 30,
-                      bottom: 20,
-                      child: Icon(
-                        Icons.landscape,
-                        size: 100,
-                        color: Colors.white.withOpacity(0.15),
-                      ),
-                    ),
-                    // Texto principal
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 24,
-                        right: 24,
-                        top: 60,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: InkWell(
-                              onTap: () => _confirmSignOut(context),
-                              borderRadius: BorderRadius.circular(20),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.logout,
-                                      size: 16,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Cerrar sesión',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '¡Hola, $userName!',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Explora, planifica y viaja seguro',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Contenido
+          _buildHeroAppBar(),
           SliverToBoxAdapter(
             child: ResponsiveCenter(
               maxWidth: 760,
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tarjeta "Crear un viaje"
+                  _buildStatsStrip(),
+                  const SizedBox(height: 24),
+
                   FadeSlideIn(
                     child: _buildFeatureCard(
                       icon: Icons.luggage_outlined,
@@ -255,16 +218,14 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Tarjeta "Mapa"
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 80),
                     child: _buildMapCard(),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 36),
 
-                  // Sección "Mis viajes"
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -273,7 +234,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A5F7A),
+                          color: AppColors.primaryLight,
                         ),
                       ),
                       TextButton(
@@ -284,61 +245,28 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Lista de viajes
                   SizedBox(
-                    height: 220,
+                    height: 156,
                     child: _isLoadingTrips
                         ? const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFF1A5F7A),
+                              color: AppColors.primaryLight,
                             ),
                           )
                         : _trips.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.luggage_outlined,
-                                  size: 50,
-                                  color: Color(0xFFB0D9E8),
-                                ),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Aún no tienes viajes',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A5F7A),
-                                  ),
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  'Crea tu primer viaje para comenzar a planificar.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondaryLight,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
+                        ? _buildEmptyTrips()
                         : ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: _trips.length,
                             separatorBuilder: (context, index) =>
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 14),
                             itemBuilder: (context, index) {
                               final trip = _trips[index];
                               return FadeSlideIn(
                                 delay: Duration(milliseconds: 70 * index),
                                 offset: const Offset(0.12, 0),
                                 child: _buildTripCard(
-                                  image: '',
-                                  title: trip.name,
-                                  dates: '${trip.startDate} - ${trip.endDate}',
-                                  location: trip.destination,
+                                  trip: trip,
                                   onViewDetails: () {
                                     Navigator.push(
                                       context,
@@ -363,99 +291,177 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                             },
                           ),
                   ),
-                  const SizedBox(height: 30),
                 ],
               ),
             ),
           ),
         ],
       ),
+      bottomNavigationBar: _FloatingBottomNav(
+        selectedIndex: _selectedIndex,
+        onItemSelected: _handleBottomNavTap,
+      ),
+    );
+  }
 
-      // Bottom Navigation
-      // Bottom Navigation
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-
-        onTap: (index) async {
-          setState(() => _selectedIndex = index);
-
-          switch (index) {
-            case 0:
-              // Inicio: no hace nada
-              break;
-
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MapScreen()),
-              );
-              break;
-
-            case 2:
-              {
-                final trip = await Navigator.push<Trip>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateTripScreen(),
-                  ),
-                );
-
-                if (!mounted) return;
-
-                if (trip != null) {
-                  setState(() {
-                    _trips.add(trip);
-                    _selectedIndex = 0;
-                  });
-                }
-                break;
-              }
-
-            case 3:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ComerciosCercanosScreen(),
+  Widget _buildHeroAppBar() {
+    return SliverAppBar(
+      expandedHeight: 220,
+      floating: false,
+      pinned: true,
+      backgroundColor: AppColors.primaryLight,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
                 ),
-              );
-              break;
-          }
-        },
+              ),
+            ),
+            const RoutePatternBackground(opacity: 0.12),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const TravelGuardBadge(size: 42, animate: false),
+                        InkWell(
+                          onTap: () => _confirmSignOut(context),
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.logout,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Cerrar sesión',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '¡Hola, $userName!',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Explora, planifica y viaja seguro',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none, color: Colors.white),
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
 
-        type: BottomNavigationBarType.fixed,
-
-        backgroundColor: Colors.white,
-
-        selectedItemColor: const Color(0xFF1A5F7A),
-
-        unselectedItemColor: AppColors.textSecondaryLight,
-
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Inicio',
+  Widget _buildStatsStrip() {
+    final next = _nextTrip;
+    return Row(
+      children: [
+        Expanded(
+          child: _StatChip(
+            icon: Icons.luggage_outlined,
+            label: 'Viajes activos',
+            value: '${_trips.length}',
           ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            label: 'Mapa',
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatChip(
+            icon: Icons.flight_takeoff,
+            label: 'Próximo viaje',
+            value: next?.destination ?? '—',
           ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Crear viaje',
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatChip(
+            icon: Icons.savings_outlined,
+            label: 'Presupuesto total',
+            value: _trips.isEmpty ? '—' : formatCOP(_totalBudget),
           ),
+        ),
+      ],
+    );
+  }
 
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            label: 'Comercios',
+  Widget _buildEmptyTrips() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.luggage_outlined,
+            size: 44,
+            color: Color(0xFFB0D9E8),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Aún no tienes viajes',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryLight,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Crea tu primer viaje para comenzar a planificar.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
           ),
         ],
       ),
     );
   }
 
-  // Widget para tarjeta de característica
   Widget _buildFeatureCard({
     required IconData icon,
     required String title,
@@ -463,24 +469,11 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     required String buttonText,
     required VoidCallback onButtonPressed,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7FC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0EEF7), width: 1),
-      ),
+    return BoardingPassCard(
+      leading: Icon(icon, size: 30, color: AppColors.primaryLight),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4E8F0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 32, color: const Color(0xFF1A5F7A)),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,18 +481,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
+                    color: AppColors.primaryLight,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: AppColors.textSecondaryLight,
-                    height: 1.5,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -508,51 +501,23 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
           const SizedBox(width: 12),
           ElevatedButton(
             onPressed: onButtonPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A5F7A),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text(
-              buttonText,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+            child: Text(buttonText),
           ),
         ],
       ),
     );
   }
 
-  // Widget para tarjeta de mapa
   Widget _buildMapCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7FC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0EEF7), width: 1),
+    return BoardingPassCard(
+      leading: const Icon(
+        Icons.location_on_outlined,
+        size: 30,
+        color: AppColors.primaryLight,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4E8F0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.location_on_outlined,
-              size: 32,
-              color: Color(0xFF1A5F7A),
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,18 +525,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 const Text(
                   'Mapa',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
+                    color: AppColors.primaryLight,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Explora destinos, encuentra comercios seguros y planifica tu ruta.',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: AppColors.textSecondaryLight,
-                    height: 1.5,
+                    height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -584,239 +549,309 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                       ),
                     );
                   },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1A5F7A), width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: const Text(
-                    'Ver mapa',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A5F7A),
-                    ),
-                  ),
+                  child: const Text('Ver mapa'),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFFE8F4F8),
-            ),
-            child: Stack(
-              children: [
-                // Simulación de mapa
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: const Color(0xFFC8E6F5),
-                  ),
-                ),
-                const Positioned(
-                  left: 20,
-                  top: 15,
-                  child: Icon(
-                    Icons.location_on,
-                    color: Color(0xFF1A5F7A),
-                    size: 24,
-                  ),
-                ),
-                const Positioned(
-                  right: 25,
-                  bottom: 20,
-                  child: Icon(Icons.shield, color: Color(0xFF1A5F7A), size: 20),
-                ),
-                const Positioned(
-                  left: 40,
-                  bottom: 30,
-                  child: Icon(
-                    Icons.restaurant,
-                    color: Color(0xFF1A5F7A),
-                    size: 18,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(width: 14),
+          const _MiniMapPreview(),
         ],
       ),
     );
   }
 
-  // Widget para tarjeta de viaje
   Widget _buildTripCard({
-    required String image,
-    required String title,
-    required String dates,
-    required String location,
+    required Trip trip,
     required VoidCallback onViewDetails,
     required VoidCallback onEdit,
   }) {
-    return Container(
-      width: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Material(
-        color: Colors.transparent,
+    final startDate = parseDdMmYyyy(trip.startDate);
+    return SizedBox(
+      width: 220,
+      child: BoardingPassCard(
+        padding: const EdgeInsets.all(14),
+        leadingWidth: 56,
+        leading: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              startDate != null ? '${startDate.day}' : '•',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            if (startDate != null)
+              Text(
+                _monthAbbrs[startDate.month - 1],
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondaryLight,
+                ),
+              ),
+          ],
+        ),
         child: InkWell(
           onTap: onViewDetails,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Imagen o espacio superior de la tarjeta.
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  color: Color(0xFFE8F4F8),
-                ),
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFB0D9E8),
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.luggage_outlined,
-                          size: 48,
-                          color: Color(0xFF1A5F7A),
-                        ),
-                      ),
-                    ),
-
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'details') {
-                            onViewDetails();
-                          }
-
-                          if (value == 'edit') {
-                            onEdit();
-                          }
-
-                          if (value == 'delete') {
-                            // Aquí puedes agregar la lógica
-                            // para eliminar el viaje.
-                          }
-                        },
-                        itemBuilder: (context) => const [
-                          PopupMenuItem<String>(
-                            value: 'details',
-                            child: Text('Ver detalles'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Text('Editar'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Text('Eliminar'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Información del viaje.
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      trip.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A5F7A),
+                        color: AppColors.primaryLight,
                       ),
                     ),
-
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 14,
-                          color: AppColors.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            dates,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondaryLight,
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, size: 18),
+                    onSelected: (value) {
+                      if (value == 'details') onViewDetails();
+                      if (value == 'edit') onEdit();
+                      // 'delete': aún no implementado en el repositorio.
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem<String>(
+                        value: 'details',
+                        child: Text('Ver detalles'),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Text('Editar'),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 13,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${trip.startDate} - ${trip.endDate}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondaryLight,
+                      ),
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 13,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      trip.destination,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                    const SizedBox(height: 6),
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: AppColors.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            location,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondaryLight,
-                            ),
-                          ),
-                        ),
-                      ],
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.primaryLight),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryLight,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Vista decorativa simplificada de un mapa — la misma idea de la tarjeta
+/// original (pines sobre un panel de color) pero reutilizando el lenguaje
+/// visual nuevo (esquinas redondeadas consistentes con `BoardingPassCard`).
+class _MiniMapPreview extends StatelessWidget {
+  const _MiniMapPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 104,
+      height: 104,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFC8E6F5),
+      ),
+      child: const Stack(
+        children: [
+          Positioned(
+            left: 16,
+            top: 14,
+            child: Icon(Icons.location_on, color: AppColors.primaryLight, size: 22),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 16,
+            child: Icon(Icons.shield, color: AppColors.primaryLight, size: 18),
+          ),
+          Positioned(
+            left: 34,
+            bottom: 24,
+            child: Icon(Icons.restaurant, color: AppColors.primaryLight, size: 16),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Barra de navegación flotante tipo píldora — mismos 4 ítems y misma
+/// lógica de navegación que la `BottomNavigationBar` original, con un
+/// tratamiento visual acorde al resto de la pantalla en vez del estilo
+/// plano por defecto de Material.
+class _FloatingBottomNav extends StatelessWidget {
+  const _FloatingBottomNav({
+    required this.selectedIndex,
+    required this.onItemSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onItemSelected;
+
+  static const _items = [
+    (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Inicio'),
+    (icon: Icons.map_outlined, activeIcon: Icons.map, label: 'Mapa'),
+    (
+      icon: Icons.add_circle_outline,
+      activeIcon: Icons.add_circle,
+      label: 'Crear',
+    ),
+    (
+      icon: Icons.shopping_bag_outlined,
+      activeIcon: Icons.shopping_bag,
+      label: 'Comercios',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: List.generate(_items.length, (index) {
+            final item = _items[index];
+            final selected = index == selectedIndex;
+            final color =
+                selected ? AppColors.primaryLight : AppColors.textSecondaryLight;
+            return Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: () => onItemSelected(index),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      selected ? item.activeIcon : item.icon,
+                      color: color,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            );
+          }),
         ),
       ),
     );

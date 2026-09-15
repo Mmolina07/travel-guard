@@ -7,6 +7,7 @@ import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
 import 'widgets/place_details_sheet.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/route_pattern_background.dart';
 
 /// HU-07: comercios y lugares de interés cercanos, con datos reales de
 /// Supabase y distancia real a la ubicación actual del turista — nada
@@ -103,6 +104,15 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
         backgroundColor: _primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -116,37 +126,50 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                 // Encabezado con ubicación y contador
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  color: _primary,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
+                    ),
+                  ),
+                  child: Stack(
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _userPosition != null
-                                ? 'Cerca de tu ubicación actual'
-                                : 'Ubicación no disponible',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                      const RoutePatternBackground(opacity: 0.10),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  color: Colors.white70,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _userPosition != null
+                                      ? 'Cerca de tu ubicación actual'
+                                      : 'Ubicación no disponible',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${comercios.length} lugar(es) encontrados',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
+                            const SizedBox(height: 4),
+                            Text(
+                              '${comercios.length} lugar(es) encontrados',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

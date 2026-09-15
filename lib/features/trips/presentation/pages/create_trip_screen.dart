@@ -450,6 +450,15 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A5F7A),
         elevation: 0,
+        flexibleSpace: const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: _isLoading ? null : _handleCancel,
