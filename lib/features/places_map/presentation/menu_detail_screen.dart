@@ -33,18 +33,10 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFF1A5F7A),
+        backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
+        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -59,7 +51,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                color: Color(0xFF1A5F7A),
+                color: AppColors.ink,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +65,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                     decoration: BoxDecoration(
                       color: menu.isAvailable
                           ? const Color(0xFF4CAF50)
-                          : const Color(0xFFF44336),
+                          : AppColors.error,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -131,24 +123,24 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5FAFC),
+                      color: AppColors.paperDeep,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFD7E8EF),
+                        color: AppColors.hair,
                       ),
                     ),
                     child: Text(
                       menu.description,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondaryLight,
+                        color: AppColors.textMuted,
                         height: 1.6,
                       ),
                     ),
@@ -196,7 +188,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A5F7A),
+                  color: AppColors.ink,
                 ),
               ),
             ),
@@ -211,10 +203,10 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5FAFC),
+                    color: AppColors.paperDeep,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFD7E8EF),
+                      color: AppColors.hair,
                     ),
                   ),
                   child: const Column(
@@ -222,14 +214,14 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       Icon(
                         Icons.fastfood_outlined,
                         size: 48,
-                        color: Color(0xFFB0D9E8),
+                        color: AppColors.hair,
                       ),
                       SizedBox(height: 10),
                       Text(
                         'No hay productos',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A5F7A),
+                          color: AppColors.ink,
                         ),
                       ),
                     ],
@@ -268,9 +260,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       icon: const Icon(Icons.edit_outlined),
                       label: const Text('Editar'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1A5F7A),
+                        foregroundColor: AppColors.ink,
                         side: const BorderSide(
-                          color: Color(0xFF1A5F7A),
+                          color: AppColors.ink,
                         ),
                         padding: const EdgeInsets.symmetric(
                           vertical: 14,
@@ -321,17 +313,17 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FAFC),
+        color: AppColors.paperDeep,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFD7E8EF),
+          color: AppColors.hair,
         ),
       ),
       child: Column(
         children: [
           Icon(
             icon,
-            color: const Color(0xFF1A5F7A),
+            color: AppColors.ink,
             size: 24,
           ),
           const SizedBox(height: 8),
@@ -340,7 +332,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A5F7A),
+              color: AppColors.ink,
             ),
           ),
           const SizedBox(height: 4),
@@ -348,7 +340,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondaryLight,
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -364,7 +356,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFD7E8EF),
+          color: AppColors.hair,
         ),
         boxShadow: [
           BoxShadow(
@@ -382,12 +374,12 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFD9EAF2),
+              color: AppColors.hair,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.fastfood_outlined,
-              color: Color(0xFF1A5F7A),
+              color: AppColors.ink,
               size: 32,
             ),
           ),
@@ -405,7 +397,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
+                    color: AppColors.ink,
                   ),
                 ),
 
@@ -417,7 +409,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: AppColors.textSecondaryLight,
+                    color: AppColors.textMuted,
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -432,14 +424,14 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F7FC),
+                    color: AppColors.paperDeep,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '\$${product.price.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                       fontSize: 14,
                     ),
                   ),
@@ -453,7 +445,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A5F7A),
+              color: AppColors.ink,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -480,7 +472,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
           title: const Text(
             'Eliminar menú',
             style: TextStyle(
-              color: Color(0xFF1A5F7A),
+              color: AppColors.ink,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -493,7 +485,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               child: const Text(
                 'Cancelar',
                 style: TextStyle(
-                  color: Color(0xFF1A5F7A),
+                  color: AppColors.ink,
                 ),
               ),
             ),
@@ -504,7 +496,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Menú eliminado'),
-                    backgroundColor: Color(0xFFF44336),
+                    backgroundColor: AppColors.error,
                   ),
                 );
               },

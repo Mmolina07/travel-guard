@@ -23,7 +23,7 @@ class EditTripBudgetScreen extends StatefulWidget {
 }
 
 class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
-  static const Color _primary = Color(0xFF1A5F7A);
+  static const Color _primary = AppColors.ink;
 
   late final TextEditingController _maxBudgetController;
   late final TextEditingController _advancePaymentController;
@@ -134,7 +134,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFD32F2F),
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -153,7 +153,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
         : null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
         title: const Text(
           'Editar presupuesto',
@@ -162,15 +162,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
         backgroundColor: _primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
+        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -190,7 +182,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
               widget.trip.destination,
               style: const TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondaryLight,
+                color: AppColors.textMuted,
               ),
             ),
             const SizedBox(height: 24),
@@ -257,8 +249,8 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                       overBudget ? 'Te excedes por' : 'Disponible',
                       formatCOP(remaining.abs()),
                       valueColor: overBudget
-                          ? const Color(0xFFD32F2F)
-                          : AppColors.accentLight,
+                          ? AppColors.error
+                          : AppColors.inkSoft,
                     ),
                     if (breakdown != null) ...[
                       const Divider(height: 24),
@@ -324,7 +316,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondaryLight,
+            color: AppColors.textMuted,
           ),
         ),
         Text(
@@ -349,7 +341,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
           label,
           style: const TextStyle(
             fontSize: 11,
-            color: AppColors.textSecondaryLight,
+            color: AppColors.textMuted,
           ),
           textAlign: TextAlign.center,
         ),
@@ -398,7 +390,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
               ? () => _removeCategoryRow(row)
               : null,
           icon: const Icon(Icons.delete_outline),
-          color: const Color(0xFFD32F2F),
+          color: AppColors.error,
           tooltip: 'Quitar categoría',
         ),
       ],

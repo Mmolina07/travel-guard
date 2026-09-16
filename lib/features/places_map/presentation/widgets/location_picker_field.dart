@@ -26,7 +26,7 @@ class LocationPickerField extends StatefulWidget {
 }
 
 class _LocationPickerFieldState extends State<LocationPickerField> {
-  static const Color _primary = Color(0xFF1A5F7A);
+  static const Color _primary = AppColors.ink;
   static const LatLng _fallbackCenter = LatLng(6.2442, -75.5812); // Medellín
 
   final LocationService _locationService = LocationService();
@@ -79,7 +79,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
           content: Text(
             'No se pudo obtener tu ubicación. Toca el mapa para ubicar tu negocio manualmente.',
           ),
-          backgroundColor: Color(0xFFD32F2F),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -158,7 +158,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                   '${_selected!.latitude.toStringAsFixed(5)}, '
                   '${_selected!.longitude.toStringAsFixed(5)} '
                   '(puedes arrastrar el marcador para ajustar)',
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
         ),
       ],
     );

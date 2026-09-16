@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/widgets/route_pattern_background.dart';
+import '../../../../shell/app_shell.dart';
+import '../../../../widgets/budget_bar.dart';
 import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/data/models/gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../presentation/pages/trip_model.dart';
 import '../../utils/budget_calculator.dart';
+import 'create_trip_screen.dart';
 import 'edit_trip_budget_screen.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/fade_slide_in.dart';
-import '../../../../core/widgets/responsive_center.dart';
-import '../../../../core/widgets/route_pattern_background.dart';
-import '../../../../core/widgets/travel_guard_badge.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final Trip trip;
 
-  const TripDetailScreen({Key? key, required this.trip}) : super(key: key);
+  const TripDetailScreen({super.key, required this.trip});
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();
 }
 
-class _TripDetailScreenState extends State<TripDetailScreen> {
-  static const Color _primary = Color(0xFF1A5F7A);
-
+class _TripDetailScreenState extends State<TripDetailScreen>
+    with SingleTickerProviderStateMixin {
   late Trip trip;
+  late final TabController _tabController;
   final ExpenseRepository _expenseRepository = ExpenseRepository();
 
   List<Gasto> _gastos = [];
@@ -44,7 +45,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   void initState() {
     super.initState();
     trip = widget.trip;
+    _tabController = TabController(length: 4, vsync: this)
+      ..addListener(() => setState(() {}));
     _loadGastos();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   /// HU-13: trae los gastos reales del viaje (y las categorías reales
@@ -95,23 +104,11 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   Future<void> _handleAddExpense() async {
     if (trip.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.',
-          ),
-          backgroundColor: Color(0xFFD32F2F),
-        ),
-      );
+      _showSnack('Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.');
       return;
     }
     if (_categorias.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudieron cargar las categorías de gasto.'),
-          backgroundColor: Color(0xFFD32F2F),
-        ),
-      );
+      _showSnack('No se pudieron cargar las categorías de gasto.');
       return;
     }
 
@@ -136,24 +133,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       );
       if (!mounted) return;
       setState(() => _gastos = [gasto, ..._gastos]);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Gasto de ${formatCOP(result.monto)} en '
-            '${result.categoria.nombre} agregado',
-          ),
-          backgroundColor: _primary,
-        ),
+      _showSnack(
+        'Gasto de ${formatCOP(result.monto)} en ${result.categoria.nombre} agregado',
+        color: AppColors.ink,
       );
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleAddExpense error: $e\n$st');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo guardar el gasto. Intenta de nuevo.'),
-          backgroundColor: Color(0xFFD32F2F),
-        ),
-      );
+      _showSnack('No se pudo guardar el gasto. Intenta de nuevo.');
     }
   }
 
@@ -161,26 +148,19 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Eliminar gasto',
-          style: TextStyle(color: _primary, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Eliminar gasto'),
         content: Text(
-          '¿Eliminar el gasto de ${formatCOP(gasto.monto)} '
-          'en ${gasto.categoriaNombre}?',
+          '¿Eliminar el gasto de ${formatCOP(gasto.monto)} en ${gasto.categoriaNombre}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: _primary)),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
@@ -194,12 +174,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleDeleteGasto error: $e\n$st');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo eliminar el gasto.'),
-          backgroundColor: Color(0xFFD32F2F),
-        ),
-      );
+      _showSnack('No se pudo eliminar el gasto.');
     }
   }
 
@@ -217,506 +192,236 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final double totalSpent = trip.getTotalSpent() + _gastosTotal;
-    final double remaining = trip.maxBudget - totalSpent;
-    final double percentage = trip.maxBudget > 0
-        ? (totalSpent / trip.maxBudget) * 100
-        : 0;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Detalle del Viaje',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF1A5F7A),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+  Future<void> _confirmDeleteTrip() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar viaje'),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar el viaje "${trip.name}"? '
+          'Esta acción no se puede deshacer.',
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Editar presupuesto',
-            onPressed: _editBudget,
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header azul
-            FadeSlideIn(
-              child: Container(
-                width: double.infinity,
-                clipBehavior: Clip.hardEdge,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    const RoutePatternBackground(opacity: 0.10),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            trip.name,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const TravelGuardBadge(size: 40, animate: false),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.white70,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          trip.destination,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          color: Colors.white70,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${trip.startDate} - ${trip.endDate}',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    );
+    if (confirmed == true && mounted) {
+      context.go('/');
+      _showSnack('Viaje eliminado', color: AppColors.error);
+    }
+  }
 
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 100),
-              child: ResponsiveCenter(
-                maxWidth: 720,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // SECCIÓN 1: INFORMACIÓN BÁSICA
-                    _buildSectionTitle('Información del Viaje'),
-                    const SizedBox(height: 12),
-                    _buildInfoRow('Destino', trip.destination),
-                    _buildInfoRow('Tipo de Viaje', trip.tripType),
-                    _buildInfoRow('Número de Personas', '${trip.persons}'),
-                    _buildInfoRow(
-                      'Fechas',
-                      '${trip.startDate} - ${trip.endDate}',
-                    ),
-                    const SizedBox(height: 24),
+  void _showSnack(String message, {Color color = AppColors.error}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
 
-                    // SECCIÓN 2: HOSPEDAJE
-                    _buildSectionTitle('Hospedaje'),
-                    const SizedBox(height: 12),
-                    _buildInfoRow('Tipo de Hospedaje', trip.lodgingType),
-                    _buildInfoRow(
-                      'Costo Hospedaje',
-                      '${formatCOP(trip.lodgingCost)}',
-                      isAmount: true,
-                    ),
-                    if (trip.includedServices.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _buildSectionSubtitle('Servicios Incluidos'),
-                      const SizedBox(height: 8),
-                      ...trip.includedServices.map(
-                        (service) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle_outlined,
-                                color: AppColors.accentLight,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                service,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondaryLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
+  Future<void> _createTripFromHere() async {
+    await showCreateTripDialog(context);
+  }
 
-                    // SECCIÓN 3: TRANSPORTE
-                    _buildSectionTitle('Transporte'),
-                    const SizedBox(height: 12),
-                    _buildInfoRow('Transporte Inicio', trip.startTransport),
-                    _buildInfoRow('Transporte Durante', trip.duringTransport),
-                    const SizedBox(height: 24),
+  void _handleSideNav(AppSection section) {
+    switch (section) {
+      case AppSection.inicio:
+      case AppSection.misViajes:
+        context.go('/');
+        break;
+      case AppSection.comercios:
+        context.go('/comercios');
+        break;
+      case AppSection.mapa:
+        context.go('/mapa');
+        break;
+    }
+  }
 
-                    // SECCIÓN 4: PRESUPUESTO PLANEADO
-                    _buildSectionTitle('Presupuesto Planeado'),
-                    const SizedBox(height: 12),
-                    for (final categoria in trip.categories)
-                      if (categoria.monto > 0)
-                        _buildInfoRow(
-                          categoria.nombre,
-                          formatCOP(categoria.monto),
-                          isAmount: true,
-                        ),
-                    if (trip.emergencyMoney > 0)
-                      _buildInfoRow(
-                        'Dinero Emergencias',
-                        '${formatCOP(trip.emergencyMoney)}',
-                        isAmount: true,
-                      ),
-                    const SizedBox(height: 24),
+  @override
+  Widget build(BuildContext context) {
+    final totalSpent = trip.getTotalSpent() + _gastosTotal;
+    final remaining = trip.maxBudget - totalSpent;
 
-                    // SECCIÓN 5: GASTOS REALES (HU-13)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildSectionTitle('Gastos Registrados'),
-                        TextButton.icon(
-                          onPressed: _handleAddExpense,
-                          icon: const Icon(Icons.add_circle, size: 20),
-                          label: const Text('Agregar'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: _primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    _buildGastosList(),
-                    const SizedBox(height: 24),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppBreakpoints.mobile) {
+          return _buildMobile(context, totalSpent: totalSpent, remaining: remaining);
+        }
+        return AppShell(
+          section: AppSection.misViajes,
+          onNavigate: _handleSideNav,
+          onCreateTrip: _createTripFromHere,
+          child: _buildDesktopContent(context, totalSpent: totalSpent, remaining: remaining),
+        );
+      },
+    );
+  }
 
-                    // SECCIÓN 6: RESUMEN PRESUPUESTARIO
-                    _buildSectionTitle('Resumen Presupuestario'),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F7FC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFD7E8EF)),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildBudgetRow(
-                            'Presupuesto Máximo',
-                            '${formatCOP(trip.maxBudget)}',
-                          ),
-                          const SizedBox(height: 12),
-                          _buildBudgetRow(
-                            'Total Gastado',
-                            '${formatCOP(totalSpent)}',
-                            isSpent: true,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildBudgetRow(
-                            'Presupuesto Disponible',
-                            '${formatCOP(remaining)}',
-                            isAvailable: true,
-                          ),
-                          const SizedBox(height: 16),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: (percentage / 100).clamp(0.0, 1.0),
-                              minHeight: 10,
-                              backgroundColor: const Color(0xFFE0EEF7),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                remaining > 0
-                                    ? AppColors.accentLight
-                                    : const Color(0xFFD32F2F),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '${percentage.toStringAsFixed(1)}% del presupuesto utilizado',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondaryLight,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (remaining > 0) ...[
-                      const SizedBox(height: 16),
-                      _buildDailyBudgetCard(remaining),
-                    ],
-                    const SizedBox(height: 24),
+  // ─── Escritorio / tablet ───
 
-                    // SECCIÓN "PARA TI": recomendaciones personalizadas
-                    _buildSectionTitle('Para ti'),
-                    const SizedBox(height: 16),
-                    _buildSpendingPaceCard(remaining, totalSpent),
-                    const SizedBox(height: 16),
-                    _buildTaxRefundCard(),
-                    const SizedBox(height: 24),
-
-                    // SECCIÓN 7: DESGLOSE DETALLADO
-                    _buildSectionTitle('Desglose de Gastos'),
-                    const SizedBox(height: 16),
-                    _buildExpenseBreakdown(),
-                    const SizedBox(height: 24),
-
-                    // BOTONES DE ACCIÓN
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Función en desarrollo'),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Editar'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1A5F7A),
-                              side: const BorderSide(color: Color(0xFF1A5F7A)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              _showDeleteDialog();
-                            },
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Eliminar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
+  Widget _buildDesktopContent(
+    BuildContext context, {
+    required double totalSpent,
+    required double remaining,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeaderCard(totalSpent: totalSpent),
+        const SizedBox(height: 24),
+        TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelColor: AppColors.ink,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.ink,
+          dividerColor: AppColors.line,
+          labelStyle: AppText.ui(14, weight: FontWeight.w700),
+          unselectedLabelStyle: AppText.ui(14, weight: FontWeight.w500),
+          tabAlignment: TabAlignment.start,
+          tabs: const [
+            Tab(text: 'Resumen'),
+            Tab(text: 'Hospedaje'),
+            Tab(text: 'Transporte'),
+            Tab(text: 'Gastos'),
           ],
         ),
-      ),
+        const SizedBox(height: 24),
+        switch (_tabController.index) {
+          0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
+          1 => _buildHospedajeTab(),
+          2 => _buildTransporteTab(),
+          _ => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+        },
+      ],
     );
   }
 
-  Widget _buildGastosList() {
-    if (_isLoadingGastos) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator(color: _primary)),
-      );
-    }
-    if (trip.id == null) {
-      return const Text(
-        'Este viaje no quedó guardado en el servidor, así que no se '
-        'pueden registrar gastos reales.',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
-      );
-    }
-    if (_gastosError != null) {
-      return Row(
+  Widget _buildHeaderCard({required double totalSpent}) {
+    final progress = trip.maxBudget > 0 ? (totalSpent / trip.maxBudget).clamp(0.0, 1.0) : 0.0;
+    return Container(
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(60),
+        ),
+      ),
+      child: Stack(
         children: [
-          Expanded(
-            child: Text(
-              _gastosError!,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFD32F2F)),
-            ),
-          ),
-          TextButton(onPressed: _loadGastos, child: const Text('Reintentar')),
-        ],
-      );
-    }
-    if (_gastos.isEmpty) {
-      return const Text(
-        'Aún no has registrado gastos reales para este viaje.',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
-      );
-    }
-
-    return Column(
-      children: _gastos.map((gasto) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: gasto.categoria.color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  gasto.categoria.icon,
-                  size: 18,
-                  color: gasto.categoria.color,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          const RoutePatternBackground(opacity: 0.10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      gasto.descripcion?.isNotEmpty == true
-                          ? gasto.descripcion!
-                          : gasto.categoriaNombre,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A5F7A),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => context.go('/'),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.arrow_back, size: 14, color: AppColors.textOnInk),
+                            const SizedBox(width: 6),
+                            Text('INICIO / MIS VIAJES', style: AppText.label(11, color: AppColors.textOnInk)),
+                          ],
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      '${gasto.categoriaNombre} · '
-                      '${DateFormat('dd/MM/yyyy').format(gasto.fecha)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondaryLight,
+                    Row(
+                      children: [
+                        _HeaderButton(label: 'Editar', translucent: true, onTap: _editBudget),
+                        const SizedBox(width: 10),
+                        _HeaderButton(
+                          label: 'Añadir gasto',
+                          translucent: false,
+                          onTap: _handleAddExpense,
+                        ),
+                        const SizedBox(width: 10),
+                        _HeaderIconButton(icon: Icons.more_horiz, onTap: _confirmDeleteTrip),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 26),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.inkSoft,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.luggage_outlined, color: AppColors.mint, size: 20),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text('Viaje a ', style: AppText.display(40, color: Colors.white)),
+                          Text(trip.destination, style: AppText.displayItalic(40)),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              Text(
-                '${formatCOP(gasto.monto)}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A5F7A),
+                const SizedBox(height: 10),
+                Text(
+                  '${trip.startDate} – ${trip.endDate} · ${trip.persons} '
+                  '${trip.persons == 1 ? 'PERSONA' : 'PERSONAS'} · ${trip.tripType.toUpperCase()}',
+                  style: AppText.label(11, color: AppColors.textOnInk),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: AppColors.textSecondaryLight,
+                const SizedBox(height: 30),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('GASTADO', style: AppText.label(10, color: AppColors.textOnInk)),
+                          const SizedBox(height: 4),
+                          Text(formatCOP(totalSpent), style: AppText.display(44, color: AppColors.paper)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('TOPE', style: AppText.label(10, color: AppColors.textOnInk)),
+                        const SizedBox(height: 4),
+                        Text(formatCOP(trip.maxBudget), style: AppText.ui(18, color: AppColors.textOnInk)),
+                      ],
+                    ),
+                  ],
                 ),
-                onPressed: () => _handleDeleteGasto(gasto),
-                tooltip: 'Eliminar gasto',
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A5F7A),
-      ),
-    );
-  }
-
-  Widget _buildSectionSubtitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1A5F7A),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, {bool isAmount = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondaryLight,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isAmount
-                  ? const Color(0xFF1A5F7A)
-                  : const Color(0xFF1A5F7A),
+                const SizedBox(height: 12),
+                BudgetBar(
+                  progress: progress,
+                  height: 8,
+                  track: Colors.white.withValues(alpha: 0.24),
+                  fill: AppColors.mint,
+                ),
+              ],
             ),
           ),
         ],
@@ -724,35 +429,150 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  Widget _buildBudgetRow(
-    String label,
-    String value, {
-    bool isSpent = false,
-    bool isAvailable = false,
-  }) {
-    Color textColor = AppColors.textSecondaryLight;
-    if (isSpent) textColor = const Color(0xFFD32F2F);
-    if (isAvailable) textColor = AppColors.accentLight;
+  // ─── Tab: Resumen ───
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildResumenTab({required double totalSpent, required double remaining}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondaryLight,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final hospedaje = _buildHospedajeSummaryCard();
+            final minis = _buildMiniCardsPair();
+            final gastos = _buildUltimosGastosCard();
+            if (constraints.maxWidth >= 760) {
+              return Column(
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: hospedaje),
+                        const SizedBox(width: 16),
+                        Expanded(child: minis),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  gastos,
+                ],
+              );
+            }
+            return Column(
+              children: [hospedaje, const SizedBox(height: 16), minis, const SizedBox(height: 16), gastos],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        if (remaining > 0) ...[
+          _buildDailyBudgetCard(remaining),
+          const SizedBox(height: 16),
+        ],
+        _buildExpenseBreakdownCard(),
+      ],
+    );
+  }
+
+  Widget _buildHospedajeSummaryCard() {
+    return _SectionCard(
+      title: 'Hospedaje',
+      trailing: formatCOP(trip.lodgingCost),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _kv('Tipo', trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
+          _kv('Costo', formatCOP(trip.lodgingCost)),
+          if (trip.includedServices.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [for (final s in trip.includedServices) _tag(s)],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniCardsPair() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _MiniCard(
+            color: AppColors.ink,
+            labelColor: AppColors.textOnInk,
+            titleColor: AppColors.paper,
+            detailColor: AppColors.textOnInk,
+            label: 'TRANSPORTE',
+            title: trip.startTransport.isNotEmpty ? trip.startTransport : '—',
+            detail: trip.duringTransport.isNotEmpty ? 'Durante: ${trip.duringTransport}' : '',
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: textColor,
+        const SizedBox(width: 16),
+        Expanded(
+          child: _MiniCard(
+            color: AppColors.wash,
+            labelColor: AppColors.inkSoft,
+            titleColor: AppColors.ink,
+            detailColor: AppColors.textMuted,
+            label: 'PERSONAS',
+            title: '${trip.persons}',
+            detail: trip.tripType,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildUltimosGastosCard() {
+    final recent = _gastos.take(5).toList();
+    return _SectionCard(
+      title: 'Últimos gastos',
+      child: _isLoadingGastos
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+            )
+          : recent.isEmpty
+          ? Text('Aún no has registrado gastos.', style: AppText.ui(13, color: AppColors.textMuted))
+          : Column(
+              children: [
+                for (var i = 0; i < recent.length; i++) ...[
+                  _gastoRow(recent[i]),
+                  if (i != recent.length - 1) const Divider(height: 1, color: AppColors.line),
+                ],
+              ],
+            ),
+    );
+  }
+
+  Widget _gastoRow(Gasto gasto) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  gasto.descripcion?.isNotEmpty == true ? gasto.descripcion! : gasto.categoriaNombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.ui(14, weight: FontWeight.w600),
+                ),
+                Text(
+                  '${gasto.categoriaNombre} · ${DateFormat('dd/MM/yyyy').format(gasto.fecha)}',
+                  style: AppText.label(10),
+                ),
+              ],
+            ),
+          ),
+          Text(formatCOP(gasto.monto), style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
+        ],
+      ),
     );
   }
 
@@ -766,14 +586,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       end: parseDdMmYyyy(trip.endDate),
       persons: trip.persons,
     );
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD7E8EF)),
-      ),
+    return _SectionCard(
+      title: 'Presupuesto disponible',
+      trailing: formatCOP(remaining),
       child: Row(
         children: [
           Expanded(
@@ -783,7 +598,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               value: formatCOP(breakdown.perDay),
             ),
           ),
-          Container(width: 1, height: 36, color: const Color(0xFFE0EEF7)),
+          Container(width: 1, height: 36, color: AppColors.line),
           Expanded(
             child: _buildDailyStat(
               icon: Icons.groups_outlined,
@@ -796,32 +611,201 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  Widget _buildDailyStat({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildDailyStat({required IconData icon, required String label, required String value}) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF4A90A4)),
+        Icon(icon, size: 18, color: AppColors.inkSoft),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: _primary,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondaryLight,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        Text(value, style: AppText.ui(15, weight: FontWeight.w700)),
+        Text(label, style: AppText.label(10), textAlign: TextAlign.center),
       ],
+    );
+  }
+
+  /// Desglose de gastos: presupuesto planeado del viaje (por categoría,
+  /// pagos anticipados, hospedaje, emergencias) más los gastos reales
+  /// de HU-13 agrupados por su propia categoría — cada monto se compara
+  /// contra el presupuesto máximo del viaje.
+  Widget _buildExpenseBreakdownCard() {
+    final Map<String, double> gastosByCategory = {};
+    for (final gasto in _gastos) {
+      gastosByCategory[gasto.categoriaNombre] = (gastosByCategory[gasto.categoriaNombre] ?? 0) + gasto.monto;
+    }
+
+    final rows = <(String, double)>[
+      ('Pagos anticipados', trip.advancePayment),
+      ('Hospedaje (planeado)', trip.lodgingCost),
+      for (final categoria in trip.categories) (categoria.nombre, categoria.monto),
+      ('Emergencias', trip.emergencyMoney),
+      ...gastosByCategory.entries.map((e) => ('${e.key} (real)', e.value)),
+    ].where((e) => e.$2 > 0).toList();
+
+    return _SectionCard(
+      title: 'Desglose de gastos',
+      child: rows.isEmpty
+          ? Text('No hay gastos registrados aún.', style: AppText.ui(13, color: AppColors.textMuted))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [for (final row in rows) _buildSimpleExpenseRow(row.$1, row.$2)],
+            ),
+    );
+  }
+
+  Widget _buildSimpleExpenseRow(String label, double amount) {
+    final percentage = trip.maxBudget > 0 ? (amount / trip.maxBudget).clamp(0.0, 1.0) : 0.0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: AppText.ui(13, color: AppColors.textMuted)),
+              Text(
+                '${formatCOP(amount)} (${(percentage * 100).toStringAsFixed(1)}%)',
+                style: AppText.ui(13, weight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          BudgetBar(progress: percentage, height: 6),
+        ],
+      ),
+    );
+  }
+
+  // ─── Tab: Hospedaje ───
+
+  Widget _buildHospedajeTab() {
+    return _SectionCard(
+      title: 'Hospedaje',
+      trailing: formatCOP(trip.lodgingCost),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _kv('Tipo de hospedaje', trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
+          _kv('Costo', formatCOP(trip.lodgingCost)),
+          if (trip.includedServices.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text('Servicios incluidos', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [for (final s in trip.includedServices) _tag(s)],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Tab: Transporte ───
+
+  Widget _buildTransporteTab() {
+    return _SectionCard(
+      title: 'Transporte',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _kv('Transporte de inicio', trip.startTransport.isNotEmpty ? trip.startTransport : '—'),
+          _kv('Transporte durante el viaje', trip.duringTransport.isNotEmpty ? trip.duringTransport : '—'),
+        ],
+      ),
+    );
+  }
+
+  // ─── Tab: Gastos ───
+
+  Widget _buildGastosTab({required double totalSpent, required double remaining}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionCard(
+          title: 'Gastos registrados',
+          trailing: formatCOP(_gastosTotal),
+          child: _buildGastosList(),
+        ),
+        const SizedBox(height: 16),
+        _buildSpendingPaceCard(remaining, totalSpent),
+        const SizedBox(height: 16),
+        _buildTaxRefundCard(),
+      ],
+    );
+  }
+
+  Widget _buildGastosList() {
+    if (_isLoadingGastos) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+      );
+    }
+    if (trip.id == null) {
+      return Text(
+        'Este viaje no quedó guardado en el servidor, así que no se pueden registrar gastos reales.',
+        style: AppText.ui(13, color: AppColors.textMuted),
+      );
+    }
+    if (_gastosError != null) {
+      return Row(
+        children: [
+          Expanded(child: Text(_gastosError!, style: AppText.ui(13, color: AppColors.error))),
+          TextButton(onPressed: _loadGastos, child: const Text('Reintentar')),
+        ],
+      );
+    }
+    if (_gastos.isEmpty) {
+      return Text(
+        'Aún no has registrado gastos reales para este viaje.',
+        style: AppText.ui(13, color: AppColors.textMuted),
+      );
+    }
+
+    return Column(
+      children: _gastos.map((gasto) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: gasto.categoria.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(gasto.categoria.icon, size: 18, color: gasto.categoria.color),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      gasto.descripcion?.isNotEmpty == true ? gasto.descripcion! : gasto.categoriaNombre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.ui(13, weight: FontWeight.w600),
+                    ),
+                    Text(
+                      '${gasto.categoriaNombre} · ${DateFormat('dd/MM/yyyy').format(gasto.fecha)}',
+                      style: AppText.label(10),
+                    ),
+                  ],
+                ),
+              ),
+              Text(formatCOP(gasto.monto), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
+                onPressed: () => _handleDeleteGasto(gasto),
+                tooltip: 'Eliminar gasto',
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -842,15 +826,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       phaseLabel = 'Agrega fechas válidas para ver tu ritmo de gasto.';
     } else if (today.isBefore(start)) {
       final daysUntil = start.difference(today).inDays;
-      phaseLabel =
-          'Tu viaje empieza en $daysUntil día${daysUntil == 1 ? '' : 's'}.';
+      phaseLabel = 'Tu viaje empieza en $daysUntil día${daysUntil == 1 ? '' : 's'}.';
       remainingDays = end.difference(start).inDays + 1;
     } else if (today.isAfter(end)) {
       phaseLabel = 'Este viaje ya terminó.';
     } else {
       remainingDays = end.difference(today).inDays + 1;
-      phaseLabel =
-          'Quedan $remainingDays día${remainingDays == 1 ? '' : 's'} de viaje.';
+      phaseLabel = 'Quedan $remainingDays día${remainingDays == 1 ? '' : 's'} de viaje.';
     }
 
     final safePersons = trip.persons < 1 ? 1 : trip.persons;
@@ -869,7 +851,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               value: formatCOP(dailyForGroup),
             ),
           ),
-          Container(width: 1, height: 36, color: const Color(0xFFE0EEF7)),
+          Container(width: 1, height: 36, color: AppColors.line),
           Expanded(
             child: _buildDailyStat(
               icon: Icons.person_outline,
@@ -881,55 +863,28 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD7E8EF)),
-      ),
+    return _SectionCard(
+      title: 'Ritmo de gasto',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.insights_outlined, size: 18, color: _primary),
+              const Icon(Icons.insights_outlined, size: 18, color: AppColors.inkSoft),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  phaseLabel,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _primary,
-                  ),
-                ),
-              ),
+              Expanded(child: Text(phaseLabel, style: AppText.ui(13, weight: FontWeight.w600))),
             ],
           ),
-          if (paceRow != null) ...[const SizedBox(height: 12), paceRow],
+          if (paceRow != null) ...[const SizedBox(height: 14), paceRow],
           if (totalSpent > 0) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFE0EEF7)),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: AppColors.line),
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Llevas gastado por persona',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-                Text(
-                  formatCOP(perPersonSpent),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _primary,
-                  ),
-                ),
+                Text('Llevas gastado por persona', style: AppText.ui(12, color: AppColors.textMuted)),
+                Text(formatCOP(perPersonSpent), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
               ],
             ),
           ],
@@ -954,18 +909,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   /// cuánto de eso fue impuesto, y por lo tanto cuánto se podría pedir
   /// de vuelta en el aeropuerto antes de salir del país.
   Widget _buildTaxRefundCard() {
-    final comprasTotal = _gastos
-        .where((g) => g.categoriaNombre == 'Compras')
-        .fold(0.0, (sum, g) => sum + g.monto);
+    final comprasTotal =
+        _gastos.where((g) => g.categoriaNombre == 'Compras').fold(0.0, (sum, g) => sum + g.monto);
     final ivaEstimado = comprasTotal * (_ivaRate / (1 + _ivaRate));
     final minPurchase = _minPurchaseUvt * _uvt2026;
     final maxRefund = _maxRefundUvt * _uvt2026;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8E1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
         border: Border.all(color: const Color(0xFFF3E0A3)),
       ),
       child: Column(
@@ -973,20 +927,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.flight_takeoff,
-                size: 18,
-                color: Color(0xFF8A6D1D),
-              ),
+              const Icon(Icons.flight_takeoff, size: 18, color: Color(0xFF8A6D1D)),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   '¿Eres turista extranjero?',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF8A6D1D),
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF8A6D1D)),
                 ),
               ),
               Switch(
@@ -1000,32 +946,22 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             const SizedBox(height: 8),
             Text(
               comprasTotal > 0
-                  ? 'De lo que llevas en "Compras" (${formatCOP(comprasTotal)}), '
-                        'aprox. ${formatCOP(ivaEstimado)} fue IVA — en Colombia '
-                        'los turistas extranjeros no residentes pueden pedirlo '
-                        'de vuelta completo antes de salir del país.'
-                  : 'Cuando registres compras (ropa, calzado, artesanías, '
-                        'joyería, electrodomésticos, etc.) con factura '
-                        'electrónica, aquí verás cuánto IVA podrías recuperar '
-                        'antes de salir del país.',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B5416),
-                height: 1.4,
-              ),
+                  ? 'De lo que llevas en "Compras" (${formatCOP(comprasTotal)}), aprox. '
+                        '${formatCOP(ivaEstimado)} fue IVA — en Colombia los turistas '
+                        'extranjeros no residentes pueden pedirlo de vuelta completo '
+                        'antes de salir del país.'
+                  : 'Cuando registres compras (ropa, calzado, artesanías, joyería, '
+                        'electrodomésticos, etc.) con factura electrónica, aquí verás '
+                        'cuánto IVA podrías recuperar antes de salir del país.',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF6B5416), height: 1.4),
             ),
             const SizedBox(height: 8),
             Text(
-              'Requisitos: factura electrónica de mínimo '
-              '${formatCOP(minPurchase)} por compra, pasaporte o Tarjeta '
-              'Andina Migratoria, y solicitarlo en la DIAN del aeropuerto '
-              'antes de viajar. Tope: ${formatCOP(maxRefund)} por solicitud. '
-              'Verifica el trámite vigente en dian.gov.co.',
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF8A6D1D),
-                height: 1.4,
-              ),
+              'Requisitos: factura electrónica de mínimo ${formatCOP(minPurchase)} por '
+              'compra, pasaporte o Tarjeta Andina Migratoria, y solicitarlo en la DIAN '
+              'del aeropuerto antes de viajar. Tope: ${formatCOP(maxRefund)} por '
+              'solicitud. Verifica el trámite vigente en dian.gov.co.',
+              style: const TextStyle(fontSize: 10, color: Color(0xFF8A6D1D), height: 1.4),
             ),
           ],
         ],
@@ -1033,130 +969,212 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  /// Desglose de gastos: presupuesto planeado del viaje (por categoría,
-  /// pagos anticipados, hospedaje, emergencias) más los gastos reales
-  /// de HU-13 agrupados por su propia categoría — cada monto se compara
-  /// contra el presupuesto máximo del viaje.
-  Widget _buildExpenseBreakdown() {
-    final Map<String, double> gastosByCategory = {};
-    for (final gasto in _gastos) {
-      gastosByCategory[gasto.categoriaNombre] =
-          (gastosByCategory[gasto.categoriaNombre] ?? 0) + gasto.monto;
-    }
-
-    final rows = <(String, double)>[
-      ('Pagos Anticipados', trip.advancePayment),
-      ('Hospedaje (planeado)', trip.lodgingCost),
-      for (final categoria in trip.categories)
-        (categoria.nombre, categoria.monto),
-      ('Emergencias', trip.emergencyMoney),
-      ...gastosByCategory.entries.map((e) => ('${e.key} (real)', e.value)),
-    ].where((e) => e.$2 > 0).toList();
-
-    if (rows.isEmpty) {
-      return const Text(
-        'No hay gastos registrados aún.',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final row in rows) _buildSimpleExpenseRow(row.$1, row.$2),
-      ],
+  Widget _kv(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppText.ui(14, color: AppColors.textMuted)),
+          Text(value, style: AppText.ui(14, weight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 
-  Widget _buildSimpleExpenseRow(String label, double amount) {
-    final percentage = trip.maxBudget > 0
-        ? (amount / trip.maxBudget) * 100
-        : 0.0;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+  Widget _tag(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: AppColors.wash, borderRadius: BorderRadius.circular(AppRadius.chip)),
+      child: Text(label, style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft)),
+    );
+  }
+
+  // ─── Móvil ───
+  // No forma parte del alcance de esta pasada de escritorio; mantiene
+  // la estructura anterior (info plana + botones fijos) funcionando.
+
+  Widget _buildMobile(BuildContext context, {required double totalSpent, required double remaining}) {
+    final percentage = trip.maxBudget > 0 ? (totalSpent / trip.maxBudget) * 100 : 0.0;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalle del Viaje', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.ink,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        actions: [
+          IconButton(icon: const Icon(Icons.edit_outlined), tooltip: 'Editar presupuesto', onPressed: _editBudget),
+          IconButton(icon: const Icon(Icons.more_vert), tooltip: 'Más', onPressed: _confirmDeleteTrip),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(trip.name, style: AppText.display(24)),
+            const SizedBox(height: 4),
+            Text(trip.destination, style: AppText.ui(14, color: AppColors.textMuted)),
+            const SizedBox(height: 20),
+            _SectionCard(
+              title: 'Presupuesto',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _kv('Gastado', formatCOP(totalSpent)),
+                  _kv('Disponible', formatCOP(remaining)),
+                  const SizedBox(height: 10),
+                  BudgetBar(progress: (percentage / 100).clamp(0, 1)),
+                  const SizedBox(height: 6),
+                  Text('${percentage.toStringAsFixed(1)}% del presupuesto utilizado', style: AppText.label(10)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildHospedajeTab(),
+            const SizedBox(height: 16),
+            _buildTransporteTab(),
+            const SizedBox(height: 16),
+            _SectionCard(title: 'Gastos registrados', trailing: formatCOP(_gastosTotal), child: _buildGastosList()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({required this.label, required this.translucent, required this.onTap});
+
+  final String label;
+  final bool translucent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: translucent ? Colors.white.withValues(alpha: 0.14) : AppColors.mint,
+            borderRadius: BorderRadius.circular(AppRadius.button),
+          ),
+          child: Text(
+            label,
+            style: AppText.ui(13, weight: FontWeight.w700, color: translucent ? Colors.white : AppColors.ink),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, this.trailing, required this.child});
+
+  final String title;
+  final String? trailing;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
+        boxShadow: AppShadow.card,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondaryLight,
-                ),
-              ),
-              Text(
-                '${formatCOP(amount)} (${percentage.toStringAsFixed(1)}%)',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A5F7A),
-                ),
-              ),
+              Text(title, style: AppText.display(22)),
+              if (trailing != null) Text(trailing!, style: AppText.label(12, color: AppColors.inkSoft)),
             ],
           ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (percentage / 100).clamp(0.0, 1.0),
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE0EEF7),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF1A5F7A),
-              ),
-            ),
-          ),
+          const SizedBox(height: 14),
+          child,
         ],
       ),
     );
   }
+}
 
-  void _showDeleteDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Eliminar viaje',
-            style: TextStyle(
-              color: Color(0xFF1A5F7A),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            '¿Estás seguro de que deseas eliminar el viaje "${trip.name}"? Esta acción no se puede deshacer.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(color: Color(0xFF1A5F7A)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Viaje eliminado'),
-                    backgroundColor: Color(0xFFF44336),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+class _MiniCard extends StatelessWidget {
+  const _MiniCard({
+    required this.color,
+    required this.labelColor,
+    required this.titleColor,
+    required this.detailColor,
+    required this.label,
+    required this.title,
+    required this.detail,
+  });
+
+  final Color color;
+  final Color labelColor;
+  final Color titleColor;
+  final Color detailColor;
+  final String label;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.card + 2)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppText.label(10, color: labelColor)),
+          const SizedBox(height: 8),
+          Text(title, style: AppText.display(24, color: titleColor)),
+          if (detail.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(detail, style: AppText.ui(12, color: detailColor)),
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 }

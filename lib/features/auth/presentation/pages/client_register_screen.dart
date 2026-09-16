@@ -111,7 +111,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.errorLight,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -130,7 +130,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
               leading: const Icon(
                 Icons.person_outline,
                 size: 30,
-                color: AppColors.primaryLight,
+                color: AppColors.ink,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +257,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                   child: Text(
                     'o continúa con',
                     style: TextStyle(
-                      color: AppColors.textSecondaryLight,
+                      color: AppColors.textMuted,
                       fontSize: 12,
                     ),
                   ),
@@ -281,7 +281,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondaryLight,
+                  color: AppColors.textMuted,
                 ),
               ),
             ),
@@ -296,7 +296,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
       text,
       style: const TextStyle(
         fontWeight: FontWeight.w600,
-        color: AppColors.primaryLight,
+        color: AppColors.ink,
       ),
     );
   }

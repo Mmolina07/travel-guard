@@ -212,7 +212,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.errorLight,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -235,7 +235,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             'No se encontró esa dirección en el mapa. Ubica tu negocio '
             'manualmente tocando el mapa de abajo.',
           ),
-          backgroundColor: AppColors.errorLight,
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -246,7 +246,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       const SnackBar(
         content:
             Text('Ubicación encontrada — ajusta el marcador si hace falta.'),
-        backgroundColor: AppColors.primaryLight,
+        backgroundColor: AppColors.ink,
       ),
     );
   }
@@ -264,7 +264,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             leading: const Icon(
               Icons.storefront,
               size: 30,
-              color: AppColors.primaryLight,
+              color: AppColors.ink,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +307,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.primaryLight,
+                                color: AppColors.ink,
                               ),
                             )
                           : const Icon(Icons.my_location),
@@ -324,7 +324,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   'presiona Enter) para verla en el mapa de abajo.',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSecondaryLight,
+                    color: AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -433,7 +433,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   'o',
-                  style: TextStyle(color: AppColors.textSecondaryLight),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
               ),
               const Expanded(child: Divider()),
@@ -456,7 +456,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
           Text(
             'Al registrarte aceptas nuestros Términos y Condiciones',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -468,7 +468,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       text,
       style: const TextStyle(
         fontWeight: FontWeight.w600,
-        color: AppColors.primaryLight,
+        color: AppColors.ink,
       ),
     );
   }

@@ -37,15 +37,7 @@ class AuthScreenShell extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
-              ),
-            ),
-          ),
+          const Positioned.fill(child: ColoredBox(color: AppColors.ink)),
           const RoutePatternBackground(opacity: 0.10),
           SafeArea(
             child: LayoutBuilder(
@@ -166,10 +158,10 @@ class AuthScreenShell extends StatelessWidget {
   }
 
   Widget _headerText({required bool onDark}) {
-    final titleColor = onDark ? Colors.white : AppColors.textPrimaryLight;
+    final titleColor = onDark ? Colors.white : AppColors.ink;
     final subtitleColor = onDark
         ? Colors.white.withValues(alpha: 0.85)
-        : AppColors.textSecondaryLight;
+        : AppColors.textMuted;
     return Column(
       children: [
         Text(

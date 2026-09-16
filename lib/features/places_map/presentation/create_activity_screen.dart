@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class CreateActivityScreen extends StatefulWidget {
   const CreateActivityScreen({Key? key}) : super(key: key);
 
@@ -158,21 +160,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF1A5F7A)),
+        prefixIcon: Icon(icon, color: AppColors.ink),
         filled: true,
-        fillColor: const Color(0xFFF5FAFC),
+        fillColor: AppColors.paperDeep,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+          borderSide: const BorderSide(color: AppColors.hair),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
-            color: Color(0xFF1A5F7A),
+            color: AppColors.ink,
             width: 1.5,
           ),
         ),
@@ -183,24 +185,16 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF8FF),
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
         title: const Text(
           'Crear actividad',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF1A5F7A),
+        backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
+        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
       ),
       body: SafeArea(
         child: Form(
@@ -215,7 +209,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
+                    color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -266,17 +260,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     labelText: 'Tipo o categoría',
                     prefixIcon: const Icon(
                       Icons.category_outlined,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF5FAFC),
+                    fillColor: AppColors.paperDeep,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   hint: const Text('Selecciona una categoría'),
@@ -324,7 +318,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Actividad gratuita'),
                   value: _isFree,
-                  activeColor: const Color(0xFF1A5F7A),
+                  activeColor: AppColors.ink,
                   onChanged: (value) {
                     setState(() {
                       _isFree = value ?? false;
@@ -344,21 +338,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     hintText: 'Selecciona la fecha de inicio',
                     prefixIcon: const Icon(
                       Icons.calendar_today_outlined,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     suffixIcon: const Icon(
                       Icons.arrow_drop_down,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF5FAFC),
+                    fillColor: AppColors.paperDeep,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   validator: (value) {
@@ -385,21 +379,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     hintText: 'Selecciona la fecha de finalización',
                     prefixIcon: const Icon(
                       Icons.event_outlined,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     suffixIcon: const Icon(
                       Icons.arrow_drop_down,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF5FAFC),
+                    fillColor: AppColors.paperDeep,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                 ),
@@ -407,7 +401,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Sin fecha de fin'),
                   value: _hasNoEndDate,
-                  activeColor: const Color(0xFF1A5F7A),
+                  activeColor: AppColors.ink,
                   onChanged: (value) {
                     setState(() {
                       _hasNoEndDate = value ?? false;
@@ -424,17 +418,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     labelText: 'Estado de la actividad',
                     prefixIcon: const Icon(
                       Icons.toggle_on_outlined,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF5FAFC),
+                    fillColor: AppColors.paperDeep,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFD7E8EF)),
+                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   items: _statuses.map((status) {
@@ -460,8 +454,8 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                             ? null
                             : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1A5F7A),
-                          side: const BorderSide(color: Color(0xFF1A5F7A)),
+                          foregroundColor: AppColors.ink,
+                          side: const BorderSide(color: AppColors.ink),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -478,7 +472,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleCreateActivity,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A5F7A),
+                          backgroundColor: AppColors.ink,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(

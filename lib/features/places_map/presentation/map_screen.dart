@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../data/location_service.dart';
@@ -20,7 +21,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  static const Color _primary = Color(0xFF1A5F7A);
+  static const Color _primary = AppColors.ink;
   static const String _userMarkerId = 'mi_ubicacion';
 
   // Medellín: centro de respaldo cuando todavía no se pudo obtener la
@@ -314,7 +315,7 @@ class _MapScreenState extends State<MapScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(_locationMessage(reason)),
-        backgroundColor: const Color(0xFFD32F2F),
+        backgroundColor: AppColors.error,
         action: SnackBarAction(
           label: _locationActionLabel(reason),
           textColor: Colors.white,
@@ -374,18 +375,10 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         backgroundColor: _primary,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
+        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/'),
         ),
         title: const Text(
           'Mapa',
@@ -484,7 +477,7 @@ class _MapScreenState extends State<MapScreen> {
               _isLoadingPlaces
                   ? 'Buscando lugares cercanos...'
                   : '${_filteredPlaces.length} lugar(es) encontrados',
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ),
           const SizedBox(height: 8),
@@ -507,7 +500,7 @@ class _MapScreenState extends State<MapScreen> {
                       color: selected ? _primary : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: selected ? _primary : const Color(0xFFD7E8EF),
+                        color: selected ? _primary : AppColors.hair,
                         width: 1.5,
                       ),
                     ),
@@ -543,7 +536,7 @@ class _MapScreenState extends State<MapScreen> {
           Expanded(
             child: Text(
               _locationMessage(reason),
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ),
           TextButton(

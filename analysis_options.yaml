@@ -16,6 +16,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - "design_handoff_travelguard_papel_petroleo*/**"
 include: package:flutter_lints/flutter.yaml
 
 linter:

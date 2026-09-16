@@ -20,7 +20,7 @@ class RegisterTypeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BoardingPassCard(
-      leading: Icon(icon, size: 30, color: AppColors.primaryLight),
+      leading: Icon(icon, size: 30, color: AppColors.ink),
       child: InkWell(
         onTap: onTap,
         child: Row(
@@ -34,7 +34,7 @@ class RegisterTypeCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryLight,
+                      color: AppColors.ink,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -42,7 +42,7 @@ class RegisterTypeCard extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondaryLight,
+                      color: AppColors.textMuted,
                       height: 1.4,
                     ),
                   ),
@@ -53,7 +53,7 @@ class RegisterTypeCard extends StatelessWidget {
             const Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: AppColors.primaryLight,
+              color: AppColors.ink,
             ),
           ],
         ),

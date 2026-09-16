@@ -140,7 +140,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A5F7A),
+                      color: AppColors.ink,
                     ),
                   ),
                 ),
@@ -151,7 +151,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               widget.distanceLabel.isEmpty
                   ? place.categoria
                   : '${place.categoria} · a ${widget.distanceLabel} de ti',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             if (place.direccion != null) ...[
@@ -172,7 +172,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               const SizedBox(height: 12),
               Text(
                 place.descripcion!,
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+                style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
               ),
             ],
             const SizedBox(height: 16),
@@ -183,7 +183,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 icon: const Icon(Icons.directions),
                 label: const Text('Cómo llegar'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A5F7A),
+                  backgroundColor: AppColors.ink,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -198,7 +198,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A5F7A),
+                color: AppColors.ink,
               ),
             ),
             const SizedBox(height: 8),
@@ -210,7 +210,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF1A5F7A),
+                        color: AppColors.ink,
                       ),
                     ),
                   );
@@ -219,7 +219,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 if (actividades.isEmpty) {
                   return const Text(
                     'Sin actividades registradas todavía.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
                   );
                 }
                 return Column(
@@ -229,7 +229,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                             child: Row(
                               children: [
                                 const Icon(Icons.check_circle_outline,
-                                    size: 16, color: Color(0xFF1A5F7A)),
+                                    size: 16, color: AppColors.ink),
                                 const SizedBox(width: 8),
                                 Expanded(child: Text(a.nombre)),
                                 if (a.precio != null)
@@ -237,7 +237,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                                     formatCOP(a.precio!),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1A5F7A),
+                                      color: AppColors.ink,
                                     ),
                                   ),
                               ],
@@ -256,12 +256,12 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondaryLight),
+        Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
           ),
         ),
       ],

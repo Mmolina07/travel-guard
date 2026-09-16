@@ -99,9 +99,9 @@ class _TravelGuardBadgeState extends State<TravelGuardBadge>
                   padding: EdgeInsets.all(math.max(3, size * 0.045)),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.accentLight,
+                    color: AppColors.inkSoft,
                     border: Border.all(
-                      color: const Color(0xFF0F3D50),
+                      color: AppColors.ink,
                       width: math.max(1.2, size * 0.016),
                     ),
                   ),

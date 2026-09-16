@@ -7,6 +7,10 @@ Material 3 por defecto por una identidad propia: papel cálido + tinta petróleo
 tipografía editorial, radios mixtos, layouts asimétricos, sombra direccional única y un sistema de
 microinteracciones con rebote físico.
 
+> **Layout web:** este README describe la anatomía de los componentes en formato móvil. Para la
+> retícula de escritorio (sidebar de 248, topbar, columnas, wizard en modal, login en split screen)
+> manda `WEB_LAYOUT.md`, y el objetivo visual exacto es `TravelGuard Web.dc.html`.
+
 ## About the Design Files
 Los archivos de este bundle son **referencias de diseño**:
 - `TravelGuard Rediseño.dc.html` — prototipo en HTML con las 5 pantallas y los paneles de sistema
@@ -185,6 +189,8 @@ JetBrains Mono). Iconografía: `Icons.arrow_back`, `Icons.arrow_forward`, `Icons
 `Icons.more_horiz`.
 
 ## Files
+- `WEB_LAYOUT.md` — retícula y navegación de escritorio (manda sobre este README en layout).
+- `TravelGuard Web.dc.html` — prototipo de la app web de escritorio: objetivo visual exacto.
 - `TravelGuard Rediseño.dc.html` — prototipo visual (dirección 1b "Papel Petróleo"; la sección 1a es
   la alternativa descartada, útil solo como contexto).
 - `flutter_reference/lib/theme/app_theme.dart` — tokens listos para copiar.

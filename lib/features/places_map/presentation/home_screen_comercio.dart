@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
 import '../presentation/create_activity_screen.dart';
@@ -47,14 +48,10 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
     );
     if (confirmed == true && context.mounted) {
       await context.read<AppAuthProvider>().signOut();
-      // `AuthGate` (main.dart) reacciona al cambio de estado y ya
-      // muestra `WelcomeHome` de fondo, pero esta pantalla se abrió con
-      // `Navigator.push` desde el login — sin este pop, sigue encima
-      // en la pila y el usuario ve la sesión "sin cerrar" hasta que
-      // presiona atrás.
-      if (context.mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
+      // El redirect de `AppRouter` ya manda a `/login` en cuanto
+      // `AppAuthProvider` notifica el cambio; este `go` solo evita el
+      // parpadeo de un frame con esta pantalla de fondo.
+      if (context.mounted) context.go('/login');
     }
   }
 
@@ -81,7 +78,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Actividad "${activity['name']}" creada'),
-            backgroundColor: AppColors.primaryLight,
+            backgroundColor: AppColors.ink,
           ),
         );
       }
@@ -97,7 +94,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Crea tu primer menú'),
-            backgroundColor: AppColors.primaryLight,
+            backgroundColor: AppColors.ink,
           ),
         );
       }
@@ -152,7 +149,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Menú "${newMenu.name}" creado'),
-                              backgroundColor: AppColors.primaryLight,
+                              backgroundColor: AppColors.ink,
                             ),
                           );
                         }
@@ -190,7 +187,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                               content: Text(
                                 'Actividad "${activity['name']}" creada',
                               ),
-                              backgroundColor: AppColors.primaryLight,
+                              backgroundColor: AppColors.ink,
                             ),
                           );
                         }
@@ -207,7 +204,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primaryLight,
+                          color: AppColors.ink,
                         ),
                       ),
                       TextButton(
@@ -262,22 +259,14 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       expandedHeight: 220,
       floating: false,
       pinned: true,
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: AppColors.ink,
       elevation: 0,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primaryLight, Color(0xFF0F4C5F)],
-                ),
-              ),
-            ),
+            const ColoredBox(color: AppColors.ink),
             const RoutePatternBackground(opacity: 0.12),
             SafeArea(
               child: Padding(
@@ -384,7 +373,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
           const Icon(
             Icons.event_busy_outlined,
             size: 44,
-            color: Color(0xFFB0D9E8),
+            color: AppColors.hair,
           ),
           const SizedBox(height: 10),
           const Text(
@@ -392,14 +381,14 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryLight,
+              color: AppColors.ink,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Crea tu primera actividad para tus visitantes.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -414,7 +403,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
     required VoidCallback onButtonPressed,
   }) {
     return BoardingPassCard(
-      leading: Icon(icon, size: 30, color: AppColors.primaryLight),
+      leading: Icon(icon, size: 30, color: AppColors.ink),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -427,7 +416,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryLight,
+                    color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -435,7 +424,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   description,
                   style: TextStyle(
                     fontSize: 12.5,
-                    color: AppColors.textSecondaryLight,
+                    color: AppColors.textMuted,
                     height: 1.4,
                   ),
                 ),
@@ -465,7 +454,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         leadingWidth: 48,
         leading: Icon(
           _iconForCategory(category),
-          color: AppColors.primaryLight,
+          color: AppColors.ink,
           size: 22,
         ),
         child: Column(
@@ -482,7 +471,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryLight,
+                    color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -492,7 +481,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondaryLight,
+                    color: AppColors.textMuted,
                     height: 1.4,
                   ),
                 ),
@@ -503,7 +492,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                 const Icon(
                   Icons.access_time_outlined,
                   size: 13,
-                  color: AppColors.textSecondaryLight,
+                  color: AppColors.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -514,7 +503,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondaryLight,
+                      color: AppColors.textMuted,
                     ),
                   ),
                 ),
@@ -560,21 +549,21 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight.withValues(alpha: 0.06),
+        color: AppColors.ink.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.14)),
+        border: Border.all(color: AppColors.ink.withValues(alpha: 0.14)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.primaryLight),
+          Icon(icon, size: 18, color: AppColors.ink),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryLight,
+              color: AppColors.ink,
             ),
           ),
           const SizedBox(height: 2),
@@ -582,7 +571,7 @@ class _StatChip extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -637,7 +626,7 @@ class _ComercioBottomNav extends StatelessWidget {
             final item = _items[index];
             final selected = index == selectedIndex;
             final color =
-                selected ? AppColors.primaryLight : AppColors.textSecondaryLight;
+                selected ? AppColors.ink : AppColors.textMuted;
             return Expanded(
               child: InkWell(
                 borderRadius: BorderRadius.circular(28),

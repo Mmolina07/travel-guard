@@ -87,7 +87,7 @@ class DesglosePresupuesto extends StatelessWidget {
               titulo: 'Comidas',
               monto: viaje.presupuestoComidas,
               icon: Icons.restaurant,
-              color: AppColors.accentLight,
+              color: AppColors.inkSoft,
             ),
             _buildItemCategoria(
               context,

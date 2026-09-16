@@ -1,26 +1,92 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../widgets/budget_bar.dart';
+import '../../../../widgets/filter_chips_row.dart';
+import '../../../../widgets/step_progress.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../data/models/trip_budget_category.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
 import '../widgets/category_field_row.dart';
-import '../pages/trip_model.dart';
-import '../pages/trip_detail_screen.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'trip_detail_screen.dart';
+import 'trip_model.dart';
 
-class CreateTripScreen extends StatefulWidget {
-  const CreateTripScreen({Key? key}) : super(key: key);
-
-  @override
-  State<CreateTripScreen> createState() => _CreateTripScreenState();
+/// Abre el wizard de "Crear viaje" en la ruta `/crear` (Fase 5: URL real
+/// para el modal, back del navegador funcional y atajo `N`/`Esc`). Sigue
+/// devolviendo el `Trip` guardado, o `null` si se canceló — mismo
+/// contrato que tenían el `showGeneralDialog`/`Navigator.push` previos,
+/// así que ninguno de sus llamadores necesitó cambiar.
+Future<Trip?> showCreateTripDialog(BuildContext context) {
+  return context.push<Trip>('/crear');
 }
 
-class _CreateTripScreenState extends State<CreateTripScreen> {
+/// `Page` de la ruta `/crear` — diálogo de dos columnas (260:resto)
+/// centrado sobre la vista actual en escritorio/tablet, tal como
+/// `WEB_LAYOUT.md`; en móvil el mismo wizard se abre a pantalla completa
+/// con la CTA fija del README. Vive aquí (y no en `app_router.dart`)
+/// porque necesita el widget privado `_CreateTripWizard`.
+Page<Trip> buildCreateTripPage(BuildContext context, GoRouterState state) {
+  if (context.isMobile) {
+    return MaterialPage<Trip>(
+      fullscreenDialog: true,
+      child: const _CreateTripWizard(asDialog: false),
+    );
+  }
+  return CustomTransitionPage<Trip>(
+    opaque: false,
+    barrierDismissible: true,
+    barrierLabel: 'Crear viaje',
+    // El scrim con blur lo dibuja el propio wizard (BackdropFilter) —
+    // así podemos difuminar detrás del diálogo, algo que el
+    // `barrierColor` plano no permite por sí solo.
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 240),
+    child: const _CreateTripWizard(asDialog: true),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+class _CreateTripWizard extends StatefulWidget {
+  const _CreateTripWizard({required this.asDialog});
+
+  final bool asDialog;
+
+  @override
+  State<_CreateTripWizard> createState() => _CreateTripWizardState();
+}
+
+class _CreateTripWizardState extends State<_CreateTripWizard> {
+  static const _stepCount = 3;
+  static const _stepTitles = [
+    ('¿A dónde', 'vamos?'),
+    ('¿Dónde', 'dormimos?'),
+    ('¿Cómo nos', 'movemos?'),
+  ];
+  static const _stepNames = ['Destino y fechas', 'Hospedaje', 'Transporte'];
+  static const _tripTypes = ['Vacaciones', 'Trabajo', 'Ocio', 'Otro'];
+  static const _lodgingTypes = ['Hotel', 'Hostel', 'Airbnb', 'Casa alquilada', 'Otro'];
+  static const _transportTypes = ['Carro', 'Transporte público', 'Uber', 'Vuelo'];
+
+  int _step = 0;
+
   // Controladores de texto
   late TextEditingController _nameController;
   late TextEditingController _destinationController;
@@ -125,9 +191,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     // El propio rango puede quedar invertido si, p.ej., la fecha de
     // inicio elegida ya pasó `_maxSelectableDate` (caso extremo, pero
     // evita el "!lastDate.isBefore(firstDate)" del date picker).
-    final lastDate = firstDate.isAfter(_maxSelectableDate)
-        ? firstDate
-        : _maxSelectableDate;
+    final lastDate = firstDate.isAfter(_maxSelectableDate) ? firstDate : _maxSelectableDate;
     var initial = initialDate ?? firstDate;
     if (initial.isBefore(firstDate)) initial = firstDate;
     if (initial.isAfter(lastDate)) initial = lastDate;
@@ -140,7 +204,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFF1A5F7A)),
+            colorScheme: const ColorScheme.light(primary: AppColors.ink),
           ),
           child: child!,
         );
@@ -188,6 +252,45 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     final end = _parseDate(_endDateController.text);
     if (start == null || end == null || !end.isAfter(start)) return null;
     return end.difference(start).inDays;
+  }
+
+  String? _validateStep0() {
+    if (_nameController.text.trim().isEmpty || _destinationController.text.trim().isEmpty) {
+      return 'Ingresa el nombre y el destino del viaje';
+    }
+    final startDate = _parseDate(_startDateController.text);
+    final endDate = _parseDate(_endDateController.text);
+    if (startDate == null || endDate == null) return 'Selecciona fechas válidas';
+    if (!endDate.isAfter(startDate)) {
+      return 'La fecha de fin debe ser posterior a la de inicio';
+    }
+    final persons = int.tryParse(_personsController.text.trim());
+    if (persons == null || persons <= 0) return 'Debe haber mínimo 1 persona';
+    return null;
+  }
+
+  void _goNext() {
+    if (_isLoading) return;
+    if (_step == 0) {
+      final error = _validateStep0();
+      if (error != null) {
+        _showError(error);
+        return;
+      }
+    }
+    if (_step < _stepCount - 1) {
+      setState(() => _step++);
+    } else {
+      _handleCreateTrip();
+    }
+  }
+
+  void _goBack() {
+    if (_step > 0) setState(() => _step--);
+  }
+
+  void _goToStep(int index) {
+    if (index <= _step) setState(() => _step = index);
   }
 
   void _handleCreateTrip() async {
@@ -247,9 +350,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     }
 
     if (_emergencyMoneyController.text.trim().isNotEmpty) {
-      final emergencyMoney = double.tryParse(
-        _emergencyMoneyController.text.trim(),
-      );
+      final emergencyMoney = double.tryParse(_emergencyMoneyController.text.trim());
       if (emergencyMoney == null || emergencyMoney <= 0) {
         return 'El monto debe ser mayor a 0';
       }
@@ -269,10 +370,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   /// Escenario 8 de HU-05: campos opcionales (no básicos) sin completar.
   bool _hasIncompleteOptionalFields() {
     final sinServiciosIncluidos =
-        !_includeBreakfast &&
-        !_includeLunch &&
-        !_includeDinner &&
-        !_includeTransfer;
+        !_includeBreakfast && !_includeLunch && !_includeDinner && !_includeTransfer;
     return _advancePaymentController.text.trim().isEmpty ||
         _lodgingCostController.text.trim().isEmpty ||
         sinServiciosIncluidos ||
@@ -285,18 +383,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Datos incompletos'),
-        content: const Text(
-          'La estimación será menos precisa. ¿Deseas continuar?',
-        ),
+        content: const Text('La estimación será menos precisa. ¿Deseas continuar?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A5F7A),
-            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sí, crear viaje'),
           ),
@@ -339,20 +429,14 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       categories: [
         for (final row in _categoryRows)
           if (row.nombreController.text.trim().isNotEmpty)
-            TripBudgetCategory(
-              nombre: row.nombreController.text.trim(),
-              monto: row.monto,
-            ),
+            TripBudgetCategory(nombre: row.nombreController.text.trim(), monto: row.monto),
       ],
       emergencyMoney: double.tryParse(_emergencyMoneyController.text) ?? 0,
       datosCompletos: datosCompletos,
     );
 
     try {
-      final saved = await _tripRepository.createTrip(
-        turistaId: turistaId,
-        trip: trip,
-      );
+      final saved = await _tripRepository.createTrip(turistaId: turistaId, trip: trip);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -360,10 +444,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       // Escenario 1 de HU-05: feedback de éxito con presupuesto total.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            '¡Viaje creado! Presupuesto total: ${formatCOP(saved.maxBudget)}',
-          ),
-          backgroundColor: AppColors.accentLight,
+          content: Text('¡Viaje creado! Presupuesto total: ${formatCOP(saved.maxBudget)}'),
+          backgroundColor: AppColors.inkSoft,
         ),
       );
 
@@ -417,14 +499,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         title: const Text('¿Estás seguro?'),
         content: const Text('Se descartarán los datos ingresados.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD32F2F),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sí, descartar'),
           ),
@@ -437,634 +514,558 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFD32F2F),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A5F7A),
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A5F7A), Color(0xFF0F4C5F)],
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: _isLoading ? null : _handleCancel,
-        ),
-        title: const Text(
-          'Crear Viaje',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Container(
-        color: const Color(0xFFF5F5F5),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // SECCIÓN 1: Información Básica
-              _buildSectionTitle('Información Básica'),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _nameController,
-                label: 'Nombre del viaje',
-                hint: 'Ej: Viaje a Cartagena',
-                icon: Icons.trip_origin,
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _destinationController,
-                label: 'Destino',
-                hint: 'Ej: Cartagena, Colombia',
-                icon: Icons.location_on_outlined,
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDateField(
-                      controller: _startDateController,
-                      label: 'Fecha inicio',
-                      onTap: _selectStartDate,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDateField(
-                      controller: _endDateController,
-                      label: 'Fecha fin',
-                      onTap: _selectEndDate,
-                    ),
-                  ),
-                ],
-              ),
-              if (_tripDurationInDays != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.event_available,
-                      size: 16,
-                      color: Color(0xFF4A90A4),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Duración: $_tripDurationInDays '
-                      '${_tripDurationInDays == 1 ? 'día' : 'días'}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF4A90A4),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _personsController,
-                label: 'Número de personas',
-                hint: 'Ej: 4',
-                icon: Icons.people_outline,
-                keyboardType: TextInputType.number,
-                inputFormatters: _digitsOnlyFormatters,
-                triggerRebuild: true,
-              ),
-              const SizedBox(height: 32),
-
-              // SECCIÓN 2: Tipo de Viaje
-              _buildSectionTitle('Tipo de Viaje'),
-              const SizedBox(height: 16),
-
-              _buildDropdown(
-                label: 'Tipo de viaje',
-                value: _tripType,
-                items: ['Vacaciones', 'Trabajo', 'Ocio', 'Otro'],
-                onChanged: (value) {
-                  setState(() => _tripType = value);
-                },
-              ),
-              const SizedBox(height: 32),
-
-              // SECCIÓN 3: Presupuesto
-              _buildSectionTitle('Presupuesto'),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _maxBudgetController,
-                label: 'Presupuesto máximo',
-                hint: 'Ej: 5000000',
-                icon: Icons.attach_money,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: _moneyFormatters,
-                triggerRebuild: true,
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _advancePaymentController,
-                label: 'Pagos anticipados',
-                hint: 'Ej: 1500000',
-                icon: Icons.credit_card,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: _moneyFormatters,
-                triggerRebuild: true,
-              ),
-              const SizedBox(height: 32),
-
-              // SECCIÓN 4: Hospedaje
-              _buildSectionTitle('Hospedaje'),
-              const SizedBox(height: 16),
-
-              _buildDropdown(
-                label: 'Tipo de hospedaje',
-                value: _lodgingType,
-                items: ['Hotel', 'Hostel', 'Airbnb', 'Casa alquilada', 'Otro'],
-                onChanged: (value) {
-                  setState(() => _lodgingType = value);
-                },
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                controller: _lodgingCostController,
-                label: 'Costo hospedaje',
-                hint: 'Ej: 2000000',
-                icon: Icons.hotel_outlined,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: _moneyFormatters,
-                triggerRebuild: true,
-              ),
-              const SizedBox(height: 20),
-
-              _buildSectionSubtitle('Servicios incluidos'),
-              const SizedBox(height: 12),
-
-              _buildCheckbox(
-                value: _includeBreakfast,
-                label: 'Desayuno',
-                onChanged: (value) {
-                  setState(() => _includeBreakfast = value ?? false);
-                },
-              ),
-              _buildCheckbox(
-                value: _includeLunch,
-                label: 'Almuerzo',
-                onChanged: (value) {
-                  setState(() => _includeLunch = value ?? false);
-                },
-              ),
-              _buildCheckbox(
-                value: _includeDinner,
-                label: 'Cena',
-                onChanged: (value) {
-                  setState(() => _includeDinner = value ?? false);
-                },
-              ),
-              _buildCheckbox(
-                value: _includeTransfer,
-                label: 'Traslado',
-                onChanged: (value) {
-                  setState(() => _includeTransfer = value ?? false);
-                },
-              ),
-              const SizedBox(height: 32),
-
-              // SECCIÓN 5: Transporte
-              _buildSectionTitle('Transporte'),
-              const SizedBox(height: 16),
-
-              _buildDropdown(
-                label: 'Transporte inicio',
-                value: _startTransport,
-                items: ['Carro', 'Transporte público', 'Uber', 'Vuelo'],
-                onChanged: (value) {
-                  setState(() => _startTransport = value);
-                },
-              ),
-              const SizedBox(height: 16),
-
-              _buildDropdown(
-                label: 'Transporte durante viaje',
-                value: _duringTransport,
-                items: ['Carro', 'Transporte público', 'Uber', 'Vuelo'],
-                onChanged: (value) {
-                  setState(() => _duringTransport = value);
-                },
-              ),
-              const SizedBox(height: 32),
-
-              // SECCIÓN 6: Gastos Adicionales (categorías personalizables)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildSectionTitle('Gastos Adicionales'),
-                  TextButton.icon(
-                    onPressed: _addCategoryRow,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Agregar categoría'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF1A5F7A),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              for (final row in _categoryRows) ...[
-                _buildCategoryRow(row),
-                const SizedBox(height: 16),
-              ],
-
-              _buildTextField(
-                controller: _emergencyMoneyController,
-                label: 'Dinero emergencias',
-                hint: 'Ej: 500000',
-                icon: Icons.health_and_safety_outlined,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: _moneyFormatters,
-                triggerRebuild: true,
-              ),
-              const SizedBox(height: 24),
-
-              _buildBudgetSummaryCard(),
-              const SizedBox(height: 40),
-
-              // Botón Crear Viaje
-              // Botones: Cancelar + Crear Viaje
-              Row(
-                children: [
-                  // Botón Cancelar
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton(
-                        onPressed: _isLoading ? null : _handleCancel,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Color(0xFF1A5F7A),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A5F7A),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Botón Crear Viaje
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleCreateTrip,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1A5F7A),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : const Text(
-                                'Crear Viaje',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A5F7A),
-      ),
-    );
-  }
-
-  Widget _buildSectionSubtitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1A5F7A),
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
   double _parsedOrZero(TextEditingController controller) =>
       double.tryParse(controller.text.trim()) ?? 0;
 
-  /// Resumen de presupuesto en vivo: se recalcula con cada cambio en los
-  /// campos de dinero gracias a `triggerRebuild: true` en `_buildTextField`.
-  Widget _buildBudgetSummaryCard() {
-    final maxBudget = _parsedOrZero(_maxBudgetController);
-    final categoriesTotal = _categoryRows.fold(
-      0.0,
-      (sum, row) => sum + row.monto,
-    );
-    final estimatedSpent =
-        _parsedOrZero(_advancePaymentController) +
-        _parsedOrZero(_lodgingCostController) +
-        categoriesTotal +
-        _parsedOrZero(_emergencyMoneyController);
-
-    if (maxBudget <= 0) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF0F7FC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0EEF7)),
-        ),
-        child: Row(
-          children: const [
-            Icon(Icons.info_outline, color: Color(0xFF4A90A4), size: 20),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Ingresa el presupuesto máximo para ver aquí el resumen.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondaryLight,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final remaining = maxBudget - estimatedSpent;
-    final percentage = (estimatedSpent / maxBudget * 100).clamp(0, 999);
-    final overBudget = remaining < 0;
-    final barColor = overBudget
-        ? const Color(0xFFD32F2F)
-        : percentage >= 90
-        ? const Color(0xFFF9A825)
-        : const Color(0xFF1A5F7A);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0EEF7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Resumen de presupuesto',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A5F7A),
-                ),
-              ),
-              Text(
-                '${percentage.toStringAsFixed(0)}%',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: barColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: (percentage / 100).clamp(0, 1).toDouble(),
-              minHeight: 8,
-              backgroundColor: const Color(0xFFE0EEF7),
-              valueColor: AlwaysStoppedAnimation<Color>(barColor),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildBudgetRow(
-            'Estimado (con lo ingresado)',
-            formatCOP(estimatedSpent),
-          ),
-          const SizedBox(height: 4),
-          _buildBudgetRow(
-            overBudget ? 'Te excedes por' : 'Disponible',
-            formatCOP(remaining.abs()),
-            valueColor: overBudget
-                ? const Color(0xFFD32F2F)
-                : AppColors.accentLight,
-          ),
-          if (overBudget) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: const [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 16,
-                  color: Color(0xFFD32F2F),
-                ),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Lo estimado supera tu presupuesto máximo.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFFD32F2F)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (!overBudget && remaining > 0) ...[
-            const Divider(height: 24),
-            _buildDailyBudgetSection(remaining),
-          ],
-        ],
-      ),
-    );
+  @override
+  Widget build(BuildContext context) {
+    return widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context);
   }
 
-  /// Presupuesto disponible por día y por persona (mejora "gestor de
-  /// presupuesto"): antes solo se veía el total estimado vs. máximo, sin
-  /// ayudar a decidir cuánto gastar día a día durante el viaje.
-  Widget _buildDailyBudgetSection(double availableBudget) {
-    final start = parseDdMmYyyy(_startDateController.text);
-    final end = parseDdMmYyyy(_endDateController.text);
-    final persons = int.tryParse(_personsController.text.trim()) ?? 1;
-    if (start == null || end == null) {
-      return const Text(
-        'Ingresa las fechas del viaje para ver el presupuesto por día.',
-        style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
-      );
-    }
+  // ─── Escritorio / tablet: diálogo de dos columnas ───
 
-    final breakdown = calculateBudgetBreakdown(
-      maxBudget: availableBudget,
-      start: start,
-      end: end,
-      persons: persons,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDialog(BuildContext context) {
+    return Stack(
       children: [
-        const Text(
-          'Presupuesto restante, repartido en:',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A5F7A),
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _isLoading ? null : _handleCancel,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: ColoredBox(color: AppColors.ink.withValues(alpha: 0.55)),
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildDailyBudgetChip(
-                icon: Icons.calendar_today,
-                label: 'Por día (${breakdown.days} días)',
-                value: formatCOP(breakdown.perDay),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 880, maxHeight: 680),
+              child: GestureDetector(
+                onTap: () {}, // Absorbe el tap para no cerrar al tocar dentro.
+                child: Material(
+                  color: Colors.transparent,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(34),
+                    child: Container(
+                      decoration: BoxDecoration(color: AppColors.paper, boxShadow: AppShadow.raised),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(width: 260, child: _buildLeftColumn()),
+                          Expanded(child: _buildRightColumn()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildDailyBudgetChip(
-                icon: Icons.person_outline,
-                label: 'Por persona ($persons)',
-                value: formatCOP(breakdown.perPerson),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        _buildDailyBudgetChip(
-          icon: Icons.groups_outlined,
-          label: 'Por persona, por día',
-          value: formatCOP(breakdown.perPersonPerDay),
-          fullWidth: true,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDailyBudgetChip({
-    required IconData icon,
-    required String label,
-    required String value,
-    bool fullWidth = false,
-  }) {
+  Widget _buildLeftColumn() {
+    final title = _stepTitles[_step];
     return Container(
-      width: fullWidth ? double.infinity : null,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7FC),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+      color: AppColors.ink,
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: const Color(0xFF4A90A4)),
-          const SizedBox(width: 6),
-          Expanded(
+          Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(10, color: AppColors.textOnInk)),
+          const SizedBox(height: 20),
+          // Tabla de movimiento del README: título de paso con fade + y
+          // 12→0 cada vez que cambia — la `key` distinta por paso hace
+          // que `TweenAnimationBuilder` se remonte y reinicie el tween.
+          TweenAnimationBuilder<double>(
+            key: ValueKey(_step),
+            tween: Tween(begin: 0, end: 1),
+            duration: AppMotion.step,
+            curve: AppMotion.enter,
+            builder: (context, t, child) => Opacity(
+              opacity: t,
+              child: Transform.translate(
+                offset: Offset(0, 12 * (1 - t)),
+                child: child,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A5F7A),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(title.$1, style: AppText.display(34, color: Colors.white)),
+                Text(title.$2, style: AppText.displayItalic(34)),
               ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          StepProgress(step: _step, total: _stepCount),
+          const Spacer(),
+          for (var i = 0; i < _stepNames.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: MouseRegion(
+                cursor: i <= _step ? SystemMouseCursors.click : MouseCursor.defer,
+                child: GestureDetector(
+                  onTap: () => _goToStep(i),
+                  child: Text(
+                    _stepNames[i],
+                    style: AppText.ui(
+                      14,
+                      weight: i == _step ? FontWeight.w700 : FontWeight.w400,
+                      color: i == _step ? AppColors.paper : AppColors.textOnInk,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightColumn() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 24, 24, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _handleCancel,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.paperDeep,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 8, 28, 24),
+            child: _buildStepContent(),
+          ),
+        ),
+        _buildFooter(),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (_step > 0)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _isLoading ? null : _goBack,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.arrow_back, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    Text('Atrás', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            )
+          else
+            const SizedBox(),
+          Row(
+            children: [
+              if (_step < _stepCount - 1) ...[
+                Text('SIGUIENTE · ${_stepNames[_step + 1]}', style: AppText.label(10)),
+                const SizedBox(width: 16),
+              ],
+              SizedBox(
+                height: 44,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _goNext,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear viaje'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Móvil: pantalla completa con CTA fija ───
+
+  Widget _buildMobileScaffold(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.ink,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _isLoading ? null : (_step > 0 ? _goBack : _handleCancel),
+        ),
+        title: Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(11, color: Colors.white)),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_stepTitles[_step].$1, style: AppText.display(30)),
+                  Text(_stepTitles[_step].$2, style: AppText.displayItalic(30)),
+                  const SizedBox(height: 16),
+                  StepProgress(step: _step, total: _stepCount),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildStepContent(),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.nav),
+                boxShadow: AppShadow.raised,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _step < _stepCount - 1 ? 'SIGUIENTE' : 'LISTO',
+                          style: AppText.label(10),
+                        ),
+                        Text(
+                          _step < _stepCount - 1 ? _stepNames[_step + 1] : 'Crear viaje',
+                          style: AppText.ui(15, weight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _goNext,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear viaje'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Contenido de cada paso (compartido entre diálogo y móvil) ───
+
+  Widget _buildStepContent() {
+    return switch (_step) {
+      0 => _buildStep0(),
+      1 => _buildStep1(),
+      _ => _buildStep2(),
+    };
+  }
+
+  Widget _buildStep0() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _labeledField(
+                label: 'Nombre del viaje',
+                controller: _nameController,
+                hint: 'Ej: Viaje a Cartagena',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _labeledField(
+                label: 'Destino',
+                controller: _destinationController,
+                hint: 'Ej: Cartagena, Colombia',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: _dateBox(label: 'INICIO', controller: _startDateController, onTap: _selectStartDate)),
+            const SizedBox(width: 10),
+            Expanded(child: _dateBox(label: 'FIN', controller: _endDateController, onTap: _selectEndDate)),
+            const SizedBox(width: 10),
+            Expanded(child: _personsBox()),
+          ],
+        ),
+        if (_tripDurationInDays != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Duración: $_tripDurationInDays ${_tripDurationInDays == 1 ? 'día' : 'días'}',
+            style: AppText.ui(12, color: AppColors.inkSoft),
+          ),
+        ],
+        const SizedBox(height: 26),
+        Text('TIPO DE VIAJE', style: AppText.label(10)),
+        const SizedBox(height: 10),
+        FilterChipsRow(
+          items: _tripTypes,
+          selected: _tripTypes.indexOf(_tripType),
+          onSelect: (i) => setState(() => _tripType = _tripTypes[i]),
+        ),
+        const SizedBox(height: 26),
+        _buildBudgetSlider(),
+      ],
+    );
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('TIPO DE HOSPEDAJE', style: AppText.label(10)),
+        const SizedBox(height: 10),
+        FilterChipsRow(
+          items: _lodgingTypes,
+          selected: _lodgingTypes.indexOf(_lodgingType),
+          onSelect: (i) => setState(() => _lodgingType = _lodgingTypes[i]),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _labeledField(
+                label: 'Costo hospedaje',
+                controller: _lodgingCostController,
+                hint: 'Ej: 2000000',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _labeledField(
+                label: 'Pagos anticipados',
+                controller: _advancePaymentController,
+                hint: 'Ej: 1500000',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: _moneyFormatters,
+                triggerRebuild: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 26),
+        Text('SERVICIOS INCLUIDOS', style: AppText.label(10)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _toggleChip('Desayuno', _includeBreakfast, (v) => setState(() => _includeBreakfast = v)),
+            _toggleChip('Almuerzo', _includeLunch, (v) => setState(() => _includeLunch = v)),
+            _toggleChip('Cena', _includeDinner, (v) => setState(() => _includeDinner = v)),
+            _toggleChip('Traslado', _includeTransfer, (v) => setState(() => _includeTransfer = v)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('TRANSPORTE DE INICIO', style: AppText.label(10)),
+        const SizedBox(height: 10),
+        FilterChipsRow(
+          items: _transportTypes,
+          selected: _transportTypes.indexOf(_startTransport),
+          onSelect: (i) => setState(() => _startTransport = _transportTypes[i]),
+        ),
+        const SizedBox(height: 20),
+        Text('TRANSPORTE DURANTE EL VIAJE', style: AppText.label(10)),
+        const SizedBox(height: 10),
+        FilterChipsRow(
+          items: _transportTypes,
+          selected: _transportTypes.indexOf(_duringTransport),
+          onSelect: (i) => setState(() => _duringTransport = _transportTypes[i]),
+        ),
+        const SizedBox(height: 26),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('GASTOS ADICIONALES', style: AppText.label(10)),
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _addCategoryRow,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add, size: 14, color: AppColors.inkSoft),
+                    const SizedBox(width: 4),
+                    Text('Agregar', style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (final row in _categoryRows) ...[
+          _buildCategoryRow(row),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 6),
+        _labeledField(
+          label: 'Dinero emergencias',
+          controller: _emergencyMoneyController,
+          hint: 'Ej: 500000',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: _moneyFormatters,
+          triggerRebuild: true,
+        ),
+        const SizedBox(height: 26),
+        _buildBudgetSummaryCard(),
+      ],
+    );
+  }
+
+  // ─── Campos compartidos ───
+
+  Widget _labeledField({
+    required String label,
+    required TextEditingController controller,
+    String hint = '',
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    bool triggerRebuild = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          onChanged: triggerRebuild ? (_) => setState(() {}) : null,
+          style: AppText.ui(15, weight: FontWeight.w600),
+          decoration: InputDecoration(hintText: hint),
+        ),
+      ],
+    );
+  }
+
+  Widget _dateBox({
+    required String label,
+    required TextEditingController controller,
+    required VoidCallback onTap,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.paperDeep,
+            borderRadius: BorderRadius.circular(AppRadius.dateField),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppText.label(10)),
+              const SizedBox(height: 4),
+              Text(
+                controller.text.isEmpty ? '—' : controller.text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.display(18),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _personsBox() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(color: AppColors.paperDeep, borderRadius: BorderRadius.circular(AppRadius.dateField)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('PERSONAS', style: AppText.label(10)),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _personsController,
+            keyboardType: TextInputType.number,
+            inputFormatters: _digitsOnlyFormatters,
+            onChanged: (_) => setState(() {}),
+            style: AppText.display(18),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+              filled: false,
+              hintText: '1',
             ),
           ),
         ],
@@ -1072,23 +1073,57 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     );
   }
 
-  Widget _buildBudgetRow(String label, String value, {Color? valueColor}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondaryLight,
+  Widget _toggleChip(String label, bool active, ValueChanged<bool> onChanged) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => onChanged(!active),
+        child: AnimatedContainer(
+          duration: AppMotion.chip,
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+          decoration: BoxDecoration(
+            color: active ? AppColors.ink : Colors.transparent,
+            border: Border.all(color: active ? AppColors.ink : AppColors.hair),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+          ),
+          child: Text(
+            label,
+            style: AppText.ui(
+              13,
+              weight: active ? FontWeight.w600 : FontWeight.w500,
+              color: active ? AppColors.mint : AppColors.textMuted,
+            ),
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: valueColor ?? const Color(0xFF1A5F7A),
+      ),
+    );
+  }
+
+  Widget _buildBudgetSlider() {
+    var value = _parsedOrZero(_maxBudgetController);
+    if (value <= 0) value = 500000;
+    value = value.clamp(500000, 10000000);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('PRESUPUESTO MÁXIMO', style: AppText.label(10)),
+        const SizedBox(height: 6),
+        Text(formatCOP(value), style: AppText.display(32, color: AppColors.inkSoft)),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: AppColors.ink,
+            inactiveTrackColor: AppColors.hair,
+            trackHeight: 6,
+            thumbColor: AppColors.mint,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+            overlayColor: AppColors.mint.withValues(alpha: 0.2),
+          ),
+          child: Slider(
+            value: value.toDouble(),
+            min: 500000,
+            max: 10000000,
+            divisions: 19,
+            onChanged: (v) => setState(() => _maxBudgetController.text = v.round().toString()),
           ),
         ),
       ],
@@ -1102,207 +1137,177 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(
-          flex: 5,
-          child: _buildTextField(
-            controller: row.nombreController,
-            label: 'Categoría',
-            hint: 'Ej: Transporte interno',
-          ),
-        ),
+        Expanded(flex: 5, child: _labeledField(label: 'Categoría', controller: row.nombreController, hint: 'Ej: Transporte interno')),
         const SizedBox(width: 10),
         Expanded(
           flex: 4,
-          child: _buildTextField(
-            controller: row.montoController,
+          child: _labeledField(
             label: 'Monto',
+            controller: row.montoController,
             hint: 'Ej: 500000',
-            icon: Icons.attach_money,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _moneyFormatters,
             triggerRebuild: true,
           ),
         ),
         IconButton(
-          onPressed: _categoryRows.length > 1
-              ? () => _removeCategoryRow(row)
-              : null,
-          icon: const Icon(Icons.delete_outline),
-          color: const Color(0xFFD32F2F),
+          onPressed: _categoryRows.length > 1 ? () => _removeCategoryRow(row) : null,
+          icon: const Icon(Icons.delete_outline, size: 20),
+          color: AppColors.error,
           tooltip: 'Quitar categoría',
         ),
       ],
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    String hint = '',
-    IconData? icon,
-    TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
-    bool triggerRebuild = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A5F7A),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          onChanged: triggerRebuild ? (_) => setState(() {}) : null,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: icon == null ? null : Icon(icon),
-            prefixIconColor: const Color(0xFF1A5F7A),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF4A90A4), width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF4A90A4), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1A5F7A), width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  /// Resumen de presupuesto en vivo: se recalcula con cada cambio en los
+  /// campos de dinero gracias a `triggerRebuild: true` en `_labeledField`.
+  Widget _buildBudgetSummaryCard() {
+    final maxBudget = _parsedOrZero(_maxBudgetController);
+    final categoriesTotal = _categoryRows.fold(0.0, (sum, row) => sum + row.monto);
+    final estimatedSpent = _parsedOrZero(_advancePaymentController) +
+        _parsedOrZero(_lodgingCostController) +
+        categoriesTotal +
+        _parsedOrZero(_emergencyMoneyController);
 
-  Widget _buildDateField({
-    required TextEditingController controller,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A5F7A),
-          ),
+    if (maxBudget <= 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: AppColors.wash, borderRadius: BorderRadius.circular(AppRadius.card)),
+        child: Text(
+          'Define el presupuesto máximo en el paso 1 para ver aquí el resumen.',
+          style: AppText.ui(12, color: AppColors.textMuted),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          readOnly: true,
-          onTap: onTap,
-          decoration: InputDecoration(
-            hintText: 'DD/MM/YYYY',
-            prefixIcon: const Icon(Icons.calendar_today_outlined),
-            prefixIconColor: const Color(0xFF1A5F7A),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF4A90A4), width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF4A90A4), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1A5F7A), width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A5F7A),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF4A90A4), width: 1),
-          ),
-          child: DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            underline: const SizedBox(),
-            items: items.map((item) {
-              return DropdownMenuItem(value: item, child: Text(item));
-            }).toList(),
-            onChanged: (newValue) {
-              if (newValue != null) {
-                onChanged(newValue);
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
+    final remaining = maxBudget - estimatedSpent;
+    final percentage = (estimatedSpent / maxBudget).clamp(0.0, 999.0);
+    final overBudget = remaining < 0;
 
-  Widget _buildCheckbox({
-    required bool value,
-    required String label,
-    required ValueChanged<bool?> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
+        boxShadow: AppShadow.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Checkbox(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF1A5F7A),
-            side: const BorderSide(color: Color(0xFF4A90A4), width: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Resumen de presupuesto', style: AppText.ui(14, weight: FontWeight.w700)),
+              Text(
+                '${(percentage * 100).toStringAsFixed(0)}%',
+                style: AppText.ui(14, weight: FontWeight.w700, color: overBudget ? AppColors.error : AppColors.inkSoft),
+              ),
+            ],
           ),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondaryLight,
+          const SizedBox(height: 10),
+          BudgetBar(progress: percentage, fill: overBudget ? AppColors.error : AppColors.inkSoft),
+          const SizedBox(height: 12),
+          _summaryRow('Estimado (con lo ingresado)', formatCOP(estimatedSpent)),
+          const SizedBox(height: 4),
+          _summaryRow(
+            overBudget ? 'Te excedes por' : 'Disponible',
+            formatCOP(remaining.abs()),
+            color: overBudget ? AppColors.error : AppColors.inkSoft,
+          ),
+          if (overBudget) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.error),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Lo estimado supera tu presupuesto máximo.',
+                    style: AppText.ui(11, color: AppColors.error),
+                  ),
+                ),
+              ],
             ),
-          ),
+          ],
+          if (!overBudget && remaining > 0) ...[
+            const Divider(height: 24, color: AppColors.line),
+            _buildDailyBudgetSection(remaining),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, String value, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppText.ui(12, color: AppColors.textMuted)),
+        Text(value, style: AppText.ui(13, weight: FontWeight.w700, color: color ?? AppColors.ink)),
+      ],
+    );
+  }
+
+  /// Presupuesto disponible por día y por persona (mejora "gestor de
+  /// presupuesto"): antes solo se veía el total estimado vs. máximo, sin
+  /// ayudar a decidir cuánto gastar día a día durante el viaje.
+  Widget _buildDailyBudgetSection(double availableBudget) {
+    final start = parseDdMmYyyy(_startDateController.text);
+    final end = parseDdMmYyyy(_endDateController.text);
+    final persons = int.tryParse(_personsController.text.trim()) ?? 1;
+    if (start == null || end == null) {
+      return Text(
+        'Ingresa las fechas del viaje para ver el presupuesto por día.',
+        style: AppText.ui(11, color: AppColors.textMuted),
+      );
+    }
+
+    final breakdown = calculateBudgetBreakdown(maxBudget: availableBudget, start: start, end: end, persons: persons);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Presupuesto restante, repartido en:', style: AppText.ui(12, weight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _dailyChip(
+                label: 'Por día (${breakdown.days} días)',
+                value: formatCOP(breakdown.perDay),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _dailyChip(
+                label: 'Por persona ($persons)',
+                value: formatCOP(breakdown.perPerson),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _dailyChip(
+          label: 'Por persona, por día',
+          value: formatCOP(breakdown.perPersonPerDay),
+          fullWidth: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _dailyChip({required String label, required String value, bool fullWidth = false}) {
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(color: AppColors.paperDeep, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: AppText.label(9)),
+          Text(value, style: AppText.ui(13, weight: FontWeight.w700), overflow: TextOverflow.ellipsis),
         ],
       ),
     );
