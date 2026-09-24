@@ -530,7 +530,17 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context);
+    // `Enter`/`NumpadEnter` actúan como el botón "Continuar →"/"Crear
+    // viaje" de la esquina, sin importar qué campo del wizard tenga el
+    // foco — comportamiento normal de un formulario al darle Enter.
+    // `_goNext` ya ignora la llamada mientras `_isLoading`.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): _goNext,
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): _goNext,
+      },
+      child: widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context),
+    );
   }
 
   // ─── Escritorio / tablet: diálogo de dos columnas ───
