@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "223103352776",
+    "project_id": "travelguard-5a487",
+    "storage_bucket": "travelguard-5a487.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:223103352776:android:24b7e1a49b5b022fc3cafd",
+        "android_client_info": {
+          "package_name": "com.example.travelguard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "223103352776-orljp1ln7p011ncbmm470kt724u3qe8n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJx57aY94VspZV2MsvvIjgbLvBHirMNmU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "223103352776-orljp1ln7p011ncbmm470kt724u3qe8n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
