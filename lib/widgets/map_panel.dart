@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/places_map/data/models/map_place.dart';
+import 'map_style.dart';
 
 /// Panel de mapa restilado en tono ink — el panel sticky de Comercios
 /// en `WEB_LAYOUT.md`. Es un `GoogleMap` **real**, no decorativo:
@@ -57,7 +58,7 @@ class _MapPanelState extends State<MapPanel> {
                 zoom: 14,
               ),
               mapType: _mapType,
-              style: _darkStyle,
+              style: mapInkStyle,
               onMapCreated: (controller) => _controller = controller,
               markers: {
                 for (final place in widget.places)
@@ -188,25 +189,3 @@ class _SelectedPlaceCard extends StatelessWidget {
   }
 }
 
-/// Estilo oscuro personalizado (JSON de Google Maps) recoloreado hacia
-/// la paleta ink/petróleo — geometría en tonos `ink`/`inkSoft`, agua
-/// casi negra, POIs en `mint`.
-const _darkStyle = '''
-[
-  {"elementType": "geometry", "stylers": [{"color": "#0f2d30"}]},
-  {"elementType": "labels.text.stroke", "stylers": [{"color": "#0b3438"}]},
-  {"elementType": "labels.text.fill", "stylers": [{"color": "#9db3b0"}]},
-  {"featureType": "administrative", "elementType": "geometry", "stylers": [{"color": "#4c6461"}]},
-  {"featureType": "poi", "elementType": "geometry", "stylers": [{"color": "#1c3a3d"}]},
-  {"featureType": "poi", "elementType": "labels.text.fill", "stylers": [{"color": "#7fd1b9"}]},
-  {"featureType": "poi.park", "elementType": "geometry", "stylers": [{"color": "#1c7a6b"}]},
-  {"featureType": "road", "elementType": "geometry", "stylers": [{"color": "#1a4145"}]},
-  {"featureType": "road", "elementType": "geometry.stroke", "stylers": [{"color": "#0b3438"}]},
-  {"featureType": "road", "elementType": "labels.text.fill", "stylers": [{"color": "#8a8272"}]},
-  {"featureType": "road.highway", "elementType": "geometry", "stylers": [{"color": "#234f52"}]},
-  {"featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{"color": "#0b3438"}]},
-  {"featureType": "transit", "elementType": "geometry", "stylers": [{"color": "#1a4145"}]},
-  {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#082226"}]},
-  {"featureType": "water", "elementType": "labels.text.fill", "stylers": [{"color": "#4c6461"}]}
-]
-''';

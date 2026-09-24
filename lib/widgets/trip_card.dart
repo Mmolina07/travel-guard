@@ -19,6 +19,7 @@ class TripCard extends StatelessWidget {
     this.onTap,
     this.thumbWidth = 62,
     this.thumbHeight = 72,
+    this.spent,
   });
 
   final Trip trip;
@@ -26,9 +27,16 @@ class TripCard extends StatelessWidget {
   final double thumbWidth;
   final double thumbHeight;
 
+  /// Gastado real (presupuesto planeado + gastos registrados en
+  /// `gastos`, HU-13) — si no se pasa, cae a `trip.getTotalSpent()`
+  /// (solo lo planeado), útil cuando la tarjeta se usa solo para
+  /// identificar el viaje (p.ej. el selector de "añadir gasto") y no
+  /// vale la pena cargar sus gastos reales.
+  final double? spent;
+
   @override
   Widget build(BuildContext context) {
-    final spent = trip.getTotalSpent();
+    final spent = this.spent ?? trip.getTotalSpent();
     final progress =
         trip.maxBudget > 0 ? (spent / trip.maxBudget).clamp(0.0, 1.0) : 0.0;
 

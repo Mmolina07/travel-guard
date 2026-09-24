@@ -29,6 +29,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
   final LocationService _locationService = LocationService();
 
   bool _isLoading = true;
+  String? _loadError;
   List<MapPlace> _places = [];
   Position? _userPosition;
   int _selectedCategoryIndex = 0;
@@ -40,22 +41,45 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
     _load();
   }
 
+  /// Antes un solo `Future.wait` combinaba comercios + ubicación: si
+  /// fallaba la ubicación (GPS apagado, permiso denegado), toda la
+  /// promesa rechazaba sin que nada la atrapara y la pantalla se
+  /// quedaba en "cargando" para siempre, aunque los comercios sí se
+  /// hubieran podido traer. Ahora van por separado: los comercios son
+  /// obligatorios (si fallan, se ve un estado de error con reintentar),
+  /// la ubicación es "mejor esfuerzo" (si falla, la lista igual se
+  /// muestra, solo sin ordenar por distancia).
   Future<void> _load() async {
-    final results = await Future.wait([
-      _repository.fetchNearbyPlaces(),
-      _locationService.getCurrentPosition(),
-    ]);
-    if (!mounted) return;
-
-    final places = results[0] as List<MapPlace>;
-    final locationResult = results[1] as LocationResult;
-
     setState(() {
-      _places = places;
-      _userPosition = locationResult.position;
-      _isLoading = false;
-      _selectedPlace = places.isNotEmpty ? places.first : null;
+      _isLoading = true;
+      _loadError = null;
     });
+
+    try {
+      final places = await _repository.fetchNearbyPlaces();
+      if (!mounted) return;
+      setState(() {
+        _places = places;
+        _isLoading = false;
+        _selectedPlace = places.isNotEmpty ? places.first : null;
+      });
+    } catch (e, st) {
+      debugPrint('ComerciosCercanosScreen._load fetchNearbyPlaces error: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'No se pudieron cargar los comercios. Intenta de nuevo.';
+      });
+      return;
+    }
+
+    try {
+      final locationResult = await _locationService.getCurrentPosition();
+      if (!mounted || !locationResult.isSuccess) return;
+      setState(() => _userPosition = locationResult.position);
+    } catch (e, st) {
+      debugPrint('ComerciosCercanosScreen._load getCurrentPosition error: $e\n$st');
+    }
   }
 
   double? _distanceMeters(MapPlace place) {
@@ -251,6 +275,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
         child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
       );
     }
+    if (_loadError != null) return _buildErrorState();
     if (places.isEmpty) return _buildEmptyState();
 
     return LayoutBuilder(
@@ -281,6 +306,33 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildErrorState() {
+    return HoverCard(
+      onTap: _load,
+      color: AppColors.wash,
+      radius: AppRadius.card,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_loadError!, style: AppText.display(20)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Reintentar',
+                style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.refresh, size: 16, color: AppColors.inkSoft),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

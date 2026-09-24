@@ -11,6 +11,7 @@ import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/data/models/gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
+import '../../data/trip_repository.dart';
 import '../../presentation/pages/trip_model.dart';
 import '../../utils/budget_calculator.dart';
 import 'create_trip_screen.dart';
@@ -30,6 +31,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   late Trip trip;
   late final TabController _tabController;
   final ExpenseRepository _expenseRepository = ExpenseRepository();
+  final TripRepository _tripRepository = TripRepository();
 
   List<Gasto> _gastos = [];
   List<CategoriaGasto> _categorias = [];
@@ -214,9 +216,24 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         ],
       ),
     );
-    if (confirmed == true && mounted) {
+    if (confirmed != true || !mounted) return;
+
+    // Antes este botón solo navegaba a Inicio y mostraba el snackbar
+    // sin borrar nada en el servidor — el viaje seguía apareciendo al
+    // volver a entrar. `archiveTrip` es el soft delete real.
+    if (trip.id == null) {
+      context.go('/');
+      return;
+    }
+    try {
+      await _tripRepository.archiveTrip(trip.id!);
+      if (!mounted) return;
       context.go('/');
       _showSnack('Viaje eliminado', color: AppColors.error);
+    } catch (e, st) {
+      debugPrint('TripDetailScreen._confirmDeleteTrip error: $e\n$st');
+      if (!mounted) return;
+      _showSnack('No se pudo eliminar el viaje. Intenta de nuevo.');
     }
   }
 
@@ -259,6 +276,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           section: AppSection.misViajes,
           onNavigate: _handleSideNav,
           onCreateTrip: _createTripFromHere,
+          activeTrip: trip,
+          activeTripSpent: totalSpent,
           child: _buildDesktopContent(context, totalSpent: totalSpent, remaining: remaining),
         );
       },
@@ -421,11 +440,39 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   track: Colors.white.withValues(alpha: 0.24),
                   fill: AppColors.mint,
                 ),
+                const SizedBox(height: 8),
+                _buildBudgetStatus(totalSpent: totalSpent),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Línea corta de estado bajo la barra de presupuesto — sin esto, el
+  /// usuario tenía que restar GASTADO - TOPE de cabeza para saber si
+  /// va bien o ya se pasó.
+  Widget _buildBudgetStatus({required double totalSpent}) {
+    if (trip.maxBudget <= 0) return const SizedBox.shrink();
+    final remaining = trip.maxBudget - totalSpent;
+    final overBudget = remaining < 0;
+    final pct = (totalSpent / trip.maxBudget * 100).round();
+    final color = overBudget ? AppColors.error : AppColors.mint;
+    final label = overBudget
+        ? 'Te pasaste del tope por ${formatCOP(remaining.abs())}'
+        : 'Vas bien: $pct% del presupuesto usado';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          overBudget ? Icons.error_outline : Icons.check_circle_outline,
+          size: 14,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: AppText.ui(12, weight: FontWeight.w600, color: color)),
+      ],
     );
   }
 
@@ -496,33 +543,43 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Widget _buildMiniCardsPair() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: _MiniCard(
-            color: AppColors.ink,
-            labelColor: AppColors.textOnInk,
-            titleColor: AppColors.paper,
-            detailColor: AppColors.textOnInk,
-            label: 'TRANSPORTE',
-            title: trip.startTransport.isNotEmpty ? trip.startTransport : '—',
-            detail: trip.duringTransport.isNotEmpty ? 'Durante: ${trip.duringTransport}' : '',
+    // `IntrinsicHeight` propio: sin esto, cuando el ancho disponible cae
+    // por debajo de 760 (pasa justo en el rango típico de una ventana
+    // de escritorio angosta: 1024px de ventana − 248px de sidebar − el
+    // padding del contenido ya da ~708px), `_buildResumenTab` coloca
+    // este `Row` sin envolver dentro de un `Column` que vive en el
+    // `SingleChildScrollView` del `AppShell` — altura no acotada +
+    // `stretch` revienta el layout (RenderFlex sin tamaño, pantalla en
+    // blanco y "congelada" repitiendo la misma excepción cada frame).
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _MiniCard(
+              color: AppColors.ink,
+              labelColor: AppColors.textOnInk,
+              titleColor: AppColors.paper,
+              detailColor: AppColors.textOnInk,
+              label: 'TRANSPORTE',
+              title: trip.startTransport.isNotEmpty ? trip.startTransport : '—',
+              detail: trip.duringTransport.isNotEmpty ? 'Durante: ${trip.duringTransport}' : '',
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _MiniCard(
-            color: AppColors.wash,
-            labelColor: AppColors.inkSoft,
-            titleColor: AppColors.ink,
-            detailColor: AppColors.textMuted,
-            label: 'PERSONAS',
-            title: '${trip.persons}',
-            detail: trip.tripType,
+          const SizedBox(width: 16),
+          Expanded(
+            child: _MiniCard(
+              color: AppColors.wash,
+              labelColor: AppColors.inkSoft,
+              titleColor: AppColors.ink,
+              detailColor: AppColors.textMuted,
+              label: 'PERSONAS',
+              title: '${trip.persons}',
+              detail: trip.tripType,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -536,7 +593,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
             )
           : recent.isEmpty
-          ? Text('Aún no has registrado gastos.', style: AppText.ui(13, color: AppColors.textMuted))
+          ? Text(
+              'Aún no has registrado gastos. Usa "Añadir gasto" arriba para anotar el primero.',
+              style: AppText.ui(13, color: AppColors.textMuted),
+            )
           : Column(
               children: [
                 for (var i = 0; i < recent.length; i++) ...[

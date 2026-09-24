@@ -21,6 +21,28 @@ class ExpenseRepository {
         .toList();
   }
 
+  /// Suma de gastos reales por viaje, en una sola consulta — antes las
+  /// tarjetas de viaje de Inicio y el resumen del sidebar calculaban lo
+  /// "gastado" solo con los campos planeados al crear el viaje
+  /// (anticipos, hospedaje, categorías, emergencias), sin contar los
+  /// gastos sueltos que el turista va registrando después (HU-13). Se
+  /// suma aparte, igual que ya hacía el detalle del viaje.
+  Future<Map<int, double>> fetchTotalGastosPorViaje(List<int> viajeIds) async {
+    if (viajeIds.isEmpty) return {};
+    final rows = await _client
+        .from('gastos')
+        .select('viaje_id, monto')
+        .inFilter('viaje_id', viajeIds);
+
+    final totals = <int, double>{};
+    for (final row in (rows as List).cast<Map<String, dynamic>>()) {
+      final viajeId = row['viaje_id'] as int;
+      final monto = (row['monto'] as num).toDouble();
+      totals[viajeId] = (totals[viajeId] ?? 0) + monto;
+    }
+    return totals;
+  }
+
   Future<List<Gasto>> fetchGastosDelViaje(int viajeId) async {
     final rows = await _client
         .from('gastos')

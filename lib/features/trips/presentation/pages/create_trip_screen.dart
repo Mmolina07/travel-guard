@@ -328,8 +328,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       return 'Debe haber mínimo 1 persona';
     }
 
-    final maxBudget = double.tryParse(_maxBudgetController.text.trim());
-    if (maxBudget == null || maxBudget <= 0) {
+    if (_maxBudget <= 0) {
       return 'El presupuesto debe ser mayor a 0';
     }
 
@@ -414,7 +413,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       endDate: _endDateController.text.trim(),
       persons: int.parse(_personsController.text.trim()),
       tripType: _tripType,
-      maxBudget: double.parse(_maxBudgetController.text.trim()),
+      maxBudget: _maxBudget,
       advancePayment: double.tryParse(_advancePaymentController.text) ?? 0,
       lodgingType: _lodgingType,
       lodgingCost: double.tryParse(_lodgingCostController.text) ?? 0,
@@ -521,6 +520,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   double _parsedOrZero(TextEditingController controller) =>
       double.tryParse(controller.text.trim()) ?? 0;
 
+  /// `_maxBudgetController` muestra el monto con puntos de miles (p.ej.
+  /// "5.000.000") para que se vea como plata — a diferencia de los
+  /// demás campos de dinero del wizard, que sí admiten decimales y por
+  /// tanto usan el punto como separador decimal. Este getter es el
+  /// único lugar donde se debe leer su valor numérico real.
+  double get _maxBudget =>
+      double.tryParse(_maxBudgetController.text.replaceAll('.', '')) ?? 0;
+
   @override
   Widget build(BuildContext context) {
     return widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context);
@@ -589,8 +596,11 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
             tween: Tween(begin: 0, end: 1),
             duration: AppMotion.step,
             curve: AppMotion.enter,
+            // `easeOutBack` se pasa de 1.0 antes de asentar — bien para
+            // el desplazamiento, pero `Opacity` exige 0..1 y revienta
+            // con el overshoot. Se recorta solo para la opacidad.
             builder: (context, t, child) => Opacity(
-              opacity: t,
+              opacity: t.clamp(0.0, 1.0),
               child: Transform.translate(
                 offset: Offset(0, 12 * (1 - t)),
                 child: child,
@@ -1100,15 +1110,39 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   }
 
   Widget _buildBudgetSlider() {
-    var value = _parsedOrZero(_maxBudgetController);
-    if (value <= 0) value = 500000;
-    value = value.clamp(500000, 10000000);
+    final raw = _maxBudget;
+    // El thumb siempre queda dentro del rango del slider aunque lo
+    // tecleado se salga de él (p.ej. 15.000.000: la barra se ve llena,
+    // pero el monto guardado sigue siendo el que escribiste).
+    final sliderValue = (raw <= 0 ? 500000.0 : raw).clamp(500000.0, 10000000.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('PRESUPUESTO MÁXIMO', style: AppText.label(10)),
         const SizedBox(height: 6),
-        Text(formatCOP(value), style: AppText.display(32, color: AppColors.inkSoft)),
+        // Editable: escribir un monto aquí mueve la barra de abajo sin
+        // necesidad de arrastrarla — y arrastrarla sigue actualizando
+        // este número, comparten el mismo controller. Se formatea con
+        // puntos de miles al vuelo (`_ThousandsInputFormatter`) para
+        // que se lea como plata ("5.000.000"), no como un id.
+        TextField(
+          controller: _maxBudgetController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [_ThousandsInputFormatter()],
+          style: AppText.display(32, color: AppColors.inkSoft),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            prefixText: '\$ ',
+            prefixStyle: AppText.display(32, color: AppColors.inkSoft),
+            hintText: '0',
+            hintStyle: AppText.display(32, color: AppColors.hair),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppColors.ink,
@@ -1119,11 +1153,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
             overlayColor: AppColors.mint.withValues(alpha: 0.2),
           ),
           child: Slider(
-            value: value.toDouble(),
+            value: sliderValue,
             min: 500000,
             max: 10000000,
             divisions: 19,
-            onChanged: (v) => setState(() => _maxBudgetController.text = v.round().toString()),
+            onChanged: (v) => setState(
+              () => _maxBudgetController.text = _groupThousands(v.round().toString()),
+            ),
           ),
         ),
       ],
@@ -1163,7 +1199,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   /// Resumen de presupuesto en vivo: se recalcula con cada cambio en los
   /// campos de dinero gracias a `triggerRebuild: true` en `_labeledField`.
   Widget _buildBudgetSummaryCard() {
-    final maxBudget = _parsedOrZero(_maxBudgetController);
+    final maxBudget = _maxBudget;
     final categoriesTotal = _categoryRows.fold(0.0, (sum, row) => sum + row.monto);
     final estimatedSpent = _parsedOrZero(_advancePaymentController) +
         _parsedOrZero(_lodgingCostController) +
@@ -1310,6 +1346,38 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           Text(value, style: AppText.ui(13, weight: FontWeight.w700), overflow: TextOverflow.ellipsis),
         ],
       ),
+    );
+  }
+}
+
+/// Inserta el punto de miles cada 3 dígitos — mismo criterio que
+/// `formatCOP`, sin el signo `$` (ese lo pone el `prefixText` del
+/// campo).
+String _groupThousands(String digits) {
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
+}
+
+/// Formatea el campo de presupuesto máximo con puntos de miles mientras
+/// se escribe. El cursor siempre queda al final del texto — es lo
+/// esperado para un monto (se escribe de corrido, no se edita en medio)
+/// y evita el cálculo de offset cuando insertar un punto desplaza los
+/// dígitos que ya estaban.
+class _ThousandsInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    final formatted = _groupThousands(digits);
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../pages/create_trip_screen.dart';
 import '../pages/trip_model.dart';
 import '../../../auth/providers/app_auth_provider.dart';
+import '../../../expenses/data/expense_repository.dart';
+import '../../../expenses/data/models/categoria_gasto_model.dart';
+import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../../places_map/data/models/map_place.dart';
 import '../../../places_map/data/places_map_repository.dart';
 import '../../data/trip_repository.dart';
@@ -33,7 +36,13 @@ class HomeScreenClient extends StatefulWidget {
 class _HomeScreenClientState extends State<HomeScreenClient> {
   final List<Trip> _trips = [];
   final TripRepository _tripRepository = TripRepository();
+  final ExpenseRepository _expenseRepository = ExpenseRepository();
   bool _isLoadingTrips = true;
+
+  /// Gastos reales (tabla `gastos`, HU-13) por `trip.id` — sin esto,
+  /// las tarjetas de viaje y el resumen del sidebar solo contaban lo
+  /// planeado al crear el viaje, no lo que en verdad se ha gastado.
+  Map<int, double> _gastosPorViaje = {};
 
   final PlacesMapRepository _placesRepository = PlacesMapRepository();
   List<MapPlace> _nearbyPlaces = [];
@@ -67,6 +76,14 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   double get _totalBudget =>
       _trips.fold(0.0, (sum, t) => sum + t.maxBudget);
+
+  /// Gastado real de [trip]: lo planeado al crearlo más los gastos
+  /// sueltos ya registrados — mismo criterio que usa el detalle del
+  /// viaje (`trip.getTotalSpent() + gastos reales`).
+  double _spentFor(Trip trip) {
+    final real = trip.id != null ? _gastosPorViaje[trip.id] ?? 0 : 0;
+    return trip.getTotalSpent() + real;
+  }
 
   @override
   void initState() {
@@ -106,10 +123,27 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
           ..addAll(trips);
         _isLoadingTrips = false;
       });
+      _loadGastosPorViaje(trips);
     } catch (e, st) {
       debugPrint('HomeScreenClient._loadTrips error: $e\n$st');
       if (!mounted) return;
       setState(() => _isLoadingTrips = false);
+    }
+  }
+
+  /// Gastos reales por viaje, para que las tarjetas y el sidebar no se
+  /// queden solo con lo planeado — si falla, las tarjetas simplemente
+  /// caen a `trip.getTotalSpent()` (comportamiento anterior), no vale
+  /// la pena bloquear la pantalla por esto.
+  Future<void> _loadGastosPorViaje(List<Trip> trips) async {
+    final ids = [for (final t in trips) if (t.id != null) t.id!];
+    if (ids.isEmpty) return;
+    try {
+      final totals = await _expenseRepository.fetchTotalGastosPorViaje(ids);
+      if (!mounted) return;
+      setState(() => _gastosPorViaje = totals);
+    } catch (e, st) {
+      debugPrint('HomeScreenClient._loadGastosPorViaje error: $e\n$st');
     }
   }
 
@@ -172,6 +206,133 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     context.go('/viajes/${trip.id}', extra: trip);
   }
 
+  /// Acceso rápido a "añadir gasto" desde Inicio, sin pasar por el
+  /// detalle del viaje: el enfoque de la app es justo registrar gastos
+  /// seguido, así que si solo hay un viaje activo no tiene sentido
+  /// pedir que se elija — se abre directo el formulario.
+  Future<void> _quickAddExpense() async {
+    if (_trips.isEmpty) {
+      _showSnack('Crea un viaje primero para poder registrar un gasto.');
+      return;
+    }
+    final trip = _trips.length == 1 ? _trips.first : await _pickTripForExpense();
+    if (trip == null || !mounted) return;
+    await _addExpenseToTrip(trip);
+  }
+
+  Future<Trip?> _pickTripForExpense() {
+    // `isScrollControlled` + el `Flexible`/`SingleChildScrollView` de
+    // adentro: sin esto, con varios viajes la lista se salía del alto
+    // fijo que Flutter le da a un bottom sheet normal (RenderFlex
+    // overflow, la hoja se veía cortada).
+    return showModalBottomSheet<Trip>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('¿A qué viaje pertenece?', style: AppText.display(22)),
+              const SizedBox(height: 4),
+              Text(
+                'Elige el viaje para registrar el gasto.',
+                style: AppText.ui(13, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < _trips.length; i++) ...[
+                        TripCard(
+                          trip: _trips[i],
+                          spent: _spentFor(_trips[i]),
+                          thumbWidth: 56,
+                          thumbHeight: 64,
+                          onTap: () => Navigator.pop(sheetContext, _trips[i]),
+                        ),
+                        if (i != _trips.length - 1) const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addExpenseToTrip(Trip trip) async {
+    if (trip.id == null) {
+      _showSnack('Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.');
+      return;
+    }
+
+    List<CategoriaGasto> categorias;
+    try {
+      categorias = await _expenseRepository.fetchCategorias();
+    } catch (e, st) {
+      debugPrint('HomeScreenClient._addExpenseToTrip fetchCategorias error: $e\n$st');
+      if (!mounted) return;
+      _showSnack('No se pudieron cargar las categorías de gasto.');
+      return;
+    }
+    if (categorias.isEmpty) {
+      if (!mounted) return;
+      _showSnack('No se pudieron cargar las categorías de gasto.');
+      return;
+    }
+    if (!mounted) return;
+
+    final startDate = parseDdMmYyyy(trip.startDate) ?? DateTime.now();
+    final endDateRaw = parseDdMmYyyy(trip.endDate) ?? startDate;
+
+    final result = await AddExpenseSheet.show(
+      context,
+      categorias: categorias,
+      tripStartDate: startDate,
+      tripEndDate: endDateRaw.isBefore(startDate) ? startDate : endDateRaw,
+    );
+    if (result == null || !mounted) return;
+
+    try {
+      await _expenseRepository.createGasto(
+        viajeId: trip.id!,
+        categoriaId: result.categoria.id,
+        monto: result.monto,
+        fecha: result.fecha,
+        descripcion: result.descripcion,
+      );
+      if (!mounted) return;
+      setState(() {
+        _gastosPorViaje[trip.id!] = (_gastosPorViaje[trip.id!] ?? 0) + result.monto;
+      });
+      _showSnack(
+        'Gasto de ${formatCOP(result.monto)} en ${result.categoria.nombre} agregado a ${trip.name}',
+        color: AppColors.ink,
+      );
+    } catch (e, st) {
+      debugPrint('HomeScreenClient._addExpenseToTrip createGasto error: $e\n$st');
+      if (!mounted) return;
+      _showSnack('No se pudo guardar el gasto. Intenta de nuevo.');
+    }
+  }
+
+  void _showSnack(String message, {Color color = AppColors.error}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
+
   void _handleSideNav(AppSection section) {
     switch (section) {
       case AppSection.inicio:
@@ -201,10 +362,13 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         if (constraints.maxWidth < AppBreakpoints.mobile) {
           return _buildMobile(context);
         }
+        final next = _nextTrip;
         return AppShell(
           section: AppSection.inicio,
           onNavigate: _handleSideNav,
           onCreateTrip: _createTrip,
+          activeTrip: next,
+          activeTripSpent: next != null ? _spentFor(next) : null,
           child: _buildDesktopContent(context),
         );
       },
@@ -289,7 +453,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 flex: crearFlex,
                 child: StaggerIn(
                   index: 2,
-                  child: _ProximoGastoCard(trip: _nextTrip),
+                  child: _ProximoGastoCard(trip: _nextTrip, onTap: _quickAddExpense),
                 ),
               ),
               const SizedBox(width: 14),
@@ -357,6 +521,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   index: i,
                   child: TripCard(
                     trip: _trips[i],
+                    spent: _spentFor(_trips[i]),
                     thumbWidth: 78,
                     thumbHeight: 88,
                     onTap: () => _openTripDetail(_trips[i]),
@@ -847,10 +1012,12 @@ class _CrearViajeCard extends StatelessWidget {
             Container(
               width: 34,
               height: 34,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.mint,
                 borderRadius: BorderRadius.circular(11),
               ),
+              child: const Icon(Icons.add, color: AppColors.ink, size: 20),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -891,10 +1058,12 @@ class _MapaCard extends StatelessWidget {
             Container(
               width: 34,
               height: 34,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.ink, width: 2),
               ),
+              child: const Icon(Icons.location_on_outlined, color: AppColors.ink, size: 18),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -911,15 +1080,21 @@ class _MapaCard extends StatelessWidget {
   }
 }
 
+/// Antes solo mostraba el próximo pago de hospedaje (informativo, sin
+/// acción). Ahora es también el acceso rápido a "añadir gasto" desde
+/// Inicio — el "+" deja claro que se puede tocar, sin agregar una
+/// tarjeta nueva a la retícula.
 class _ProximoGastoCard extends StatelessWidget {
-  const _ProximoGastoCard({required this.trip});
+  const _ProximoGastoCard({required this.trip, required this.onTap});
 
   final Trip? trip;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final hasExpense = trip != null && trip!.lodgingCost > 0;
     return HoverCard(
+      onTap: onTap,
       color: AppColors.surface,
       radius: 28,
       padding: const EdgeInsets.all(24),
@@ -929,7 +1104,22 @@ class _ProximoGastoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('PRÓXIMO GASTO', style: AppText.label(10)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('PRÓXIMO GASTO', style: AppText.label(10)),
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.mint,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(Icons.add, color: AppColors.ink, size: 16),
+                ),
+              ],
+            ),
             if (hasExpense)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,7 +1137,7 @@ class _ProximoGastoCard extends StatelessWidget {
               )
             else
               Text(
-                'Aún no tienes gastos programados.',
+                'Registra un gasto de tu viaje en segundos.',
                 style: AppText.ui(13, color: AppColors.textMuted),
               ),
           ],

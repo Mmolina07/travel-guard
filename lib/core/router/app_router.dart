@@ -81,8 +81,14 @@ class AppRouter {
               child: child,
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
+                // `easeOutBack` se pasa de 1.0 antes de asentar (es su
+                // gracia) — bien para el desplazamiento, pero
+                // `FadeTransition` arma un `Opacity` interno que
+                // revienta si `opacity > 1`. El fade usa la animación
+                // sin curvear (0→1 sin overshoot); solo el
+                // desplazamiento usa `curved`.
                 return FadeTransition(
-                  opacity: curved,
+                  opacity: animation,
                   child: AnimatedBuilder(
                     animation: curved,
                     builder: (context, child) => Transform.translate(

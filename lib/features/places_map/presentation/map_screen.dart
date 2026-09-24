@@ -12,6 +12,9 @@ import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
 import 'widgets/place_details_sheet.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shell/app_shell.dart';
+import '../../../widgets/map_style.dart';
+import '../../trips/presentation/pages/create_trip_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -369,8 +372,156 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  void _handleSideNav(AppSection section) {
+    switch (section) {
+      case AppSection.inicio:
+      case AppSection.misViajes:
+        context.go('/');
+        break;
+      case AppSection.comercios:
+        context.go('/comercios');
+        break;
+      case AppSection.mapa:
+        break; // ya estamos aquí.
+    }
+  }
+
+  Future<void> _createTrip() async {
+    await showCreateTripDialog(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppBreakpoints.mobile) {
+          return _buildMobile(context);
+        }
+        return AppShell(
+          section: AppSection.mapa,
+          onNavigate: _handleSideNav,
+          onCreateTrip: _createTrip,
+          child: _buildDesktopContent(context),
+        );
+      },
+    );
+  }
+
+  // ─── Escritorio / tablet ───
+
+  // Solo el mapa — sin encabezado ni chips de categoría duplicando lo
+  // que ya está en Comercios; la altura crece con la ventana (más alto
+  // que antes) porque acá el mapa es todo el contenido de la pantalla.
+  Widget _buildDesktopContent(BuildContext context) {
+    final mapHeight = (MediaQuery.sizeOf(context).height - 190).clamp(560.0, 920.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_locationFailure != null) ...[
+          _buildDesktopLocationBanner(),
+          const SizedBox(height: 16),
+        ],
+        _buildMapCard(mapHeight),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLocationBanner() {
+    final reason = _locationFailure!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_off_outlined, color: AppColors.error, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(_locationMessage(reason), style: AppText.ui(13, color: AppColors.ink)),
+          ),
+          const SizedBox(width: 12),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => _handleLocationBannerAction(reason),
+              child: Text(
+                _locationActionLabel(reason).toUpperCase(),
+                style: AppText.label(11, color: AppColors.error),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapCard(double height) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.cardLg),
+        boxShadow: AppShadow.card,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.cardLg),
+        child: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _userLatLng ?? _fallbackCenter,
+                zoom: 14,
+              ),
+              style: mapInkStyle,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                if (_userLatLng != null) _followUserIfNeeded(_userLatLng!);
+              },
+              onCameraMoveStarted: () {
+                if (_ignoreNextCameraMove) {
+                  _ignoreNextCameraMove = false;
+                } else if (_isFollowingUser) {
+                  setState(() => _isFollowingUser = false);
+                }
+              },
+              markers: _markers,
+              myLocationEnabled: false,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+            ),
+            if (_isLoading)
+              Container(
+                color: AppColors.ink.withValues(alpha: 0.15),
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppColors.mint),
+                ),
+              ),
+            Positioned(
+              right: 18,
+              bottom: 18,
+              child: _RecenterButton(
+                following: _isFollowingUser,
+                onTap: _userLatLng == null
+                    ? () => _handleLocationBannerAction(
+                          _locationFailure ?? LocationFailureReason.permissionDenied,
+                        )
+                    : _resumeFollowingUser,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Móvil ───
+  // Estructura original (AppBar + filtros + banner + mapa) — no forma
+  // parte del alcance de esta pasada de escritorio, se mantiene
+  // funcional tal como estaba.
+
+  Widget _buildMobile(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: _primary,
@@ -549,3 +700,39 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
+/// Botón "seguir mi ubicación" restilado con los tokens de la app —
+/// mismo criterio de estados que antes (blanco = siguiendo, ink =
+/// pausado, toca para reanudar), solo que ahora combina con el resto
+/// de botones circulares de la app (p.ej. el de tema del `TopBar`).
+class _RecenterButton extends StatelessWidget {
+  const _RecenterButton({required this.following, required this.onTap});
+
+  final bool following;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: following ? AppColors.surface : AppColors.ink,
+            border: following ? Border.all(color: AppColors.line) : null,
+            boxShadow: AppShadow.raised,
+          ),
+          child: Icon(
+            Icons.my_location,
+            color: following ? AppColors.ink : AppColors.mint,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}

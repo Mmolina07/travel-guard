@@ -9,7 +9,7 @@ import '../core/theme/app_theme.dart';
 import '../core/utils/money_formatter.dart';
 import '../core/utils/search_focus.dart';
 import '../features/auth/providers/app_auth_provider.dart';
-import '../features/trips/providers/trip_provider.dart';
+import '../features/trips/presentation/pages/trip_model.dart';
 
 /// Las 4 secciones de navegación del sidebar — ver
 /// `design_handoff_travelguard_papel_petroleo/WEB_LAYOUT.md`. "Inicio"
@@ -34,12 +34,27 @@ class AppShell extends StatefulWidget {
     required this.child,
     required this.onNavigate,
     required this.onCreateTrip,
+    this.activeTrip,
+    this.activeTripSpent,
   });
 
   final AppSection section;
   final Widget child;
   final ValueChanged<AppSection> onNavigate;
   final VoidCallback onCreateTrip;
+
+  /// Viaje que muestra el resumen de presupuesto del sidebar — cada
+  /// pantalla decide cuál tiene sentido mostrar (Inicio: el más
+  /// próximo; Detalle: el que se está viendo). `null` en pantallas sin
+  /// un viaje de contexto (Comercios, Mapa): el sidebar muestra "Sin
+  /// viaje activo" en vez de quedar pegado a un `Provider` que nada
+  /// llenaba.
+  final Trip? activeTrip;
+
+  /// Gastado real de [activeTrip] (planeado + gastos registrados) — lo
+  /// calcula quien pasa `activeTrip`, porque solo esa pantalla sabe si
+  /// ya tiene los gastos reales a mano.
+  final double? activeTripSpent;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -71,6 +86,8 @@ class _AppShellState extends State<AppShell> {
             section: widget.section,
             onNavigate: widget.onNavigate,
             onCreateTrip: widget.onCreateTrip,
+            activeTrip: widget.activeTrip,
+            activeTripSpent: widget.activeTripSpent,
           ),
           Expanded(
             child: Column(
@@ -102,12 +119,16 @@ class _SideNav extends StatelessWidget {
     required this.section,
     required this.onNavigate,
     required this.onCreateTrip,
+    required this.activeTrip,
+    required this.activeTripSpent,
   });
 
   final bool collapsed;
   final AppSection section;
   final ValueChanged<AppSection> onNavigate;
   final VoidCallback onCreateTrip;
+  final Trip? activeTrip;
+  final double? activeTripSpent;
 
   static const _items = [
     (section: AppSection.inicio, icon: Icons.home_outlined, label: 'Inicio'),
@@ -156,7 +177,7 @@ class _SideNav extends StatelessWidget {
             ),
           const Spacer(),
           const SizedBox(height: 26),
-          _BudgetSummary(collapsed: collapsed),
+          _BudgetSummary(collapsed: collapsed, trip: activeTrip, spent: activeTripSpent),
           const SizedBox(height: 14),
           _ProfileRow(collapsed: collapsed),
         ],
@@ -323,20 +344,17 @@ class _NavItem extends StatelessWidget {
 }
 
 class _BudgetSummary extends StatelessWidget {
-  const _BudgetSummary({required this.collapsed});
+  const _BudgetSummary({required this.collapsed, required this.trip, required this.spent});
 
   final bool collapsed;
+  final Trip? trip;
+  final double? spent;
 
   @override
   Widget build(BuildContext context) {
-    final trip = context.watch<TripProvider>().activeTrip;
-    final budget = trip?.presupuestoTotal ?? 0;
-    final spent = (trip?.presupuestoHospedaje ?? 0) +
-        (trip?.presupuestoTransporte ?? 0) +
-        (trip?.presupuestoComidas ?? 0) +
-        (trip?.presupuestoActividades ?? 0) +
-        (trip?.presupuestoEmergencias ?? 0);
-    final pct = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+    final budget = trip?.maxBudget ?? 0;
+    final spentValue = spent ?? 0;
+    final pct = budget > 0 ? (spentValue / budget).clamp(0.0, 1.0) : 0.0;
     final month = _currentMonthLabel();
 
     if (collapsed) {

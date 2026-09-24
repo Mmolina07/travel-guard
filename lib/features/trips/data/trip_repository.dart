@@ -122,6 +122,14 @@ class TripRepository {
     );
   }
 
+  /// "Eliminar" un viaje (botón ⋯ del detalle) es en realidad un soft
+  /// delete: lo pasa a `estado = 'archivado'` en vez de borrar la fila,
+  /// así se conserva el historial de gastos. `fetchTripsByTurista` ya
+  /// excluye los archivados, así que con esto solo basta.
+  Future<void> archiveTrip(int tripId) async {
+    await _client.from(_table).update({'estado': 'archivado'}).eq('id', tripId);
+  }
+
   /// Viajes del turista, más recientes primero (excluye archivados).
   /// Sin esto, `HomeScreenClient` no puede mostrar lo ya guardado al
   /// reabrir la app: solo tenía una lista en memoria que se reinicia
