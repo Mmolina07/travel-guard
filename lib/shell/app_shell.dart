@@ -478,6 +478,20 @@ class _ProfileRow extends StatelessWidget {
             ],
           ),
         ),
+        //botón de perfil
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(
+            icon: const Icon(
+              Icons.settings_outlined,
+              size: 18,
+              color: AppColors.inkSoft,
+            ),
+            tooltip: 'Configuracion',
+            onPressed: () => context.go('/configuracion'),
+          ),
+        ),
+        //botón de cerrar sesión
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: IconButton(

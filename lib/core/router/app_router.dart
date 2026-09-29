@@ -14,6 +14,7 @@ import '../../features/trips/presentation/pages/trip_detail_screen.dart';
 import '../../features/trips/presentation/pages/trip_model.dart';
 import '../theme/app_theme.dart';
 import '../utils/page_title.dart';
+import '../../features/auth/presentation/pages/config_screen.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
 /// atrás del navegador funcional y `/crear` como ruta de diálogo. Antes
@@ -32,6 +33,15 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Ingresar');
             return const LoginScreen();
+          },
+        ),
+
+        GoRoute(
+          path: '/configuracion',
+          name: 'configuracion',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Mi configuración');
+            return const ConfigScreen();
           },
         ),
         GoRoute(
