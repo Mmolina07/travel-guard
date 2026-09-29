@@ -1,8 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/supabase_client.dart';
+import '../../../core/utils/money_formatter.dart';
 import '../presentation/pages/trip_model.dart';
 import 'models/trip_budget_category.dart';
+import 'models/trip_collaborator.dart';
+import 'models/trip_history_entry.dart';
 
 /// Persistencia de HU-05 (Crear Viaje, TG-141) en la tabla `viajes` de
 /// Supabase. `turista_id` es el `usuarios.id` (int8) del turista dueño
@@ -19,6 +22,8 @@ class TripRepository {
   final SupabaseClient _client;
   static const String _table = 'viajes';
   static const String _categoriesTable = 'presupuesto_categorias';
+  static const String _collaboratorsTable = 'viaje_colaboradores';
+  static const String _historyTable = 'viaje_historial';
 
   Future<Trip> createTrip({
     required int turistaId,
@@ -53,15 +58,22 @@ class TripRepository {
     final tripId = row['id'] as int;
     final savedCategories = await _replaceCategories(tripId, trip.categories);
 
-    return trip.copyWith(id: tripId, categories: savedCategories);
+    return trip.copyWith(id: tripId, turistaId: turistaId, categories: savedCategories);
   }
 
   /// Actualiza solo los campos de presupuesto de un viaje ya creado
   /// (mejora "gestor de presupuesto": antes esto se definía una sola
   /// vez al crear el viaje y no se podía ajustar después) y reemplaza
   /// por completo sus categorías personalizadas.
+  ///
+  /// HU-16: recibe también el viaje ANTES del cambio (`previous`) y
+  /// quién edita (`editorUsuarioId`), para dejar en `viaje_historial`
+  /// una fila por cada campo que realmente cambió — así el historial
+  /// sirve tanto para el dueño como para cualquier colaborador que edite.
   Future<Trip> updateTripBudget({
+    required Trip previous,
     required Trip trip,
+    required int editorUsuarioId,
   }) async {
     final tripId = trip.id;
     if (tripId == null) {
@@ -76,7 +88,180 @@ class TripRepository {
     }).eq('id', tripId);
 
     final savedCategories = await _replaceCategories(tripId, trip.categories);
-    return trip.copyWith(categories: savedCategories);
+    final saved = trip.copyWith(categories: savedCategories);
+
+    await _logBudgetChanges(
+      tripId: tripId,
+      editorUsuarioId: editorUsuarioId,
+      previous: previous,
+      updated: saved,
+    );
+
+    return saved;
+  }
+
+  /// Compara `previous` vs. `updated` campo por campo y guarda una fila
+  /// de historial solo por los que de verdad cambiaron — así una edición
+  /// que solo toca el presupuesto máximo no llena el historial con
+  /// "categorías: sin cambios", etc.
+  Future<void> _logBudgetChanges({
+    required int tripId,
+    required int editorUsuarioId,
+    required Trip previous,
+    required Trip updated,
+  }) async {
+    final entries = <Map<String, dynamic>>[];
+
+    void addIfChanged(String campo, double before, double after) {
+      if (before == after) return;
+      entries.add({
+        'viaje_id': tripId,
+        'usuario_id': editorUsuarioId,
+        'campo': campo,
+        'valor_anterior': formatCOP(before),
+        'valor_nuevo': formatCOP(after),
+      });
+    }
+
+    addIfChanged('presupuesto_maximo', previous.maxBudget, updated.maxBudget);
+    addIfChanged('pagos_anticipados', previous.advancePayment, updated.advancePayment);
+    addIfChanged('costo_hospedaje', previous.lodgingCost, updated.lodgingCost);
+    addIfChanged('dinero_emergencias', previous.emergencyMoney, updated.emergencyMoney);
+
+    final categoriesBefore = _describeCategories(previous.categories);
+    final categoriesAfter = _describeCategories(updated.categories);
+    if (categoriesBefore != categoriesAfter) {
+      entries.add({
+        'viaje_id': tripId,
+        'usuario_id': editorUsuarioId,
+        'campo': 'categorias_presupuesto',
+        'valor_anterior': categoriesBefore.isEmpty ? '—' : categoriesBefore,
+        'valor_nuevo': categoriesAfter.isEmpty ? '—' : categoriesAfter,
+      });
+    }
+
+    if (entries.isEmpty) return;
+    await _client.from(_historyTable).insert(entries);
+  }
+
+  String _describeCategories(List<TripBudgetCategory> categories) {
+    final sorted = [...categories]..sort((a, b) => a.nombre.compareTo(b.nombre));
+    return sorted.map((c) => '${c.nombre}: ${formatCOP(c.monto)}').join(', ');
+  }
+
+  /// HU-16: últimos cambios del viaje (más reciente primero), para el
+  /// "pequeño historial de cambios" del tab Grupo.
+  Future<List<TripHistoryEntry>> fetchHistory(int tripId) async {
+    final rows = await _client
+        .from(_historyTable)
+        .select('*, usuarios(email, turistas(nombre, apellido))')
+        .eq('viaje_id', tripId)
+        .order('created_at', ascending: false);
+
+    return (rows as List)
+        .map((row) => TripHistoryEntry.fromRow(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// HU-16: datos del dueño del viaje (`Trip.turistaId`) para mostrarlo
+  /// junto a los colaboradores en el tab "Grupo" — no está en
+  /// `viaje_colaboradores`, así que se busca aparte.
+  Future<TripCollaborator> fetchOwner(int usuarioId) async {
+    final row = await _client
+        .from('usuarios')
+        .select('email, turistas(nombre, apellido)')
+        .eq('id', usuarioId)
+        .single();
+    return TripCollaborator.fromRow({
+      'usuario_id': usuarioId,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'usuarios': row,
+    });
+  }
+
+  /// HU-16: colaboradores invitados al viaje (sin incluir al dueño, que
+  /// se identifica con `Trip.turistaId`).
+  Future<List<TripCollaborator>> fetchCollaborators(int tripId) async {
+    final rows = await _client
+        .from(_collaboratorsTable)
+        // `!usuario_id` desambigua el embed: `viaje_colaboradores` tiene
+        // DOS FKs hacia `usuarios` (`usuario_id` e `invitado_por`), así
+        // que sin esto PostgREST no sabe cuál usar y responde con un
+        // error de "more than one relationship was found" — eso era lo
+        // que hacía fallar todo el tab "Grupo".
+        .select('usuario_id, created_at, usuarios!usuario_id(email, turistas(nombre, apellido))')
+        .eq('viaje_id', tripId)
+        .order('created_at');
+
+    return (rows as List)
+        .map((row) => TripCollaborator.fromRow(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Invita a un turista por correo. Inmediato (sin estado "pendiente"):
+  /// si el correo ya está registrado como turista, queda agregado de
+  /// una vez. Lanza [TripInviteException] con un mensaje ya listo para
+  /// mostrar en pantalla cuando no se puede invitar.
+  Future<TripCollaborator> addCollaboratorByEmail({
+    required int tripId,
+    required int ownerId,
+    required String email,
+    required int invitedBy,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+
+    final usuarioRow = await _client
+        .from('usuarios')
+        .select('id, tipo_usuario, email, turistas(nombre, apellido)')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+
+    if (usuarioRow == null) {
+      throw const TripInviteException(
+        'Ese correo no está registrado en TravelGuard todavía.',
+      );
+    }
+    if (usuarioRow['tipo_usuario'] != 'turista') {
+      throw const TripInviteException(
+        'Solo se pueden invitar cuentas de turista.',
+      );
+    }
+
+    final invitedUserId = usuarioRow['id'] as int;
+    if (invitedUserId == ownerId) {
+      throw const TripInviteException('Ya eres el dueño de este viaje.');
+    }
+
+    final alreadyCollaborator = await _client
+        .from(_collaboratorsTable)
+        .select('id')
+        .eq('viaje_id', tripId)
+        .eq('usuario_id', invitedUserId)
+        .maybeSingle();
+    if (alreadyCollaborator != null) {
+      throw const TripInviteException('Esa persona ya es colaboradora de este viaje.');
+    }
+
+    await _client.from(_collaboratorsTable).insert({
+      'viaje_id': tripId,
+      'usuario_id': invitedUserId,
+      'invitado_por': invitedBy,
+    });
+
+    return TripCollaborator.fromRow({
+      'usuario_id': invitedUserId,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'usuarios': usuarioRow,
+    });
+  }
+
+  /// Solo el dueño puede quitar colaboradores (se valida en la UI).
+  Future<void> removeCollaborator({required int tripId, required int usuarioId}) async {
+    await _client
+        .from(_collaboratorsTable)
+        .delete()
+        .eq('viaje_id', tripId)
+        .eq('usuario_id', usuarioId);
   }
 
   /// Borra las categorías existentes del viaje y crea las nuevas —
@@ -134,11 +319,28 @@ class TripRepository {
   /// Sin esto, `HomeScreenClient` no puede mostrar lo ya guardado al
   /// reabrir la app: solo tenía una lista en memoria que se reinicia
   /// cada vez que se recrea la pantalla.
+  ///
+  /// HU-16: incluye tanto los viajes propios (`turista_id`) como los
+  /// viajes de otros donde este turista quedó como colaborador — un
+  /// viaje compartido debe verse igual en "Mis viajes" para todos sus
+  /// miembros, no solo para quien lo creó.
   Future<List<Trip>> fetchTripsByTurista(int turistaId) async {
+    final collaboratorRows = await _client
+        .from(_collaboratorsTable)
+        .select('viaje_id')
+        .eq('usuario_id', turistaId);
+    final collaboratorTripIds = (collaboratorRows as List)
+        .map((row) => row['viaje_id'] as int)
+        .toList();
+
+    final ownershipFilter = collaboratorTripIds.isEmpty
+        ? 'turista_id.eq.$turistaId'
+        : 'turista_id.eq.$turistaId,id.in.(${collaboratorTripIds.join(',')})';
+
     final rows = await _client
         .from(_table)
         .select('*, $_categoriesTable(*, categorias_gasto(nombre))')
-        .eq('turista_id', turistaId)
+        .or(ownershipFilter)
         .neq('estado', 'archivado')
         .order('created_at', ascending: false);
 
@@ -157,6 +359,7 @@ class TripRepository {
 
     return Trip(
       id: row['id'] as int,
+      turistaId: row['turista_id'] as int?,
       name: row['nombre'] as String,
       destination: row['destino'] as String,
       startDate: _fromIsoDate(row['fecha_inicio'] as String),
@@ -256,4 +459,15 @@ class TripRepository {
         return 'Otro';
     }
   }
+}
+
+/// Error de invitación (HU-16) con un mensaje ya listo para mostrar en
+/// un `SnackBar` — evita repetir la traducción de errores en la UI.
+class TripInviteException implements Exception {
+  const TripInviteException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

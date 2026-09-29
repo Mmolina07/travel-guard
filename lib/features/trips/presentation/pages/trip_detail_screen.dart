@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/route_pattern_background.dart';
 import '../../../../shell/app_shell.dart';
 import '../../../../widgets/budget_bar.dart';
+import '../../../auth/providers/app_auth_provider.dart';
 import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/data/models/gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
+import '../../data/models/trip_collaborator.dart';
+import '../../data/models/trip_history_entry.dart';
 import '../../data/trip_repository.dart';
 import '../../presentation/pages/trip_model.dart';
 import '../../utils/budget_calculator.dart';
@@ -43,13 +47,28 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   /// mostrarla siempre.
   bool _esExtranjero = false;
 
+  // HU-16: gestión de viajes en grupo (colaboradores + historial).
+  int? _currentUserId;
+  TripCollaborator? _owner;
+  List<TripCollaborator> _collaborators = [];
+  List<TripHistoryEntry> _history = [];
+  bool _isLoadingGrupo = true;
+  String? _grupoError;
+
+  /// Solo el dueño puede invitar/quitar colaboradores o eliminar el
+  /// viaje — un colaborador puede editar todo lo demás igual que el
+  /// dueño (ver docs/db/hu16_colaboradores_historial.sql).
+  bool get _isOwner => _currentUserId != null && _currentUserId == trip.turistaId;
+
   @override
   void initState() {
     super.initState();
     trip = widget.trip;
-    _tabController = TabController(length: 4, vsync: this)
+    _tabController = TabController(length: 5, vsync: this)
       ..addListener(() => setState(() {}));
+    _currentUserId = context.read<AppAuthProvider>().usuario?.id;
     _loadGastos();
+    _loadGrupo();
   }
 
   @override
@@ -95,6 +114,123 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   /// solita cada vez que `_gastos` cambia (agregar/eliminar) — "se va
   /// actualizando constantemente".
   double get _gastosTotal => _gastos.fold(0.0, (sum, g) => sum + g.monto);
+
+  /// HU-16: dueño, colaboradores e historial del viaje, para el tab
+  /// "Grupo". Igual que `_loadGastos`, sin `trip.id` no hay nada que
+  /// consultar (viaje que no llegó a guardarse).
+  Future<void> _loadGrupo() async {
+    if (trip.id == null || trip.turistaId == null) {
+      setState(() => _isLoadingGrupo = false);
+      return;
+    }
+    setState(() {
+      _isLoadingGrupo = true;
+      _grupoError = null;
+    });
+    try {
+      final results = await Future.wait([
+        _tripRepository.fetchOwner(trip.turistaId!),
+        _tripRepository.fetchCollaborators(trip.id!),
+        _tripRepository.fetchHistory(trip.id!),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _owner = results[0] as TripCollaborator;
+        _collaborators = results[1] as List<TripCollaborator>;
+        _history = results[2] as List<TripHistoryEntry>;
+        _isLoadingGrupo = false;
+      });
+    } catch (e, st) {
+      debugPrint('TripDetailScreen._loadGrupo error: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        _grupoError = 'No se pudo cargar el grupo del viaje.';
+        _isLoadingGrupo = false;
+      });
+    }
+  }
+
+  Future<void> _handleInvite() async {
+    if (trip.id == null || trip.turistaId == null || _currentUserId == null) return;
+
+    final emailController = TextEditingController();
+    final email = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Invitar colaborador'),
+        content: TextField(
+          controller: emailController,
+          autofocus: true,
+          keyboardType: TextInputType.emailAddress,
+          onSubmitted: (value) => Navigator.pop(ctx, value),
+          decoration: const InputDecoration(
+            hintText: 'correo@ejemplo.com',
+            helperText: 'Debe estar registrado en TravelGuard como turista.',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, emailController.text),
+            child: const Text('Invitar'),
+          ),
+        ],
+      ),
+    );
+    emailController.dispose();
+    if (email == null || email.trim().isEmpty) return;
+
+    try {
+      final collaborator = await _tripRepository.addCollaboratorByEmail(
+        tripId: trip.id!,
+        ownerId: trip.turistaId!,
+        email: email,
+        invitedBy: _currentUserId!,
+      );
+      if (!mounted) return;
+      setState(() => _collaborators = [..._collaborators, collaborator]);
+      _showSnack('${collaborator.nombreCompleto} ahora puede ver y editar este viaje', color: AppColors.ink);
+    } on TripInviteException catch (e) {
+      if (!mounted) return;
+      _showSnack(e.message);
+    } catch (e, st) {
+      debugPrint('TripDetailScreen._handleInvite error: $e\n$st');
+      if (!mounted) return;
+      _showSnack('No se pudo invitar a esa persona. Intenta de nuevo.');
+    }
+  }
+
+  Future<void> _handleRemoveCollaborator(TripCollaborator member) async {
+    if (trip.id == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Quitar colaborador'),
+        content: Text(
+          '¿Quitar a ${member.nombreCompleto} de este viaje? Dejará de poder verlo y editarlo.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    try {
+      await _tripRepository.removeCollaborator(tripId: trip.id!, usuarioId: member.usuarioId);
+      if (!mounted) return;
+      setState(() => _collaborators = _collaborators.where((c) => c.usuarioId != member.usuarioId).toList());
+    } catch (e, st) {
+      debugPrint('TripDetailScreen._handleRemoveCollaborator error: $e\n$st');
+      if (!mounted) return;
+      _showSnack('No se pudo quitar al colaborador.');
+    }
+  }
 
   DateTime? _parseTripDate(String ddMmYyyy) {
     try {
@@ -195,6 +331,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Future<void> _confirmDeleteTrip() async {
+    // HU-16: eliminar el viaje es solo del dueño — la UI ya oculta este
+    // botón para colaboradores, esto es un segundo seguro.
+    if (!_isOwner) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -311,6 +450,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             Tab(text: 'Hospedaje'),
             Tab(text: 'Transporte'),
             Tab(text: 'Gastos'),
+            Tab(text: 'Grupo'),
           ],
         ),
         const SizedBox(height: 24),
@@ -318,7 +458,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
           1 => _buildHospedajeTab(),
           2 => _buildTransporteTab(),
-          _ => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+          3 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+          _ => _buildGrupoTab(),
         },
       ],
     );
@@ -371,8 +512,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                           translucent: false,
                           onTap: _handleAddExpense,
                         ),
-                        const SizedBox(width: 10),
-                        _HeaderIconButton(icon: Icons.more_horiz, onTap: _confirmDeleteTrip),
+                        if (_isOwner) ...[
+                          const SizedBox(width: 10),
+                          _HeaderIconButton(icon: Icons.more_horiz, onTap: _confirmDeleteTrip),
+                        ],
                       ],
                     ),
                   ],
@@ -1029,6 +1172,197 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     );
   }
 
+  // ─── Tab: Grupo (HU-16) ───
+
+  Widget _buildGrupoTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildColaboradoresCard(),
+        const SizedBox(height: 16),
+        _buildHistorialCard(),
+      ],
+    );
+  }
+
+  Widget _buildColaboradoresCard() {
+    return _SectionCard(
+      title: 'Colaboradores',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Quiénes pueden ver y editar este viaje',
+                  style: AppText.ui(12, color: AppColors.textMuted),
+                ),
+              ),
+              if (_isOwner) _addActionButton('Invitar', _handleInvite),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (_isLoadingGrupo)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+            )
+          else if (_grupoError != null)
+            Row(
+              children: [
+                Expanded(child: Text(_grupoError!, style: AppText.ui(13, color: AppColors.error))),
+                TextButton(onPressed: _loadGrupo, child: const Text('Reintentar')),
+              ],
+            )
+          else ...[
+            if (_owner != null) _memberRow(_owner!, isOwnerRow: true),
+            for (final collaborator in _collaborators) _memberRow(collaborator, isOwnerRow: false),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _memberRow(TripCollaborator member, {required bool isOwnerRow}) {
+    final isMe = member.usuarioId == _currentUserId;
+    final initial = member.nombreCompleto.isNotEmpty ? member.nombreCompleto[0].toUpperCase() : '?';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.wash,
+            child: Text(initial, style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(member.nombreCompleto, style: AppText.ui(14, weight: FontWeight.w600)),
+                Text(member.email, style: AppText.label(10)),
+              ],
+            ),
+          ),
+          if (isOwnerRow)
+            _tag('Dueño')
+          else ...[
+            if (isMe) _tag('Tú'),
+            if (_isOwner) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
+                onPressed: () => _handleRemoveCollaborator(member),
+                tooltip: 'Quitar colaborador',
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _addActionButton(String label, VoidCallback onTap) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.person_add_alt, size: 14, color: AppColors.inkSoft),
+            const SizedBox(width: 4),
+            Text(label, style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistorialCard() {
+    return _SectionCard(
+      title: 'Historial de cambios',
+      child: _isLoadingGrupo
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+            )
+          : _history.isEmpty
+          ? Text(
+              'Todavía no hay cambios registrados. Cuando alguien edite el presupuesto, quedará aquí.',
+              style: AppText.ui(13, color: AppColors.textMuted),
+            )
+          : Column(
+              children: [
+                for (var i = 0; i < _history.length; i++) ...[
+                  _historyRow(_history[i]),
+                  if (i != _history.length - 1) const Divider(height: 1, color: AppColors.line),
+                ],
+              ],
+            ),
+    );
+  }
+
+  Widget _historyRow(TripHistoryEntry entry) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: AppColors.wash, borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.history, size: 15, color: AppColors.inkSoft),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    style: AppText.ui(13, color: AppColors.ink),
+                    children: [
+                      TextSpan(text: entry.editorNombre, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      const TextSpan(text: ' cambió '),
+                      TextSpan(
+                        text: tripHistoryFieldLabel(entry.campo),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${entry.valorAnterior ?? '—'} → ${entry.valorNuevo ?? '—'}',
+                  style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.inkSoft),
+                ),
+                const SizedBox(height: 2),
+                Text(_relativeTime(entry.createdAt), style: AppText.label(10)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _relativeTime(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    final diff = DateTime.now().difference(local);
+    if (diff.inMinutes < 1) return 'Justo ahora';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Hace ${diff.inHours} h';
+    if (diff.inDays == 1) return 'Ayer';
+    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
+    return DateFormat('dd/MM/yyyy').format(local);
+  }
+
   Widget _kv(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1068,7 +1402,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         ),
         actions: [
           IconButton(icon: const Icon(Icons.edit_outlined), tooltip: 'Editar presupuesto', onPressed: _editBudget),
-          IconButton(icon: const Icon(Icons.more_vert), tooltip: 'Más', onPressed: _confirmDeleteTrip),
+          if (_isOwner)
+            IconButton(icon: const Icon(Icons.more_vert), tooltip: 'Más', onPressed: _confirmDeleteTrip),
         ],
       ),
       body: SingleChildScrollView(
@@ -1100,6 +1435,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             _buildTransporteTab(),
             const SizedBox(height: 16),
             _SectionCard(title: 'Gastos registrados', trailing: formatCOP(_gastosTotal), child: _buildGastosList()),
+            const SizedBox(height: 16),
+            _buildGrupoTab(),
           ],
         ),
       ),

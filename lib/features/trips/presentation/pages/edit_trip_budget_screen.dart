@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../auth/providers/app_auth_provider.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
 import '../widgets/category_field_row.dart';
@@ -118,8 +120,19 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
       ],
     );
 
+    final editorUsuarioId = context.read<AppAuthProvider>().usuario?.id;
+    if (editorUsuarioId == null) {
+      setState(() => _isSaving = false);
+      _showError('Debes iniciar sesión para guardar cambios.');
+      return;
+    }
+
     try {
-      final saved = await _tripRepository.updateTripBudget(trip: updatedDraft);
+      final saved = await _tripRepository.updateTripBudget(
+        previous: widget.trip,
+        trip: updatedDraft,
+        editorUsuarioId: editorUsuarioId,
+      );
       if (!mounted) return;
       Navigator.pop(context, saved);
     } catch (e) {

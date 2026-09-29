@@ -184,6 +184,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                     enabled: !_isLoading,
                     decoration: InputDecoration(
                       hintText: '••••••••',
+                      helperText: 'Mínimo 6 caracteres',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(

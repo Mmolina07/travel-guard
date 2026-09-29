@@ -379,6 +379,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: '••••••••',
+                    helperText: 'Mínimo 8 caracteres',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(

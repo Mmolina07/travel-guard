@@ -240,6 +240,32 @@ CREATE TRIGGER trg_presupuesto_categorias_updated_at BEFORE UPDATE ON presupuest
   FOR EACH ROW EXECUTE FUNCTION set_timestamp();
 CREATE INDEX idx_presupuesto_categorias_viaje ON presupuesto_categorias(viaje_id);
 
+-- HU-16 (gestión de viajes en grupo): ver docs/db/hu16_colaboradores_historial.sql
+-- para el detalle de las decisiones. El dueño del viaje sigue siendo
+-- `viajes.turista_id`; esta tabla solo guarda a los demás colaboradores.
+CREATE TABLE viaje_colaboradores (
+  id            BIGSERIAL PRIMARY KEY,
+  viaje_id      BIGINT NOT NULL REFERENCES viajes(id) ON DELETE CASCADE,
+  usuario_id    BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  invitado_por  BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (viaje_id, usuario_id)
+);
+CREATE INDEX idx_viaje_colaboradores_viaje ON viaje_colaboradores(viaje_id);
+CREATE INDEX idx_viaje_colaboradores_usuario ON viaje_colaboradores(usuario_id);
+
+-- Una fila por campo editado, ya formateado para mostrar (solo lectura).
+CREATE TABLE viaje_historial (
+  id              BIGSERIAL PRIMARY KEY,
+  viaje_id        BIGINT NOT NULL REFERENCES viajes(id) ON DELETE CASCADE,
+  usuario_id      BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  campo           VARCHAR(60) NOT NULL,
+  valor_anterior  TEXT,
+  valor_nuevo     TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_viaje_historial_viaje ON viaje_historial(viaje_id, created_at DESC);
+
 COMMIT;
 
 INSERT INTO categorias_gasto (nombre) VALUES
@@ -266,6 +292,8 @@ ALTER TABLE categorias_lugar    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lugares_interes     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE actividades         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE presupuesto_categorias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE viaje_colaboradores    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE viaje_historial        ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "dev_open_access_usuarios"            ON usuarios            FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_turistas"            ON turistas            FOR ALL USING (true) WITH CHECK (true);
@@ -278,6 +306,8 @@ CREATE POLICY "dev_open_access_categorias_lugar"    ON categorias_lugar    FOR A
 CREATE POLICY "dev_open_access_lugares_interes"     ON lugares_interes     FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_actividades"         ON actividades         FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "dev_open_access_presupuesto_categorias" ON presupuesto_categorias FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "dev_open_access_viaje_colaboradores" ON viaje_colaboradores FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "dev_open_access_viaje_historial"     ON viaje_historial     FOR ALL USING (true) WITH CHECK (true);
 
 -- =====================================================================
 -- FIN

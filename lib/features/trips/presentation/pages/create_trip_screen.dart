@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -118,6 +119,16 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
 
   bool _isLoading = false;
 
+  // El wizard se dibuja sobre un `BackdropFilter` propio (ver
+  // `_buildDialog`) — un `SnackBar` normal vía `ScaffoldMessenger`
+  // termina detrás de ese blur (el `Scaffold` que lo resuelve es el de
+  // la pantalla de atrás, no el del wizard) y se ve difuminado e
+  // ilegible. Este banner se pinta como el ÚLTIMO hijo del `Stack` raíz
+  // (ver `build`), después del blur, así que siempre queda nítido y
+  // encima de todo.
+  String? _banner;
+  Timer? _bannerTimer;
+
   final TripRepository _tripRepository = TripRepository();
 
   @override
@@ -166,6 +177,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     for (final row in _categoryRows) {
       row.dispose();
     }
+    _bannerTimer?.cancel();
     super.dispose();
   }
 
@@ -367,14 +379,16 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   }
 
   /// Escenario 8 de HU-05: campos opcionales (no básicos) sin completar.
+  /// "Dinero emergencias" queda fuera a propósito: no es obligatorio
+  /// tener un fondo de emergencia definido para crear el viaje, así que
+  /// dejarlo vacío no debe disparar el aviso de "datos incompletos".
   bool _hasIncompleteOptionalFields() {
     final sinServiciosIncluidos =
         !_includeBreakfast && !_includeLunch && !_includeDinner && !_includeTransfer;
     return _advancePaymentController.text.trim().isEmpty ||
         _lodgingCostController.text.trim().isEmpty ||
         sinServiciosIncluidos ||
-        _categoryRows.any((row) => row.montoController.text.trim().isEmpty) ||
-        _emergencyMoneyController.text.trim().isEmpty;
+        _categoryRows.any((row) => row.montoController.text.trim().isEmpty);
   }
 
   Future<bool?> _confirmPartialData() {
@@ -512,9 +526,11 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
+    _bannerTimer?.cancel();
+    setState(() => _banner = message);
+    _bannerTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _banner = null);
+    });
   }
 
   double _parsedOrZero(TextEditingController controller) =>
@@ -539,7 +555,21 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         const SingleActivator(LogicalKeyboardKey.enter): _goNext,
         const SingleActivator(LogicalKeyboardKey.numpadEnter): _goNext,
       },
-      child: widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context),
+      child: Stack(
+        children: [
+          widget.asDialog ? _buildDialog(context) : _buildMobileScaffold(context),
+          if (_banner != null)
+            Positioned(
+              top: 24,
+              left: 24,
+              right: 24,
+              child: SafeArea(
+                bottom: false,
+                child: Center(child: _ErrorBanner(message: _banner!)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1388,6 +1418,41 @@ class _ThousandsInputFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+/// Banner de error del wizard — pintado fuera del `BackdropFilter` (ver
+/// `_CreateTripWizardState.build`), así que siempre se ve nítido encima
+/// de todo, a diferencia de un `SnackBar` normal.
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 420),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: AppShadow.raised,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 18, color: Colors.white),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              message,
+              style: AppText.ui(13, weight: FontWeight.w600, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

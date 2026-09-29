@@ -4,6 +4,11 @@ import '../../utils/budget_calculator.dart';
 
 class Trip {
   final int? id;
+  // HU-16: dueño real del viaje (`viajes.turista_id`) — distinto del
+  // usuario que esté viendo la pantalla, que puede ser un colaborador
+  // invitado. Sirve para decidir qué botones mostrar (invitar/quitar
+  // colaboradores y eliminar el viaje son solo del dueño).
+  final int? turistaId;
   final String name;
   final String destination;
   final String startDate;
@@ -27,6 +32,7 @@ class Trip {
 
   Trip({
     this.id,
+    this.turistaId,
     required this.name,
     required this.destination,
     required this.startDate,
@@ -47,6 +53,7 @@ class Trip {
 
   Trip copyWith({
     int? id,
+    int? turistaId,
     double? maxBudget,
     double? advancePayment,
     double? lodgingCost,
@@ -55,6 +62,7 @@ class Trip {
   }) {
     return Trip(
       id: id ?? this.id,
+      turistaId: turistaId ?? this.turistaId,
       name: name,
       destination: destination,
       startDate: startDate,
