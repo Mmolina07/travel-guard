@@ -19,7 +19,7 @@ abstract final class AppColors {
   static const line = Color(0xFFE5E9E2); // bordes de nav y pistas
   static const hair = Color(0xFFDDD7C9); // subrayados/bordes sutiles
   static const textMuted = Color(0xFF4C6461); // texto secundario
-  static const textLabel = Color(0xFF8A8272); // etiquetas mono
+  static const textLabel = Color(0xFF8A8272); // etiquetas mono 
   static const textOnInk = Color(0xFF9DB3B0); // texto secundario sobre ink
   static const error = Color(0xFFB4413A); // error de campo
 }
