@@ -1,27 +1,90 @@
 import 'package:flutter/material.dart';
 
 class ExpenseAlertView extends StatelessWidget {
-  const ExpenseAlertView({super.key});
+  final double spentPercentage;
+  final double remainingBudget;
+  final bool hasNoExpensesToday;
+
+  const ExpenseAlertView({
+    super.key,
+    required this.spentPercentage,
+    required this.remainingBudget,
+    this.hasNoExpensesToday = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Si no hay alerta que mostrar, no dibuja nada
+    if (spentPercentage < 75 && !hasNoExpensesToday) {
+      return const SizedBox.shrink();
+    }
+
+    Color backgroundColor;
+    Color borderColor;
+    Color textColor;
+    IconData icon;
+    String title;
+    String message;
+
+    if (hasNoExpensesToday) {
+      // Recordatorio de gastos no registrados (HU11 - 11:00 PM / Fin de día)
+      backgroundColor = Colors.blue.shade50;
+      borderColor = Colors.blue.shade700;
+      textColor = Colors.blue.shade900;
+      icon = Icons.notifications_active_rounded;
+      title = "Recordatorio de Gastos";
+      message = "¿Tuviste gastos hoy que no hayas registrado? Recuerda mantener tu presupuesto al día.";
+    } else if (spentPercentage >= 100) {
+      // Alerta de límite alcanzado / superado (100%)
+      backgroundColor = Colors.red.shade50;
+      borderColor = Colors.red.shade700;
+      textColor = Colors.red.shade900;
+      icon = Icons.error_outline_rounded;
+      title = "¡Límite Alcanzado!";
+      message = "Has alcanzado o superado tu presupuesto diario. Saldo disponible: \$${remainingBudget.toStringAsFixed(0)} COP.";
+    } else {
+      // Alerta preventiva (75% - 99%)
+      backgroundColor = Colors.amber.shade50;
+      borderColor = Colors.amber.shade700;
+      textColor = Colors.amber.shade900;
+      icon = Icons.warning_amber_rounded;
+      title = "Advertencia de Presupuesto";
+      message = "Has gastado el ${spentPercentage.toStringAsFixed(0)}% de tu presupuesto diario. Te quedan \$${remainingBudget.toStringAsFixed(0)} COP.";
+    }
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       margin: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Colors.amber.shade100,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.amber.shade700),
+        border: Border.all(color: borderColor, width: 1.5),
       ),
-      const Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Alerta de Presupuesto Diario",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          Icon(icon, color: borderColor, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: TextStyle(fontSize: 14, color: textColor),
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: 8),
-          Text("Has alcanzado el límite o estás cerca de tu presupuesto diario."),
         ],
       ),
     );
