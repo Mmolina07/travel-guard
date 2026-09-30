@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../presentation/menu_model.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n_extension.dart';
 
 class MenuDetailScreen extends StatefulWidget {
   final Menu menu;
@@ -27,9 +28,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Detalle del Menú',
-          style: TextStyle(
+        title: Text(
+          context.l10n.menuDetailAppBarTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -69,7 +70,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      menu.isAvailable ? 'Disponible' : 'No disponible',
+                      menu.isAvailable
+                          ? context.l10n.menuDetailStatusAvailable
+                          : context.l10n.menuDetailStatusUnavailable,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -118,9 +121,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Descripción',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.menuDetailDescriptionLabel,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.ink,
@@ -155,7 +158,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.restaurant_menu_outlined,
-                    label: 'Productos',
+                    label: context.l10n.menuDetailStatProductsLabel,
                     value: menu.getProductCount().toString(),
                   ),
                 ),
@@ -163,7 +166,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.attach_money_outlined,
-                    label: 'Promedio',
+                    label: context.l10n.menuDetailStatAverageLabel,
                     value: '\$${menu.getAveragePrice().toStringAsFixed(0)}',
                   ),
                 ),
@@ -171,7 +174,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.receipt_long_outlined,  // ← CAMBIO AQUÍ
-                    label: 'Total',
+                    label: context.l10n.menuDetailStatTotalLabel,
                     value: '\$${menu.getTotalPrice().toStringAsFixed(0)}',
                   ),
                 ),
@@ -184,7 +187,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Productos (${menu.getProductCount()})',
+                context.l10n.menuDetailProductsCount(menu.getProductCount()),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -209,17 +212,17 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       color: AppColors.hair,
                     ),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.fastfood_outlined,
                         size: 48,
                         color: AppColors.hair,
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
-                        'No hay productos',
-                        style: TextStyle(
+                        context.l10n.menuDetailNoProductsTitle,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.ink,
                         ),
@@ -252,13 +255,15 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                       onPressed: () {
                         // Editar menú
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Función en desarrollo'),
+                          SnackBar(
+                            content: Text(
+                              context.l10n.menuDetailFeatureInDevelopmentSnackbar,
+                            ),
                           ),
                         );
                       },
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Editar'),
+                      label: Text(context.l10n.menuDetailEditButton),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.ink,
                         side: const BorderSide(
@@ -281,7 +286,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                         _showDeleteDialog();
                       },
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('Eliminar'),
+                      label: Text(context.l10n.menuDetailDeleteButton),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
@@ -469,22 +474,22 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Eliminar menú',
-            style: TextStyle(
+          title: Text(
+            context.l10n.menuDetailDeleteDialogTitle,
+            style: const TextStyle(
               color: AppColors.ink,
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
-            '¿Estás seguro de que deseas eliminar el menú "${menu.name}"? Esta acción no se puede deshacer.',
+            context.l10n.menuDetailDeleteDialogContent(menu.name),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(
+              child: Text(
+                context.l10n.menuDetailCancelButton,
+                style: const TextStyle(
                   color: AppColors.ink,
                 ),
               ),
@@ -494,8 +499,8 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                 Navigator.pop(context); // Cerrar diálogo
                 Navigator.pop(context); // Volver a pantalla anterior
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Menú eliminado'),
+                  SnackBar(
+                    content: Text(context.l10n.menuDetailMenuDeletedSnackbar),
                     backgroundColor: AppColors.error,
                   ),
                 );
@@ -503,9 +508,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
               ),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(
+              child: Text(
+                context.l10n.menuDetailDeleteButton,
+                style: const TextStyle(
                   color: Colors.white,
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../data/models/categoria_gasto_model.dart';
 
 /// Resultado de [AddExpenseSheet]: datos ya validados, listos para
@@ -107,9 +108,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ingresa un monto válido'),
-          backgroundColor: Color(0xFFD32F2F),
+        SnackBar(
+          content: Text(context.l10n.addExpenseInvalidAmount),
+          backgroundColor: const Color(0xFFD32F2F),
         ),
       );
       return;
@@ -178,9 +179,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Agregar gasto',
-            style: TextStyle(
+          Text(
+            context.l10n.addExpenseTitle,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: _primary,
@@ -188,7 +189,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Registra un nuevo gasto real de este viaje',
+            context.l10n.addExpenseSubtitle,
             style: TextStyle(fontSize: 13, color: Colors.grey[600]),
           ),
           const SizedBox(height: 20),
@@ -196,7 +197,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           DropdownButtonFormField<CategoriaGasto>(
             initialValue: _selectedCategoria,
             decoration: _fieldDecoration(
-              label: 'Categoría',
+              label: context.l10n.addExpenseCategoryLabel,
               icon: Icons.category_outlined,
             ),
             items: widget.categorias
@@ -222,9 +223,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: _fieldDecoration(
-              label: 'Monto',
+              label: context.l10n.addExpenseAmountLabel,
               icon: Icons.attach_money,
-              hint: 'Ej. 50000',
+              hint: context.l10n.addExpenseAmountHint,
             ),
           ),
           const SizedBox(height: 16),
@@ -234,7 +235,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             onTap: _pickDate,
             child: InputDecorator(
               decoration: _fieldDecoration(
-                label: 'Fecha del gasto',
+                label: context.l10n.addExpenseDateLabel,
                 icon: Icons.calendar_today_outlined,
               ),
               child: Text(DateFormat('dd/MM/yyyy').format(_fecha)),
@@ -246,9 +247,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             controller: _descriptionController,
             maxLines: 2,
             decoration: _fieldDecoration(
-              label: 'Descripción (opcional)',
+              label: context.l10n.addExpenseDescriptionLabel,
               icon: Icons.description_outlined,
-              hint: 'Ej. Cena en el centro',
+              hint: context.l10n.addExpenseDescriptionHint,
             ),
           ),
           const SizedBox(height: 24),
@@ -266,9 +267,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Cancelar',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.l10n.configCancelButton,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -284,9 +285,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Agregar',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.l10n.addExpenseAddButton,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../core/l10n/l10n_extension.dart';
+import '../core/settings/currency_provider.dart';
 import '../core/theme/app_theme.dart';
-import '../core/utils/money_formatter.dart';
 import '../features/trips/presentation/pages/trip_model.dart';
 import 'budget_bar.dart';
 import 'hover_card.dart';
@@ -36,6 +38,7 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     final spent = this.spent ?? trip.getTotalSpent();
     final progress =
         trip.maxBudget > 0 ? (spent / trip.maxBudget).clamp(0.0, 1.0) : 0.0;
@@ -78,7 +81,10 @@ class TripCard extends StatelessWidget {
                 BudgetBar(progress: progress),
                 const SizedBox(height: 6),
                 Text(
-                  '${formatCOP(spent)} gastado de ${formatCOP(trip.maxBudget)}',
+                  context.l10n.tripCardSpentOfBudget(
+                    context.formatMoney(spent),
+                    context.formatMoney(trip.maxBudget),
+                  ),
                   style: AppText.ui(11, color: AppColors.textMuted),
                 ),
               ],

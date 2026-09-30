@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../widgets/pressable.dart';
 import '../../../../widgets/segmented_pill.dart';
@@ -63,12 +64,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (!success) {
-      _showError(auth.errorMessage ?? 'No se pudo iniciar sesión.');
+      _showError(auth.errorMessage ?? context.l10n.loginErrorGeneric);
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('¡Ingreso exitoso!')),
+      SnackBar(content: Text(context.l10n.loginSuccessSnackbar)),
     );
 
     // El redirect de `AppRouter` decide entre home de turista/comercio
@@ -91,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('¡Ingreso exitoso!')),
+      SnackBar(content: Text(context.l10n.loginSuccessSnackbar)),
     );
 
     context.go('/');
@@ -99,15 +100,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _validateForm() {
     if (_emailController.text.isEmpty) {
-      _showError('Por favor ingresa tu correo');
+      _showError(context.l10n.loginErrorEnterEmail);
       return false;
     }
     if (!_isValidEmail(_emailController.text)) {
-      _showError('Correo inválido');
+      _showError(context.l10n.loginErrorInvalidEmail);
       return false;
     }
     if (_passwordController.text.isEmpty) {
-      _showError('Por favor ingresa tu contraseña');
+      _showError(context.l10n.loginErrorEnterPassword);
       return false;
     }
     return true;
@@ -227,22 +228,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Bienvenido', style: AppText.display(headlineSize, color: Colors.white)),
-                      Text('de nuevo', style: AppText.displayItalic(headlineSize)),
+                      Text(context.l10n.loginWelcome, style: AppText.display(headlineSize, color: Colors.white)),
+                      Text(context.l10n.loginWelcomeBack, style: AppText.displayItalic(headlineSize)),
                       const SizedBox(height: 18),
                       SizedBox(
                         width: 380,
                         child: Text(
-                          'Explora Medellín con seguridad y control de tu presupuesto.',
+                          context.l10n.loginHeroSubtitle,
                           style: AppText.ui(16, color: AppColors.textOnInk, height: 1.5),
                         ),
                       ),
                       const SizedBox(height: 44),
                       Row(
                         children: [
-                          _stat(value: '3', label: 'PASOS PARA CREAR TU VIAJE'),
+                          _stat(value: '3', label: context.l10n.loginStatStepsLabel),
                           const SizedBox(width: 44),
-                          _stat(value: '100%', label: 'CONTROL DE TU PRESUPUESTO'),
+                          _stat(value: '100%', label: context.l10n.loginStatBudgetLabel),
                         ],
                       ),
                     ],
@@ -314,8 +315,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Bienvenido', style: AppText.display(44, color: Colors.white)),
-                      Text('de nuevo', style: AppText.displayItalic(44)),
+                      Text(context.l10n.loginWelcome, style: AppText.display(44, color: Colors.white)),
+                      Text(context.l10n.loginWelcomeBack, style: AppText.displayItalic(44)),
                     ],
                   ),
                 ),
@@ -348,14 +349,14 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SegmentedPill(
-            labels: const ['Turista', 'Comercio'],
+            labels: [context.l10n.loginRoleTourist, context.l10n.loginRoleCommerce],
             index: _roleIndex,
             onChanged: _isLoading ? (_) {} : (i) => setState(() => _roleIndex = i),
           ),
           const SizedBox(height: 22),
           _UnderlineField(
-            label: 'CORREO',
-            hint: 'ejemplo@correo.com',
+            label: context.l10n.loginFieldEmailLabel,
+            hint: context.l10n.loginFieldEmailHint,
             controller: _emailController,
             emphasized: true,
             keyboardType: TextInputType.emailAddress,
@@ -363,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 20),
           _UnderlineField(
-            label: 'CONTRASEÑA',
+            label: context.l10n.loginFieldPasswordLabel,
             hint: '••••••••',
             controller: _passwordController,
             obscure: !_isPasswordVisible,
@@ -371,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
             trailing: GestureDetector(
               onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
               child: Text(
-                _isPasswordVisible ? 'OCULTAR' : 'VER',
+                _isPasswordVisible ? context.l10n.loginPasswordHide : context.l10n.loginPasswordShow,
                 style: AppText.label(11, color: AppColors.ink),
               ),
             ),
@@ -384,11 +385,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Función en desarrollo')),
+                    SnackBar(content: Text(context.l10n.loginFeatureInDevelopment)),
                   );
                 },
                 child: Text(
-                  '¿Olvidaste tu contraseña?',
+                  context.l10n.loginForgotPassword,
                   style: AppText.ui(13, color: AppColors.textMuted),
                 ),
               ),
@@ -397,7 +398,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 24),
           Pressable(
             onTap: _isLoading ? null : _handleLogin,
-            semanticLabel: _isComercio ? 'Ingresar como comercio' : 'Ingresar como turista',
+            semanticLabel: _isComercio ? context.l10n.loginSubmitAsCommerce : context.l10n.loginSubmitAsTourist,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
               decoration: BoxDecoration(
@@ -420,7 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _isComercio ? 'Ingresar como comercio' : 'Ingresar como turista',
+                          _isComercio ? context.l10n.loginSubmitAsCommerce : context.l10n.loginSubmitAsTourist,
                           style: AppText.ui(16, weight: FontWeight.w700, color: AppColors.paper),
                         ),
                         const Icon(Icons.arrow_forward, color: AppColors.mint, size: 20),
@@ -442,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildGoogleButton() {
     return Pressable(
       onTap: _isLoading ? null : _handleGoogleLogin,
-      semanticLabel: 'Continuar con Google',
+      semanticLabel: context.l10n.loginContinueWithGoogle,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 17),
         alignment: Alignment.center,
@@ -451,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen> {
           border: Border.all(color: AppColors.hair),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text('Continuar con Google', style: AppText.ui(15, weight: FontWeight.w500)),
+        child: Text(context.l10n.loginContinueWithGoogle, style: AppText.ui(15, weight: FontWeight.w500)),
       ),
     );
   }
@@ -466,9 +467,9 @@ class _LoginScreenState extends State<LoginScreen> {
             TextSpan(
               style: AppText.ui(14, color: AppColors.textMuted),
               children: [
-                const TextSpan(text: '¿No tienes cuenta?  '),
+                TextSpan(text: '${context.l10n.loginNoAccountQuestion}  '),
                 TextSpan(
-                  text: 'Regístrate',
+                  text: context.l10n.loginRegisterLink,
                   style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.ink),
                 ),
               ],

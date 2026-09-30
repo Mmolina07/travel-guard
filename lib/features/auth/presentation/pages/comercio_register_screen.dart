@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
 import '../../../../core/widgets/boarding_pass_card.dart';
@@ -92,14 +93,14 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     setState(() => _isLoading = false);
 
     if (!success) {
-      _showError(auth.errorMessage ?? 'No se pudo completar el registro.');
+      _showError(auth.errorMessage ?? context.l10n.commonRegisterErrorGeneric);
       return;
     }
 
     // SnackBar de éxito
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('¡Registro exitoso!'),
+      SnackBar(
+        content: Text(context.l10n.commerceRegisterSuccessSnackbar),
         backgroundColor: Colors.green,
       ),
     );
@@ -136,11 +137,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Cuenta de Google verificada. Completa los datos del negocio '
-          'y presiona "Registrarse" para terminar.',
-        ),
+      SnackBar(
+        content: Text(context.l10n.commerceRegisterGoogleVerifiedSnackbar),
       ),
     );
   }
@@ -157,27 +155,27 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             (_passwordController.text.isEmpty ||
                 _confirmPasswordController.text.isEmpty));
     if (camposVacios) {
-      _showError('Debe completar todos los campos obligatorios');
+      _showError(context.l10n.commerceRegisterFieldsRequired);
       return false;
     }
 
     // HU-07: sin ubicación, el comercio nunca aparece en el mapa.
     if (_comercioLocation == null) {
-      _showError('Selecciona la ubicación de tu negocio en el mapa');
+      _showError(context.l10n.commerceRegisterLocationRequired);
       return false;
     }
 
     // Escenario 4 de HU-02: formato de NIT (la duplicidad la valida el
     // backend en AppAuthProvider.registerComercio).
     if (!_isValidNit(_nitController.text)) {
-      _showError('NIT inválido o ya registrado');
+      _showError(context.l10n.commerceRegisterNitInvalid);
       return false;
     }
 
     // Escenario 2 de HU-02: formato de email (la duplicidad la valida el
     // backend en AppAuthProvider.registerComercio).
     if (!_isValidEmail(_emailController.text)) {
-      _showError('Email inválido o ya registrado');
+      _showError(context.l10n.commerceRegisterEmailInvalidOrTaken);
       return false;
     }
 
@@ -185,12 +183,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
     // HU-02 Escenario 1: mínimo 8 caracteres.
     if (_passwordController.text.length < 8) {
-      _showError('La contraseña debe tener mínimo 8 caracteres');
+      _showError(context.l10n.commerceRegisterPasswordMin);
       return false;
     }
     // Escenario 3 de HU-02.
     if (_passwordController.text != _confirmPasswordController.text) {
-      _showError('Las contraseñas no coinciden');
+      _showError(context.l10n.commonPasswordsMismatch);
       return false;
     }
     return true;
@@ -230,11 +228,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
     if (location == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No se encontró esa dirección en el mapa. Ubica tu negocio '
-            'manualmente tocando el mapa de abajo.',
-          ),
+        SnackBar(
+          content: Text(context.l10n.commerceRegisterGeocodeNotFound),
           backgroundColor: AppColors.error,
         ),
       );
@@ -243,9 +238,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
     setState(() => _comercioLocation = location);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Ubicación encontrada — ajusta el marcador si hace falta.'),
+      SnackBar(
+        content: Text(context.l10n.commerceRegisterGeocodeFound),
         backgroundColor: AppColors.ink,
       ),
     );
@@ -254,8 +248,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthScreenShell(
-      title: 'Registra tu comercio',
-      subtitle: 'Llega a más viajeros con tu negocio en TravelGuard',
+      title: context.l10n.commerceRegisterTitle,
+      subtitle: context.l10n.commerceRegisterSubtitle,
       maxContentWidth: 560,
       content: (context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,36 +263,36 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildLabel('NIT'),
+                _buildLabel(context.l10n.commerceRegisterNitLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _nitController,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'Ingresa el NIT',
-                    prefixIcon: Icon(Icons.badge_outlined),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commerceRegisterNitHint,
+                    prefixIcon: const Icon(Icons.badge_outlined),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Nombre del negocio'),
+                _buildLabel(context.l10n.commerceRegisterNameLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _nameController,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'Ingresa el nombre del negocio',
-                    prefixIcon: Icon(Icons.storefront),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commerceRegisterNameHint,
+                    prefixIcon: const Icon(Icons.storefront),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Dirección'),
+                _buildLabel(context.l10n.commerceRegisterAddressLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _directionController,
                   enabled: !_isLoading,
                   onSubmitted: _geocodeAddress,
                   decoration: InputDecoration(
-                    hintText: 'Ingresa la dirección',
+                    hintText: context.l10n.commerceRegisterAddressHint,
                     prefixIcon: const Icon(Icons.location_on_outlined),
                     suffixIcon: IconButton(
                       icon: _isGeocoding
@@ -311,7 +305,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                               ),
                             )
                           : const Icon(Icons.my_location),
-                      tooltip: 'Buscar esta dirección en el mapa',
+                      tooltip: context.l10n.commerceRegisterAddressSearchTooltip,
                       onPressed: _isLoading || _isGeocoding
                           ? null
                           : () => _geocodeAddress(_directionController.text),
@@ -320,38 +314,37 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Escribe la dirección y toca el ícono de ubicación (o '
-                  'presiona Enter) para verla en el mapa de abajo.',
+                  context.l10n.commerceRegisterAddressHelper,
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Número telefónico'),
+                _buildLabel(context.l10n.commerceRegisterPhoneLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'Ingresa el número',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commerceRegisterPhoneHint,
+                    prefixIcon: const Icon(Icons.phone_outlined),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Sede'),
+                _buildLabel(context.l10n.commerceRegisterSedeLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _sedeController,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'Ingresa la sede',
-                    prefixIcon: Icon(Icons.business),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commerceRegisterSedeHint,
+                    prefixIcon: const Icon(Icons.business),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Ubicación del negocio'),
+                _buildLabel(context.l10n.commerceRegisterLocationLabel),
                 const SizedBox(height: 8),
                 LocationPickerField(
                   initialLocation: _comercioLocation,
@@ -359,19 +352,19 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                       setState(() => _comercioLocation = latLng),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Correo electrónico'),
+                _buildLabel(context.l10n.commonEmailLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'ejemplo@correo.com',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commonEmailHint,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Contraseña'),
+                _buildLabel(context.l10n.commonPasswordLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _passwordController,
@@ -379,7 +372,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: '••••••••',
-                    helperText: 'Mínimo 8 caracteres',
+                    helperText: context.l10n.commerceRegisterPasswordHelper,
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -394,7 +387,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _buildLabel('Confirmar contraseña'),
+                _buildLabel(context.l10n.commonConfirmPasswordLabel),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _confirmPasswordController,
@@ -423,7 +416,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                             AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text('Registrarse'),
+                  : Text(context.l10n.commonRegisterButton),
             ),
           ),
           const SizedBox(height: 20),
@@ -433,7 +426,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'o',
+                  context.l10n.commerceRegisterOr,
                   style: TextStyle(color: AppColors.textMuted),
                 ),
               ),
@@ -448,14 +441,14 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
               icon: const Icon(Icons.g_mobiledata, size: 28),
               label: Text(
                 _isGoogleAccount
-                    ? 'Cuenta de Google verificada'
-                    : 'Verificar con Google',
+                    ? context.l10n.commerceRegisterGoogleVerified
+                    : context.l10n.commerceRegisterGoogleVerify,
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Al registrarte aceptas nuestros Términos y Condiciones',
+            context.l10n.commonTermsNotice,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shell/app_shell.dart';
 import '../../../widgets/filter_chips_row.dart';
@@ -12,6 +13,7 @@ import '../../trips/presentation/pages/create_trip_screen.dart';
 import '../data/location_service.dart';
 import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
+import 'widgets/category_label.dart';
 import 'widgets/place_details_sheet.dart';
 
 /// HU-07: comercios y lugares de interés cercanos, con datos reales de
@@ -68,7 +70,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _loadError = 'No se pudieron cargar los comercios. Intenta de nuevo.';
+        _loadError = context.l10n.comerciosCercanosLoadError;
       });
       return;
     }
@@ -225,10 +227,9 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
   }
 
   Widget _buildHeaderRow(int count) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.start,
-      runSpacing: 16,
+    final categories = _categories;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),
@@ -236,33 +237,34 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                count == 1 ? '1 LUGAR' : '$count LUGARES',
+                context.l10n.comerciosCercanosPlacesCountLabel(count),
                 style: AppText.label(11, color: AppColors.inkSoft),
               ),
               const SizedBox(height: 8),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text('Cerca ', style: AppText.display(40)),
-                  Text('de ti', style: AppText.displayItalic(40)),
+                  Text(context.l10n.comerciosCercanosHeaderTitle1, style: AppText.display(40)),
+                  Text(context.l10n.comerciosCercanosHeaderTitle2, style: AppText.displayItalic(40)),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Comercios y lugares verificados cerca de tu ubicación.',
+                context.l10n.comerciosCercanosHeaderSubtitle,
                 style: AppText.ui(14, color: AppColors.textMuted),
               ),
             ],
           ),
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: FilterChipsRow(
-            items: _categories,
-            selected: _selectedCategoryIndex,
-            onSelect: (i) => setState(() => _selectedCategoryIndex = i),
-            alignment: WrapAlignment.end,
-          ),
+        const SizedBox(height: 20),
+        // Fila propia a ancho completo con scroll horizontal: con Wrap
+        // quedaba descuadrada (número de chips + textos en inglés no
+        // caben parejo en dos líneas junto al título).
+        FilterChipsRow(
+          items: [for (final c in categories) localizedCategoryOrAll(context, c)],
+          selected: _selectedCategoryIndex,
+          onSelect: (i) => setState(() => _selectedCategoryIndex = i),
+          forceScrollable: true,
         ),
       ],
     );
@@ -293,12 +295,12 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                   variant: PlaceCardVariant.featured,
                   name: place.nombre,
                   imageUrl: place.fotoUrl,
-                  categoryLabel: place.categoria.toUpperCase(),
+                  categoryLabel: localizedCategoryLabel(context, place.categoria).toUpperCase(),
                   distanceLabel: _formatDistance(_distanceMeters(place)),
                   address: place.direccion,
                   tags: [
-                    const PlaceCardTag('Verificado', emphasis: true),
-                    if (_isOpenNow(place) == true) const PlaceCardTag('Abierto ahora'),
+                    PlaceCardTag(context.l10n.comerciosCercanosTagVerified, emphasis: true),
+                    if (_isOpenNow(place) == true) PlaceCardTag(context.l10n.comerciosCercanosTagOpenNow),
                   ],
                   onTap: () => _openPlaceDetails(place),
                 ),
@@ -324,7 +326,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Reintentar',
+                context.l10n.comerciosCercanosRetryLabel,
                 style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
               ),
               const SizedBox(width: 6),
@@ -347,12 +349,12 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
         children: [
           Text(
             selectedCategory == 'Todos'
-                ? 'Todavía no hay comercios ni lugares registrados'
-                : 'No hay lugares en esta categoría',
+                ? context.l10n.comerciosCercanosEmptyAll
+                : context.l10n.comerciosCercanosEmptyCategory,
             style: AppText.display(22),
           ),
           const SizedBox(height: 6),
-          Text('Prueba con otra categoría o vuelve más tarde.', style: AppText.ui(13, color: AppColors.textMuted)),
+          Text(context.l10n.comerciosCercanosEmptyHint, style: AppText.ui(13, color: AppColors.textMuted)),
         ],
       ),
     );
@@ -367,7 +369,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
-        title: const Text('Comercios cercanos', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.l10n.comerciosCercanosTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -390,13 +392,18 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                           const Icon(Icons.location_on_outlined, color: Colors.white70, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            _userPosition != null ? 'Cerca de tu ubicación actual' : 'Ubicación no disponible',
+                            _userPosition != null
+                                ? context.l10n.comerciosCercanosNearYourLocation
+                                : context.l10n.comerciosCercanosLocationUnavailable,
                             style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text('${comercios.length} lugar(es) encontrados', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text(
+                        context.l10n.comerciosCercanosPlacesFoundCount(comercios.length),
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
                     ],
                   ),
                 ),
@@ -421,7 +428,7 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                             border: Border.all(color: isSelected ? AppColors.ink : AppColors.hair, width: 1.5),
                           ),
                           child: Text(
-                            label,
+                            localizedCategoryOrAll(context, label),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -447,12 +454,12 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
                               variant: PlaceCardVariant.featured,
                               name: place.nombre,
                               imageUrl: place.fotoUrl,
-                              categoryLabel: place.categoria.toUpperCase(),
+                              categoryLabel: localizedCategoryLabel(context, place.categoria).toUpperCase(),
                               distanceLabel: _formatDistance(_distanceMeters(place)),
                               address: place.direccion,
                               tags: [
-                                const PlaceCardTag('Verificado', emphasis: true),
-                                if (_isOpenNow(place) == true) const PlaceCardTag('Abierto ahora'),
+                                PlaceCardTag(context.l10n.comerciosCercanosTagVerified, emphasis: true),
+                                if (_isOpenNow(place) == true) PlaceCardTag(context.l10n.comerciosCercanosTagOpenNow),
                               ],
                               onTap: () => _openPlaceDetails(place),
                             );

@@ -12,6 +12,7 @@ import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/responsive_center.dart';
 import '../../../core/widgets/route_pattern_background.dart';
 import '../../../core/widgets/travel_guard_badge.dart';
+import '../../../core/l10n/l10n_extension.dart';
 
 class HomeScreenComercio extends StatefulWidget {
   const HomeScreenComercio({Key? key}) : super(key: key);
@@ -32,16 +33,16 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        title: Text(context.l10n.homeComercioSignOut),
+        content: Text(context.l10n.homeComercioSignOutDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.homeComercioCancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar sesión'),
+            child: Text(context.l10n.homeComercioSignOut),
           ),
         ],
       ),
@@ -77,7 +78,11 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Actividad "${activity['name']}" creada'),
+            content: Text(
+              context.l10n.homeComercioActivityCreatedSnackbar(
+                activity['name'],
+              ),
+            ),
             backgroundColor: AppColors.ink,
           ),
         );
@@ -92,8 +97,8 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Crea tu primer menú'),
+          SnackBar(
+            content: Text(context.l10n.homeComercioCreateFirstMenuSnackbar),
             backgroundColor: AppColors.ink,
           ),
         );
@@ -120,10 +125,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   FadeSlideIn(
                     child: _buildFeatureCard(
                       icon: Icons.restaurant_menu,
-                      title: 'Agregar menú',
-                      description:
-                          'Crea y gestiona los platos, bebidas y servicios que ofrece tu negocio.',
-                      buttonText: '+ Menú',
+                      title: context.l10n.homeComercioAddMenuTitle,
+                      description: context.l10n.homeComercioAddMenuDescription,
+                      buttonText: context.l10n.homeComercioAddMenuButton,
                       onButtonPressed: () async {
                         final Menu? newMenu = await Navigator.push<Menu>(
                           context,
@@ -148,7 +152,11 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Menú "${newMenu.name}" creado'),
+                              content: Text(
+                                context.l10n.homeComercioMenuCreatedSnackbar(
+                                  newMenu.name,
+                                ),
+                              ),
                               backgroundColor: AppColors.ink,
                             ),
                           );
@@ -162,10 +170,10 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     delay: const Duration(milliseconds: 80),
                     child: _buildFeatureCard(
                       icon: Icons.event_note,
-                      title: 'Crear actividad',
+                      title: context.l10n.homeComercioCreateActivityTitle,
                       description:
-                          'Organiza eventos, promociones y actividades especiales para tus clientes.',
-                      buttonText: '+ Actividad',
+                          context.l10n.homeComercioCreateActivityDescription,
+                      buttonText: context.l10n.homeComercioCreateActivityButton,
                       onButtonPressed: () async {
                         final activity =
                             await Navigator.push<Map<String, dynamic>>(
@@ -185,7 +193,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Actividad "${activity['name']}" creada',
+                                context.l10n.homeComercioActivityCreatedSnackbar(
+                                  activity['name'],
+                                ),
                               ),
                               backgroundColor: AppColors.ink,
                             ),
@@ -199,9 +209,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Mis actividades',
-                        style: TextStyle(
+                      Text(
+                        context.l10n.homeComercioMyActivitiesTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.ink,
@@ -209,7 +219,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('Ver todas'),
+                        child: Text(context.l10n.homeComercioSeeAllButton),
                       ),
                     ],
                   ),
@@ -230,7 +240,8 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                                 delay: Duration(milliseconds: 70 * index),
                                 offset: const Offset(0.12, 0),
                                 child: _buildActivityCard(
-                                  title: activity['name'] ?? 'Sin nombre',
+                                  title: activity['name'] ??
+                                      context.l10n.homeComercioNoNameFallback,
                                   description: activity['description'] ?? '',
                                   date: activity['hasNoEndDate'] == true
                                       ? (activity['startDate'] ?? '')
@@ -282,23 +293,23 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                         InkWell(
                           onTap: () => _confirmSignOut(context),
                           borderRadius: BorderRadius.circular(20),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.logout,
                                   size: 16,
                                   color: Colors.white,
                                 ),
-                                SizedBox(width: 6),
+                                const SizedBox(width: 6),
                                 Text(
-                                  'Cerrar sesión',
-                                  style: TextStyle(
+                                  context.l10n.homeComercioSignOut,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -312,7 +323,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '¡Hola, $businessName!',
+                      context.l10n.homeComercioGreeting(businessName),
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -321,7 +332,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Gestiona tu negocio fácilmente',
+                      context.l10n.homeComercioHeroSubtitle,
                       style: TextStyle(
                         fontSize: 15,
                         color: Colors.white.withValues(alpha: 0.9),
@@ -349,7 +360,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         Expanded(
           child: _StatChip(
             icon: Icons.event_note,
-            label: 'Actividades',
+            label: context.l10n.homeComercioStatActivitiesLabel,
             value: '${_actividades.length}',
           ),
         ),
@@ -357,7 +368,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         Expanded(
           child: _StatChip(
             icon: Icons.restaurant_menu,
-            label: 'Menús creados',
+            label: context.l10n.homeComercioStatMenusLabel,
             value: '${_menus.length}',
           ),
         ),
@@ -376,9 +387,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
             color: AppColors.hair,
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Aún no tienes actividades',
-            style: TextStyle(
+          Text(
+            context.l10n.homeComercioEmptyActivitiesTitle,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
               color: AppColors.ink,
@@ -386,9 +397,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Crea tu primera actividad para tus visitantes.',
+            context.l10n.homeComercioEmptyActivitiesSubtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -590,22 +601,29 @@ class _ComercioBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
 
-  static const _items = [
-    (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Inicio'),
+  List<({IconData icon, IconData activeIcon, String label})> _items(
+    BuildContext context,
+  ) => [
+    (
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home,
+      label: context.l10n.homeComercioNavHome,
+    ),
     (
       icon: Icons.add_circle_outline,
       activeIcon: Icons.add_circle,
-      label: 'Actividades',
+      label: context.l10n.homeComercioNavActivities,
     ),
     (
       icon: Icons.storefront_outlined,
       activeIcon: Icons.storefront,
-      label: 'Menú',
+      label: context.l10n.homeComercioNavMenu,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final items = _items(context);
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(20, 0, 20, 14),
       child: Container(
@@ -622,8 +640,8 @@ class _ComercioBottomNav extends StatelessWidget {
           ],
         ),
         child: Row(
-          children: List.generate(_items.length, (index) {
-            final item = _items[index];
+          children: List.generate(items.length, (index) {
+            final item = items[index];
             final selected = index == selectedIndex;
             final color =
                 selected ? AppColors.ink : AppColors.textMuted;

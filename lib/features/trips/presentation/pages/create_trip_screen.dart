@@ -8,11 +8,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/money_formatter.dart';
 import '../../../../widgets/budget_bar.dart';
 import '../../../../widgets/filter_chips_row.dart';
 import '../../../../widgets/step_progress.dart';
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../data/models/trip_budget_category.dart';
 import '../../data/trip_repository.dart';
@@ -45,7 +46,7 @@ Page<Trip> buildCreateTripPage(BuildContext context, GoRouterState state) {
   return CustomTransitionPage<Trip>(
     opaque: false,
     barrierDismissible: true,
-    barrierLabel: 'Crear viaje',
+    barrierLabel: context.l10n.createTripBarrierLabel,
     // El scrim con blur lo dibuja el propio wizard (BackdropFilter) —
     // así podemos difuminar detrás del diálogo, algo que el
     // `barrierColor` plano no permite por sí solo.
@@ -76,14 +77,39 @@ class _CreateTripWizard extends StatefulWidget {
 
 class _CreateTripWizardState extends State<_CreateTripWizard> {
   static const _stepCount = 3;
-  static const _stepTitles = [
-    ('¿A dónde', 'vamos?'),
-    ('¿Dónde', 'dormimos?'),
-    ('¿Cómo nos', 'movemos?'),
-  ];
-  static const _stepNames = ['Destino y fechas', 'Hospedaje', 'Transporte'];
+
+  /// Título (línea 1, línea 2) de cada paso del wizard, ya localizado.
+  (String, String) _stepTitle(BuildContext context, int step) {
+    return switch (step) {
+      0 => (context.l10n.createTripStep0TitleLine1, context.l10n.createTripStep0TitleLine2),
+      1 => (context.l10n.createTripStep1TitleLine1, context.l10n.createTripStep1TitleLine2),
+      _ => (context.l10n.createTripStep2TitleLine1, context.l10n.createTripStep2TitleLine2),
+    };
+  }
+
+  /// Nombres de los pasos (columna izquierda / footer), ya localizados.
+  List<String> _stepNames(BuildContext context) => [
+        context.l10n.createTripStepNameDestination,
+        context.l10n.createTripStepNameLodging,
+        context.l10n.createTripStepNameTransport,
+      ];
+
+  // ⚠️ Estos valores se guardan tal cual en la tabla `viajes` de Supabase
+  // (ver `trip_repository.dart` `_mapTipoViaje`/`_unmapTipoViaje`) — NO
+  // traducir, se comparan por igualdad de string contra la base de datos.
   static const _tripTypes = ['Vacaciones', 'Trabajo', 'Ocio', 'Otro'];
+
+  // ⚠️ `tipo_hospedaje` es un varchar libre en Supabase (sin mapeo a
+  // enum): se guarda y se vuelve a mostrar tal cual se eligió aquí. NO
+  // traducir — si se tradujera, un viaje creado en un idioma mostraría
+  // el hospedaje en ese idioma para siempre, sin importar el idioma
+  // actual de la app (comportamiento inconsistente con el resto de la
+  // UI, que sí cambia con el idioma).
   static const _lodgingTypes = ['Hotel', 'Hostel', 'Airbnb', 'Casa alquilada', 'Otro'];
+
+  // ⚠️ Igual que `_tripTypes`: se comparan por igualdad de string contra
+  // `_mapTransporte`/`_unmapTransporte` en `trip_repository.dart`. NO
+  // traducir.
   static const _transportTypes = ['Carro', 'Transporte público', 'Uber', 'Vuelo'];
 
   int _step = 0;
@@ -248,7 +274,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   Future<void> _selectEndDate() async {
     final start = _parseDate(_startDateController.text);
     if (start == null) {
-      _showError('Primero selecciona la fecha de inicio');
+      _showError(context.l10n.createTripErrorSelectStartDateFirst);
       return;
     }
     await _pickDate(
@@ -268,16 +294,16 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
 
   String? _validateStep0() {
     if (_nameController.text.trim().isEmpty || _destinationController.text.trim().isEmpty) {
-      return 'Ingresa el nombre y el destino del viaje';
+      return context.l10n.createTripErrorNameDestinationRequired;
     }
     final startDate = _parseDate(_startDateController.text);
     final endDate = _parseDate(_endDateController.text);
-    if (startDate == null || endDate == null) return 'Selecciona fechas válidas';
+    if (startDate == null || endDate == null) return context.l10n.createTripErrorInvalidDates;
     if (!endDate.isAfter(startDate)) {
-      return 'La fecha de fin debe ser posterior a la de inicio';
+      return context.l10n.createTripErrorEndDateAfterStart;
     }
     final persons = int.tryParse(_personsController.text.trim());
-    if (persons == null || persons <= 0) return 'Debe haber mínimo 1 persona';
+    if (persons == null || persons <= 0) return context.l10n.createTripErrorMinOnePerson;
     return null;
   }
 
@@ -332,38 +358,38 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         _personsController.text.trim().isEmpty ||
         _maxBudgetController.text.trim().isEmpty;
     if (camposBasicosVacios) {
-      return 'Debe completar todos los campos obligatorios';
+      return context.l10n.createTripErrorRequiredFields;
     }
 
     final persons = int.tryParse(_personsController.text.trim());
     if (persons == null || persons <= 0) {
-      return 'Debe haber mínimo 1 persona';
+      return context.l10n.createTripErrorMinOnePerson;
     }
 
     if (_maxBudget <= 0) {
-      return 'El presupuesto debe ser mayor a 0';
+      return context.l10n.createTripErrorBudgetMustBePositive;
     }
 
     final startDate = _parseDate(_startDateController.text);
     final endDate = _parseDate(_endDateController.text);
     if (startDate == null || endDate == null) {
-      return 'Las fechas ingresadas no son válidas';
+      return context.l10n.createTripErrorInvalidDatesEntered;
     }
     if (!endDate.isAfter(startDate)) {
-      return 'La fecha de fin debe ser posterior a la fecha de inicio';
+      return context.l10n.createTripErrorEndDateAfterStartFull;
     }
 
     if (_lodgingCostController.text.trim().isNotEmpty) {
       final lodgingCost = double.tryParse(_lodgingCostController.text.trim());
       if (lodgingCost == null || lodgingCost <= 0) {
-        return 'El costo debe ser mayor a 0';
+        return context.l10n.createTripErrorLodgingCostMustBePositive;
       }
     }
 
     if (_emergencyMoneyController.text.trim().isNotEmpty) {
       final emergencyMoney = double.tryParse(_emergencyMoneyController.text.trim());
       if (emergencyMoney == null || emergencyMoney <= 0) {
-        return 'El monto debe ser mayor a 0';
+        return context.l10n.createTripErrorEmergencyAmountMustBePositive;
       }
     }
 
@@ -395,13 +421,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Datos incompletos'),
-        content: const Text('La estimación será menos precisa. ¿Deseas continuar?'),
+        title: Text(context.l10n.createTripIncompleteDataDialogTitle),
+        content: Text(context.l10n.createTripIncompleteDataDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.createTripCancelButton)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sí, crear viaje'),
+            child: Text(context.l10n.createTripConfirmCreateButton),
           ),
         ],
       ),
@@ -416,7 +442,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     final turistaId = auth.usuario?.id;
     if (turistaId == null) {
       setState(() => _isLoading = false);
-      _showError('Debes iniciar sesión como turista para crear un viaje.');
+      _showError(context.l10n.createTripErrorMustBeLoggedIn);
       return;
     }
 
@@ -457,7 +483,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       // Escenario 1 de HU-05: feedback de éxito con presupuesto total.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Viaje creado! Presupuesto total: ${formatCOP(saved.maxBudget)}'),
+          content: Text(context.l10n.createTripCreatedSnackbar(context.formatMoney(saved.maxBudget))),
           backgroundColor: AppColors.inkSoft,
         ),
       );
@@ -482,7 +508,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       debugPrint('CreateTripScreen._saveTrip error: $e\n$st');
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showError('No se pudo guardar el viaje. Intenta nuevamente.');
+      _showError(context.l10n.createTripErrorSaveGeneric);
     }
   }
 
@@ -491,17 +517,15 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   String _mapSaveTripError(PostgrestException e) {
     final detalle = '${e.message} ${e.details ?? ''}'.toLowerCase();
     if (e.code == '42P01' || detalle.contains('does not exist')) {
-      return 'La base de datos no está actualizada para guardar el viaje '
-          '(falta una columna o tabla). Revisa docs/db/hu05_viajes_costos.sql.';
+      return context.l10n.createTripErrorDbOutdated;
     }
     if (e.code == '42501') {
-      return 'No tienes permiso para guardar el viaje (revisa las '
-          'políticas de seguridad de la tabla viajes en Supabase).';
+      return context.l10n.createTripErrorNoPermission;
     }
     if (e.code == '23503') {
-      return 'Tu usuario no está registrado como turista todavía.';
+      return context.l10n.createTripErrorNotRegisteredAsTourist;
     }
-    return 'No se pudo guardar el viaje. Intenta nuevamente.';
+    return context.l10n.createTripErrorSaveGeneric;
   }
 
   /// Escenario 10 de HU-05: confirmar antes de descartar el formulario.
@@ -509,14 +533,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Estás seguro?'),
-        content: const Text('Se descartarán los datos ingresados.'),
+        title: Text(context.l10n.createTripCancelDialogTitle),
+        content: Text(context.l10n.createTripCancelDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.createTripCancelDialogNoButton)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sí, descartar'),
+            child: Text(context.l10n.createTripCancelDialogConfirmButton),
           ),
         ],
       ),
@@ -546,6 +570,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     // `Enter`/`NumpadEnter` actúan como el botón "Continuar →"/"Crear
     // viaje" de la esquina, sin importar qué campo del wizard tenga el
     // foco — comportamiento normal de un formulario al darle Enter.
@@ -619,14 +644,18 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   }
 
   Widget _buildLeftColumn() {
-    final title = _stepTitles[_step];
+    final title = _stepTitle(context, _step);
+    final stepNames = _stepNames(context);
     return Container(
       color: AppColors.ink,
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(10, color: AppColors.textOnInk)),
+          Text(
+            context.l10n.createTripStepIndicator(_step + 1, _stepCount),
+            style: AppText.label(10, color: AppColors.textOnInk),
+          ),
           const SizedBox(height: 20),
           // Tabla de movimiento del README: título de paso con fade + y
           // 12→0 cada vez que cambia — la `key` distinta por paso hace
@@ -657,7 +686,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           const SizedBox(height: 26),
           StepProgress(step: _step, total: _stepCount),
           const Spacer(),
-          for (var i = 0; i < _stepNames.length; i++)
+          for (var i = 0; i < stepNames.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: MouseRegion(
@@ -665,7 +694,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                 child: GestureDetector(
                   onTap: () => _goToStep(i),
                   child: Text(
-                    _stepNames[i],
+                    stepNames[i],
                     style: AppText.ui(
                       14,
                       weight: i == _step ? FontWeight.w700 : FontWeight.w400,
@@ -735,7 +764,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                   children: [
                     const Icon(Icons.arrow_back, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 6),
-                    Text('Atrás', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+                    Text(context.l10n.createTripBackButton, style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
                   ],
                 ),
               ),
@@ -745,7 +774,10 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           Row(
             children: [
               if (_step < _stepCount - 1) ...[
-                Text('SIGUIENTE · ${_stepNames[_step + 1]}', style: AppText.label(10)),
+                Text(
+                  context.l10n.createTripNextStepLabel(_stepNames(context)[_step + 1]),
+                  style: AppText.label(10),
+                ),
                 const SizedBox(width: 16),
               ],
               SizedBox(
@@ -761,7 +793,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear viaje'),
+                      : Text(_step < _stepCount - 1 ? context.l10n.createTripContinueButton : context.l10n.createTripCreateButton),
                 ),
               ),
             ],
@@ -784,7 +816,10 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           icon: const Icon(Icons.arrow_back),
           onPressed: _isLoading ? null : (_step > 0 ? _goBack : _handleCancel),
         ),
-        title: Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(11, color: Colors.white)),
+        title: Text(
+          context.l10n.createTripStepIndicator(_step + 1, _stepCount),
+          style: AppText.label(11, color: Colors.white),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -794,8 +829,8 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_stepTitles[_step].$1, style: AppText.display(30)),
-                  Text(_stepTitles[_step].$2, style: AppText.displayItalic(30)),
+                  Text(_stepTitle(context, _step).$1, style: AppText.display(30)),
+                  Text(_stepTitle(context, _step).$2, style: AppText.displayItalic(30)),
                   const SizedBox(height: 16),
                   StepProgress(step: _step, total: _stepCount),
                 ],
@@ -823,11 +858,11 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _step < _stepCount - 1 ? 'SIGUIENTE' : 'LISTO',
+                          _step < _stepCount - 1 ? context.l10n.createTripNextLabel : context.l10n.createTripDoneLabel,
                           style: AppText.label(10),
                         ),
                         Text(
-                          _step < _stepCount - 1 ? _stepNames[_step + 1] : 'Crear viaje',
+                          _step < _stepCount - 1 ? _stepNames(context)[_step + 1] : context.l10n.createTripCreateButton,
                           style: AppText.ui(15, weight: FontWeight.w600),
                         ),
                       ],
@@ -844,7 +879,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear viaje'),
+                        : Text(_step < _stepCount - 1 ? context.l10n.createTripContinueButton : context.l10n.createTripCreateButton),
                   ),
                 ],
               ),
@@ -874,17 +909,17 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           children: [
             Expanded(
               child: _labeledField(
-                label: 'Nombre del viaje',
+                label: context.l10n.createTripNameLabel,
                 controller: _nameController,
-                hint: 'Ej: Viaje a Cartagena',
+                hint: context.l10n.createTripNameHint,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _labeledField(
-                label: 'Destino',
+                label: context.l10n.createTripDestinationLabel,
                 controller: _destinationController,
-                hint: 'Ej: Cartagena, Colombia',
+                hint: context.l10n.createTripDestinationHint,
               ),
             ),
           ],
@@ -892,9 +927,9 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(child: _dateBox(label: 'INICIO', controller: _startDateController, onTap: _selectStartDate)),
+            Expanded(child: _dateBox(label: context.l10n.createTripStartDateLabel, controller: _startDateController, onTap: _selectStartDate)),
             const SizedBox(width: 10),
-            Expanded(child: _dateBox(label: 'FIN', controller: _endDateController, onTap: _selectEndDate)),
+            Expanded(child: _dateBox(label: context.l10n.createTripEndDateLabel, controller: _endDateController, onTap: _selectEndDate)),
             const SizedBox(width: 10),
             Expanded(child: _personsBox()),
           ],
@@ -902,12 +937,12 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         if (_tripDurationInDays != null) ...[
           const SizedBox(height: 10),
           Text(
-            'Duración: $_tripDurationInDays ${_tripDurationInDays == 1 ? 'día' : 'días'}',
+            context.l10n.createTripDurationLabel(_tripDurationInDays!),
             style: AppText.ui(12, color: AppColors.inkSoft),
           ),
         ],
         const SizedBox(height: 26),
-        Text('TIPO DE VIAJE', style: AppText.label(10)),
+        Text(context.l10n.createTripTypeLabel, style: AppText.label(10)),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _tripTypes,
@@ -924,7 +959,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('TIPO DE HOSPEDAJE', style: AppText.label(10)),
+        Text(context.l10n.createTripLodgingTypeLabel, style: AppText.label(10)),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _lodgingTypes,
@@ -937,9 +972,9 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           children: [
             Expanded(
               child: _labeledField(
-                label: 'Costo hospedaje',
+                label: context.l10n.createTripLodgingCostLabel,
                 controller: _lodgingCostController,
-                hint: 'Ej: 2000000',
+                hint: context.l10n.createTripLodgingCostHint,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: _moneyFormatters,
                 triggerRebuild: true,
@@ -948,9 +983,9 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
             const SizedBox(width: 16),
             Expanded(
               child: _labeledField(
-                label: 'Pagos anticipados',
+                label: context.l10n.createTripAdvancePaymentLabel,
                 controller: _advancePaymentController,
-                hint: 'Ej: 1500000',
+                hint: context.l10n.createTripAdvancePaymentHint,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: _moneyFormatters,
                 triggerRebuild: true,
@@ -959,16 +994,19 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           ],
         ),
         const SizedBox(height: 26),
-        Text('SERVICIOS INCLUIDOS', style: AppText.label(10)),
+        Text(context.l10n.createTripIncludedServicesLabel, style: AppText.label(10)),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            _toggleChip('Desayuno', _includeBreakfast, (v) => setState(() => _includeBreakfast = v)),
-            _toggleChip('Almuerzo', _includeLunch, (v) => setState(() => _includeLunch = v)),
-            _toggleChip('Cena', _includeDinner, (v) => setState(() => _includeDinner = v)),
-            _toggleChip('Traslado', _includeTransfer, (v) => setState(() => _includeTransfer = v)),
+            // Los labels se traducen libremente — el valor guardado en
+            // `includedServices` (ver `_saveTrip`) sigue siendo el
+            // string fijo en español que compara `trip_repository.dart`.
+            _toggleChip(context.l10n.createTripServiceBreakfast, _includeBreakfast, (v) => setState(() => _includeBreakfast = v)),
+            _toggleChip(context.l10n.createTripServiceLunch, _includeLunch, (v) => setState(() => _includeLunch = v)),
+            _toggleChip(context.l10n.createTripServiceDinner, _includeDinner, (v) => setState(() => _includeDinner = v)),
+            _toggleChip(context.l10n.createTripServiceTransfer, _includeTransfer, (v) => setState(() => _includeTransfer = v)),
           ],
         ),
       ],
@@ -979,7 +1017,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('TRANSPORTE DE INICIO', style: AppText.label(10)),
+        Text(context.l10n.createTripStartTransportLabel, style: AppText.label(10)),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _transportTypes,
@@ -987,7 +1025,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           onSelect: (i) => setState(() => _startTransport = _transportTypes[i]),
         ),
         const SizedBox(height: 20),
-        Text('TRANSPORTE DURANTE EL VIAJE', style: AppText.label(10)),
+        Text(context.l10n.createTripDuringTransportLabel, style: AppText.label(10)),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _transportTypes,
@@ -998,7 +1036,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('GASTOS ADICIONALES', style: AppText.label(10)),
+            Text(context.l10n.createTripAdditionalExpensesLabel, style: AppText.label(10)),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
@@ -1008,7 +1046,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                   children: [
                     const Icon(Icons.add, size: 14, color: AppColors.inkSoft),
                     const SizedBox(width: 4),
-                    Text('Agregar', style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft)),
+                    Text(context.l10n.createTripAddButton, style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft)),
                   ],
                 ),
               ),
@@ -1022,9 +1060,9 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         ],
         const SizedBox(height: 6),
         _labeledField(
-          label: 'Dinero emergencias',
+          label: context.l10n.createTripEmergencyMoneyLabel,
           controller: _emergencyMoneyController,
-          hint: 'Ej: 500000',
+          hint: context.l10n.createTripEmergencyMoneyHint,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: _moneyFormatters,
           triggerRebuild: true,
@@ -1102,7 +1140,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PERSONAS', style: AppText.label(10)),
+          Text(context.l10n.createTripPersonsLabel, style: AppText.label(10)),
           const SizedBox(height: 4),
           TextField(
             controller: _personsController,
@@ -1158,7 +1196,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('PRESUPUESTO MÁXIMO', style: AppText.label(10)),
+        Text(context.l10n.createTripMaxBudgetLabel, style: AppText.label(10)),
         const SizedBox(height: 6),
         // Editable: escribir un monto aquí mueve la barra de abajo sin
         // necesidad de arrastrarla — y arrastrarla sigue actualizando
@@ -1213,14 +1251,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(flex: 5, child: _labeledField(label: 'Categoría', controller: row.nombreController, hint: 'Ej: Transporte interno')),
+        Expanded(flex: 5, child: _labeledField(label: context.l10n.createTripCategoryLabel, controller: row.nombreController, hint: context.l10n.createTripCategoryHint)),
         const SizedBox(width: 10),
         Expanded(
           flex: 4,
           child: _labeledField(
-            label: 'Monto',
+            label: context.l10n.createTripAmountLabel,
             controller: row.montoController,
-            hint: 'Ej: 500000',
+            hint: context.l10n.createTripCategoryAmountHint,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _moneyFormatters,
             triggerRebuild: true,
@@ -1230,7 +1268,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           onPressed: _categoryRows.length > 1 ? () => _removeCategoryRow(row) : null,
           icon: const Icon(Icons.delete_outline, size: 20),
           color: AppColors.error,
-          tooltip: 'Quitar categoría',
+          tooltip: context.l10n.createTripRemoveCategoryTooltip,
         ),
       ],
     );
@@ -1251,7 +1289,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: AppColors.wash, borderRadius: BorderRadius.circular(AppRadius.card)),
         child: Text(
-          'Define el presupuesto máximo en el paso 1 para ver aquí el resumen.',
+          context.l10n.createTripBudgetSummaryPlaceholder,
           style: AppText.ui(12, color: AppColors.textMuted),
         ),
       );
@@ -1274,7 +1312,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Resumen de presupuesto', style: AppText.ui(14, weight: FontWeight.w700)),
+              Text(context.l10n.createTripBudgetSummaryTitle, style: AppText.ui(14, weight: FontWeight.w700)),
               Text(
                 '${(percentage * 100).toStringAsFixed(0)}%',
                 style: AppText.ui(14, weight: FontWeight.w700, color: overBudget ? AppColors.error : AppColors.inkSoft),
@@ -1284,11 +1322,11 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           const SizedBox(height: 10),
           BudgetBar(progress: percentage, fill: overBudget ? AppColors.error : AppColors.inkSoft),
           const SizedBox(height: 12),
-          _summaryRow('Estimado (con lo ingresado)', formatCOP(estimatedSpent)),
+          _summaryRow(context.l10n.createTripEstimatedLabel, context.formatMoney(estimatedSpent)),
           const SizedBox(height: 4),
           _summaryRow(
-            overBudget ? 'Te excedes por' : 'Disponible',
-            formatCOP(remaining.abs()),
+            overBudget ? context.l10n.createTripOverBudgetLabel : context.l10n.createTripAvailableLabel,
+            context.formatMoney(remaining.abs()),
             color: overBudget ? AppColors.error : AppColors.inkSoft,
           ),
           if (overBudget) ...[
@@ -1299,7 +1337,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Lo estimado supera tu presupuesto máximo.',
+                    context.l10n.createTripOverBudgetWarning,
                     style: AppText.ui(11, color: AppColors.error),
                   ),
                 ),
@@ -1334,7 +1372,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     final persons = int.tryParse(_personsController.text.trim()) ?? 1;
     if (start == null || end == null) {
       return Text(
-        'Ingresa las fechas del viaje para ver el presupuesto por día.',
+        context.l10n.createTripEnterDatesForDailyBudget,
         style: AppText.ui(11, color: AppColors.textMuted),
       );
     }
@@ -1344,29 +1382,29 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Presupuesto restante, repartido en:', style: AppText.ui(12, weight: FontWeight.w700)),
+        Text(context.l10n.createTripRemainingBudgetSplitLabel, style: AppText.ui(12, weight: FontWeight.w700)),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _dailyChip(
-                label: 'Por día (${breakdown.days} días)',
-                value: formatCOP(breakdown.perDay),
+                label: context.l10n.createTripPerDayLabel(breakdown.days),
+                value: context.formatMoney(breakdown.perDay),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _dailyChip(
-                label: 'Por persona ($persons)',
-                value: formatCOP(breakdown.perPerson),
+                label: context.l10n.createTripPerPersonLabel(persons),
+                value: context.formatMoney(breakdown.perPerson),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         _dailyChip(
-          label: 'Por persona, por día',
-          value: formatCOP(breakdown.perPersonPerDay),
+          label: context.l10n.createTripPerPersonPerDayLabel,
+          value: context.formatMoney(breakdown.perPersonPerDay),
           fullWidth: true,
         ),
       ],

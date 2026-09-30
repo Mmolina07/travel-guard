@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n_extension.dart';
 
 class CreateActivityScreen extends StatefulWidget {
   const CreateActivityScreen({Key? key}) : super(key: key);
@@ -63,9 +64,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       initialDate: today,
       firstDate: today,
       lastDate: DateTime(2100),
-      helpText: 'Selecciona una fecha',
-      cancelText: 'Cancelar',
-      confirmText: 'Aceptar',
+      helpText: context.l10n.createActivityDatePickerHelpText,
+      cancelText: context.l10n.createActivityDatePickerCancel,
+      confirmText: context.l10n.createActivityDatePickerConfirm,
     );
 
     if (pickedDate != null) {
@@ -83,8 +84,8 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
     if (_startDateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona la fecha de inicio de la actividad.'),
+        SnackBar(
+          content: Text(context.l10n.createActivityStartDateSnackbar),
         ),
       );
       return false;
@@ -92,9 +93,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
     if (!_hasNoEndDate && _endDateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Selecciona la fecha de finalización o marca "Sin fecha de fin".',
+            context.l10n.createActivityEndDateSnackbar,
           ),
         ),
       );
@@ -187,9 +188,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
-        title: const Text(
-          'Crear actividad',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.createActivityAppBarTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
@@ -204,30 +205,30 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Nueva actividad',
-                  style: TextStyle(
+                Text(
+                  context.l10n.createActivityHeading,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Completa la información para publicar una actividad para los turistas.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                Text(
+                  context.l10n.createActivitySubtitle,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
 
                 // Nombre
                 _buildTextField(
                   controller: _nameController,
-                  label: 'Nombre de la actividad',
-                  hint: 'Ej. Happy Hour',
+                  label: context.l10n.createActivityNameLabel,
+                  hint: context.l10n.createActivityNameHint,
                   icon: Icons.local_activity_outlined,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa el nombre de la actividad';
+                      return context.l10n.createActivityNameRequired;
                     }
                     return null;
                   },
@@ -237,16 +238,16 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 // Descripción
                 _buildTextField(
                   controller: _descriptionController,
-                  label: 'Descripción',
-                  hint: 'Explica de qué trata la actividad',
+                  label: context.l10n.createActivityDescriptionLabel,
+                  hint: context.l10n.createActivityDescriptionHint,
                   icon: Icons.description_outlined,
                   maxLines: 5,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa una descripción';
+                      return context.l10n.createActivityDescriptionRequired;
                     }
                     if (value.trim().length < 10) {
-                      return 'La descripción debe ser más detallada';
+                      return context.l10n.createActivityDescriptionTooShort;
                     }
                     return null;
                   },
@@ -257,7 +258,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'Tipo o categoría',
+                    labelText: context.l10n.createActivityCategoryLabel,
                     prefixIcon: const Icon(
                       Icons.category_outlined,
                       color: AppColors.ink,
@@ -273,7 +274,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                       borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
-                  hint: const Text('Selecciona una categoría'),
+                  hint: Text(context.l10n.createActivityCategoryHint),
                   items: _categories.map((category) {
                     return DropdownMenuItem<String>(
                       value: category,
@@ -287,7 +288,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Selecciona una categoría';
+                      return context.l10n.createActivityCategoryRequired;
                     }
                     return null;
                   },
@@ -297,26 +298,26 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 // Precio
                 _buildTextField(
                   controller: _priceController,
-                  label: 'Precio',
-                  hint: 'Ej. 25000',
+                  label: context.l10n.createActivityPriceLabel,
+                  hint: context.l10n.createActivityPriceHint,
                   icon: Icons.attach_money,
                   keyboardType: TextInputType.number,
                   enabled: !_isFree,
                   validator: (value) {
                     if (_isFree) return null;
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa el precio o marca "Gratis"';
+                      return context.l10n.createActivityPriceRequired;
                     }
                     final double? price = double.tryParse(value.trim());
                     if (price == null || price < 0) {
-                      return 'Ingresa un precio válido';
+                      return context.l10n.createActivityPriceInvalid;
                     }
                     return null;
                   },
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Actividad gratuita'),
+                  title: Text(context.l10n.createActivityFreeCheckbox),
                   value: _isFree,
                   activeColor: AppColors.ink,
                   onChanged: (value) {
@@ -334,8 +335,8 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   readOnly: true,
                   onTap: () => _selectDate(_startDateController),
                   decoration: InputDecoration(
-                    labelText: 'Fecha de inicio',
-                    hintText: 'Selecciona la fecha de inicio',
+                    labelText: context.l10n.createActivityStartDateLabel,
+                    hintText: context.l10n.createActivityStartDateHint,
                     prefixIcon: const Icon(
                       Icons.calendar_today_outlined,
                       color: AppColors.ink,
@@ -357,7 +358,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Selecciona la fecha de inicio';
+                      return context.l10n.createActivityStartDateRequired;
                     }
                     return null;
                   },
@@ -375,8 +376,8 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     }
                   },
                   decoration: InputDecoration(
-                    labelText: 'Fecha de finalización',
-                    hintText: 'Selecciona la fecha de finalización',
+                    labelText: context.l10n.createActivityEndDateLabel,
+                    hintText: context.l10n.createActivityEndDateHint,
                     prefixIcon: const Icon(
                       Icons.event_outlined,
                       color: AppColors.ink,
@@ -399,7 +400,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Sin fecha de fin'),
+                  title: Text(context.l10n.createActivityNoEndDateCheckbox),
                   value: _hasNoEndDate,
                   activeColor: AppColors.ink,
                   onChanged: (value) {
@@ -415,7 +416,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 DropdownButtonFormField<String>(
                   value: _selectedStatus,
                   decoration: InputDecoration(
-                    labelText: 'Estado de la actividad',
+                    labelText: context.l10n.createActivityStatusLabel,
                     prefixIcon: const Icon(
                       Icons.toggle_on_outlined,
                       color: AppColors.ink,
@@ -461,9 +462,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        child: Text(
+                          context.l10n.createActivityCancelButton,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -488,9 +489,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'Crear',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                            : Text(
+                                context.l10n.createActivityCreateButton,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),

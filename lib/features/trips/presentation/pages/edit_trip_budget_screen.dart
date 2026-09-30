@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/l10n/l10n_extension.dart';
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/money_formatter.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
@@ -104,7 +105,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
 
   Future<void> _save() async {
     if (_maxBudget <= 0) {
-      _showError('El presupuesto máximo debe ser mayor a 0');
+      _showError(context.l10n.editTripBudgetErrorMaxBudgetPositive);
       return;
     }
     setState(() => _isSaving = true);
@@ -123,7 +124,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     final editorUsuarioId = context.read<AppAuthProvider>().usuario?.id;
     if (editorUsuarioId == null) {
       setState(() => _isSaving = false);
-      _showError('Debes iniciar sesión para guardar cambios.');
+      _showError(context.l10n.editTripBudgetErrorMustBeLoggedIn);
       return;
     }
 
@@ -137,7 +138,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
       Navigator.pop(context, saved);
     } catch (e) {
       if (!mounted) return;
-      _showError('No se pudo guardar el presupuesto. Intenta de nuevo.');
+      _showError(context.l10n.editTripBudgetErrorSaveGeneric);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -154,6 +155,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     final remaining = _maxBudget - _estimatedSpent;
     final overBudget = remaining < 0;
     final breakdown = remaining > 0
@@ -168,9 +170,9 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
-        title: const Text(
-          'Editar presupuesto',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.editTripBudgetTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: _primary,
         foregroundColor: Colors.white,
@@ -202,25 +204,25 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
 
             _field(
               controller: _maxBudgetController,
-              label: 'Presupuesto máximo',
+              label: context.l10n.editTripBudgetMaxBudgetLabel,
               icon: Icons.account_balance_wallet_outlined,
             ),
             const SizedBox(height: 16),
             _field(
               controller: _advancePaymentController,
-              label: 'Pagos anticipados',
+              label: context.l10n.editTripBudgetAdvancePaymentLabel,
               icon: Icons.credit_card,
             ),
             const SizedBox(height: 16),
             _field(
               controller: _lodgingCostController,
-              label: 'Costo hospedaje',
+              label: context.l10n.editTripBudgetLodgingCostLabel,
               icon: Icons.hotel_outlined,
             ),
             const SizedBox(height: 16),
             _field(
               controller: _emergencyMoneyController,
-              label: 'Dinero emergencias',
+              label: context.l10n.editTripBudgetEmergencyMoneyLabel,
               icon: Icons.health_and_safety_outlined,
             ),
             const SizedBox(height: 28),
@@ -228,9 +230,9 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Categorías de gasto',
-                  style: TextStyle(
+                Text(
+                  context.l10n.editTripBudgetCategoriesTitle,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: _primary,
@@ -239,7 +241,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                 TextButton.icon(
                   onPressed: _addCategoryRow,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Agregar'),
+                  label: Text(context.l10n.editTripBudgetAddButton),
                 ),
               ],
             ),
@@ -256,11 +258,11 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _summaryRow('Estimado', formatCOP(_estimatedSpent)),
+                    _summaryRow(context.l10n.editTripBudgetEstimatedLabel, context.formatMoney(_estimatedSpent)),
                     const SizedBox(height: 6),
                     _summaryRow(
-                      overBudget ? 'Te excedes por' : 'Disponible',
-                      formatCOP(remaining.abs()),
+                      overBudget ? context.l10n.editTripBudgetOverBudgetLabel : context.l10n.editTripBudgetAvailableLabel,
+                      context.formatMoney(remaining.abs()),
                       valueColor: overBudget
                           ? AppColors.error
                           : AppColors.inkSoft,
@@ -271,14 +273,14 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                         children: [
                           Expanded(
                             child: _stat(
-                              'Por día (${breakdown.days}d)',
-                              formatCOP(breakdown.perDay),
+                              context.l10n.editTripBudgetPerDayLabel(breakdown.days),
+                              context.formatMoney(breakdown.perDay),
                             ),
                           ),
                           Expanded(
                             child: _stat(
-                              'Por persona (${widget.trip.persons})',
-                              formatCOP(breakdown.perPerson),
+                              context.l10n.editTripBudgetPerPersonLabel(widget.trip.persons),
+                              context.formatMoney(breakdown.perPerson),
                             ),
                           ),
                         ],
@@ -305,9 +307,9 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Guardar cambios',
-                        style: TextStyle(
+                    : Text(
+                        context.l10n.editTripBudgetSaveButton,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -384,7 +386,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
           flex: 5,
           child: TextField(
             controller: row.nombreController,
-            decoration: const InputDecoration(labelText: 'Categoría'),
+            decoration: InputDecoration(labelText: context.l10n.editTripBudgetCategoryLabel),
           ),
         ),
         const SizedBox(width: 10),
@@ -395,7 +397,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _moneyFormatters,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(labelText: 'Monto'),
+            decoration: InputDecoration(labelText: context.l10n.editTripBudgetAmountLabel),
           ),
         ),
         IconButton(
@@ -404,7 +406,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
               : null,
           icon: const Icon(Icons.delete_outline),
           color: AppColors.error,
-          tooltip: 'Quitar categoría',
+          tooltip: context.l10n.editTripBudgetRemoveCategoryTooltip,
         ),
       ],
     );

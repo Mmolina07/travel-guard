@@ -10,7 +10,9 @@ import '../data/location_service.dart';
 import '../data/models/category_visuals.dart';
 import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
+import 'widgets/category_label.dart';
 import 'widgets/place_details_sheet.dart';
+import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shell/app_shell.dart';
 import '../../../widgets/map_style.dart';
@@ -135,12 +137,12 @@ class _MapScreenState extends State<MapScreen> {
     const double circleDiameter = 26 * dpr;
     const double margin = 6 * dpr;
     const double gap = 4 * dpr;
-    const label = 'Tú estás aquí';
+    final label = context.l10n.mapScreenUserHereLabel;
 
     final textPainter = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: label,
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 10 * dpr,
           fontWeight: FontWeight.bold,
@@ -260,8 +262,8 @@ class _MapScreenState extends State<MapScreen> {
         infoWindow: InfoWindow(
           title: place.nombre,
           snippet: distancia.isEmpty
-              ? place.categoria
-              : '${place.categoria} · $distancia',
+              ? localizedCategoryLabel(context, place.categoria)
+              : '${localizedCategoryLabel(context, place.categoria)} · $distancia',
         ),
         onTap: () => _showPlaceDetails(place),
       );
@@ -331,11 +333,11 @@ class _MapScreenState extends State<MapScreen> {
   String _locationActionLabel(LocationFailureReason reason) {
     switch (reason) {
       case LocationFailureReason.serviceDisabled:
-        return 'Activar GPS';
+        return context.l10n.mapScreenActionEnableGps;
       case LocationFailureReason.permissionDenied:
-        return 'Permitir';
+        return context.l10n.mapScreenActionAllow;
       case LocationFailureReason.permissionDeniedForever:
-        return 'Ajustes';
+        return context.l10n.mapScreenActionSettings;
     }
   }
 
@@ -353,12 +355,11 @@ class _MapScreenState extends State<MapScreen> {
   String _locationMessage(LocationFailureReason reason) {
     switch (reason) {
       case LocationFailureReason.serviceDisabled:
-        return 'El GPS está desactivado. Actívalo para ver tu ubicación.';
+        return context.l10n.mapScreenLocationServiceDisabled;
       case LocationFailureReason.permissionDenied:
-        return 'Necesitamos permiso de ubicación para centrar el mapa en ti.';
+        return context.l10n.mapScreenLocationPermissionDenied;
       case LocationFailureReason.permissionDeniedForever:
-        return 'El permiso de ubicación está bloqueado. Actívalo desde '
-            'los ajustes de la app.';
+        return context.l10n.mapScreenLocationPermissionDeniedForever;
     }
   }
 
@@ -531,9 +532,9 @@ class _MapScreenState extends State<MapScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.go('/'),
         ),
-        title: const Text(
-          'Mapa',
-          style: TextStyle(
+        title: Text(
+          context.l10n.mapScreenTitle,
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -626,8 +627,8 @@ class _MapScreenState extends State<MapScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               _isLoadingPlaces
-                  ? 'Buscando lugares cercanos...'
-                  : '${_filteredPlaces.length} lugar(es) encontrados',
+                  ? context.l10n.mapScreenSearchingNearbyPlaces
+                  : context.l10n.mapScreenPlacesFoundCount(_filteredPlaces.length),
               style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ),
@@ -656,7 +657,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                     child: Text(
-                      categoria,
+                      localizedCategoryOrAll(context, categoria),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

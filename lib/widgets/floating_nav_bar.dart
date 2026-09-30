@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/l10n/l10n_extension.dart';
 import '../core/theme/app_theme.dart';
 import 'pressable.dart';
 
@@ -36,14 +37,18 @@ class FloatingNavBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _NavItem(
-            label: 'Inicio',
+            label: context.l10n.floatingNavBarHome,
             active: index == 0,
             onTap: () => onSelect(0),
           ),
-          _NavItem(label: 'Mapa', active: index == 1, onTap: () => onSelect(1)),
+          _NavItem(
+            label: context.l10n.floatingNavBarMap,
+            active: index == 1,
+            onTap: () => onSelect(1),
+          ),
           Pressable(
             onTap: onCreate,
-            semanticLabel: 'Crear viaje',
+            semanticLabel: context.l10n.floatingNavBarCreateTripSemanticLabel,
             child: Hero(
               tag: fabHeroTag,
               child: Container(
@@ -59,7 +64,7 @@ class FloatingNavBar extends StatelessWidget {
             ),
           ),
           _NavItem(
-            label: 'Comercios',
+            label: context.l10n.floatingNavBarCommerces,
             active: index == 2,
             onTap: () => onSelect(2),
           ),

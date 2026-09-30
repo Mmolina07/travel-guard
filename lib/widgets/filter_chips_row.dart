@@ -12,12 +12,18 @@ class FilterChipsRow extends StatelessWidget {
     required this.selected,
     required this.onSelect,
     this.alignment = WrapAlignment.start,
+    this.forceScrollable = false,
   });
 
   final List<String> items;
   final int selected;
   final ValueChanged<int> onSelect;
   final WrapAlignment alignment;
+
+  /// Fuerza el scroll horizontal (como en móvil) aunque no se esté en
+  /// breakpoint móvil — útil cuando la lista de opciones es larga y un
+  /// `Wrap` quedaría descuadrado en el espacio disponible.
+  final bool forceScrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +32,7 @@ class FilterChipsRow extends StatelessWidget {
         _Chip(label: items[i], active: i == selected, onTap: () => onSelect(i)),
     ];
 
-    if (context.isMobile) {
+    if (context.isMobile || forceScrollable) {
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(

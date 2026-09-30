@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../core/l10n/l10n_extension.dart';
+import '../core/settings/currency_provider.dart';
 import '../core/theme/app_theme.dart';
-import '../core/utils/money_formatter.dart';
 import '../core/utils/search_focus.dart';
 import '../features/auth/providers/app_auth_provider.dart';
 import '../features/trips/presentation/pages/trip_model.dart';
@@ -130,19 +131,29 @@ class _SideNav extends StatelessWidget {
   final Trip? activeTrip;
   final double? activeTripSpent;
 
-  static const _items = [
-    (section: AppSection.inicio, icon: Icons.home_outlined, label: 'Inicio'),
+  List<({AppSection section, IconData icon, String label})> _items(
+    BuildContext context,
+  ) => [
+    (
+      section: AppSection.inicio,
+      icon: Icons.home_outlined,
+      label: context.l10n.appShellNavHome,
+    ),
     (
       section: AppSection.misViajes,
       icon: Icons.luggage_outlined,
-      label: 'Mis viajes',
+      label: context.l10n.appShellNavMyTrips,
     ),
     (
       section: AppSection.comercios,
       icon: Icons.storefront_outlined,
-      label: 'Comercios',
+      label: context.l10n.appShellNavCommerces,
     ),
-    (section: AppSection.mapa, icon: Icons.map_outlined, label: 'Mapa'),
+    (
+      section: AppSection.mapa,
+      icon: Icons.map_outlined,
+      label: context.l10n.appShellNavMap,
+    ),
   ];
 
   @override
@@ -164,10 +175,13 @@ class _SideNav extends StatelessWidget {
           if (!collapsed)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('NAVEGACIÓN', style: AppText.label(10)),
+              child: Text(
+                context.l10n.appShellNavSectionLabel,
+                style: AppText.label(10),
+              ),
             ),
           const SizedBox(height: 8),
-          for (final item in _items)
+          for (final item in _items(context))
             _NavItem(
               collapsed: collapsed,
               icon: item.icon,
@@ -273,7 +287,7 @@ class _CreateTripCta extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Crear viaje',
+                      context.l10n.appShellCreateTripButton,
                       style: AppText.ui(
                         15,
                         weight: FontWeight.w700,
@@ -352,10 +366,11 @@ class _BudgetSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     final budget = trip?.maxBudget ?? 0;
     final spentValue = spent ?? 0;
     final pct = budget > 0 ? (spentValue / budget).clamp(0.0, 1.0) : 0.0;
-    final month = _currentMonthLabel();
+    final month = _currentMonthLabel(context).toUpperCase();
 
     if (collapsed) {
       return Center(
@@ -377,12 +392,12 @@ class _BudgetSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'PRESUPUESTO $month',
+            context.l10n.appShellBudgetLabel(month),
             style: AppText.label(10, color: AppColors.inkSoft),
           ),
           const SizedBox(height: 6),
           Text(
-            budget > 0 ? formatCOP(budget) : '—',
+            budget > 0 ? context.formatMoney(budget) : '—',
             style: AppText.display(26),
           ),
           const SizedBox(height: 10),
@@ -404,8 +419,11 @@ class _BudgetSummary extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             budget > 0
-                ? '${(pct * 100).round()}% de ${formatCOP(budget)}'
-                : 'Sin viaje activo',
+                ? context.l10n.appShellBudgetPercentOf(
+                    (pct * 100).round(),
+                    context.formatMoney(budget),
+                  )
+                : context.l10n.appShellNoActiveTrip,
             style: AppText.ui(11, color: AppColors.textMuted),
           ),
         ],
@@ -413,10 +431,21 @@ class _BudgetSummary extends StatelessWidget {
     );
   }
 
-  String _currentMonthLabel() {
-    const months = [
-      'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN',
-      'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC',
+  String _currentMonthLabel(BuildContext context) {
+    final l10n = context.l10n;
+    final months = [
+      l10n.appShellMonthJan,
+      l10n.appShellMonthFeb,
+      l10n.appShellMonthMar,
+      l10n.appShellMonthApr,
+      l10n.appShellMonthMay,
+      l10n.appShellMonthJun,
+      l10n.appShellMonthJul,
+      l10n.appShellMonthAug,
+      l10n.appShellMonthSep,
+      l10n.appShellMonthOct,
+      l10n.appShellMonthNov,
+      l10n.appShellMonthDec,
     ];
     return months[DateTime.now().month - 1];
   }
@@ -432,7 +461,9 @@ class _ProfileRow extends StatelessWidget {
     final auth = context.watch<AppAuthProvider>();
     final name = auth.displayName;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final role = auth.comercio != null ? 'Comercio' : 'Turista';
+    final role = auth.comercio != null
+        ? context.l10n.appShellRoleCommerce
+        : context.l10n.appShellRoleTourist;
 
     final avatar = Container(
       width: 34,
@@ -487,7 +518,7 @@ class _ProfileRow extends StatelessWidget {
               size: 18,
               color: AppColors.inkSoft,
             ),
-            tooltip: 'Configuracion',
+            tooltip: context.l10n.appShellSettingsTooltip,
             onPressed: () => context.go('/configuracion'),
           ),
         ),
@@ -496,7 +527,7 @@ class _ProfileRow extends StatelessWidget {
           cursor: SystemMouseCursors.click,
           child: IconButton(
             icon: const Icon(Icons.logout, size: 18, color: AppColors.textMuted),
-            tooltip: 'Cerrar sesión',
+            tooltip: context.l10n.appShellSignOutTooltip,
             onPressed: () => _confirmSignOut(context),
           ),
         ),
@@ -505,19 +536,20 @@ class _ProfileRow extends StatelessWidget {
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        title: Text(l10n.appShellSignOutDialogTitle),
+        content: Text(l10n.appShellSignOutDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(l10n.appShellCancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar sesión'),
+            child: Text(l10n.appShellSignOutConfirmButton),
           ),
         ],
       ),
@@ -539,12 +571,29 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    const months = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+    final l10n = context.l10n;
+    final months = [
+      l10n.appShellMonthJan,
+      l10n.appShellMonthFeb,
+      l10n.appShellMonthMar,
+      l10n.appShellMonthApr,
+      l10n.appShellMonthMay,
+      l10n.appShellMonthJun,
+      l10n.appShellMonthJul,
+      l10n.appShellMonthAug,
+      l10n.appShellMonthSep,
+      l10n.appShellMonthOct,
+      l10n.appShellMonthNov,
+      l10n.appShellMonthDec,
     ];
-    const weekdays = [
-      'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo',
+    final weekdays = [
+      l10n.appShellWeekdayMonday,
+      l10n.appShellWeekdayTuesday,
+      l10n.appShellWeekdayWednesday,
+      l10n.appShellWeekdayThursday,
+      l10n.appShellWeekdayFriday,
+      l10n.appShellWeekdaySaturday,
+      l10n.appShellWeekdaySunday,
     ];
     final dateLabel =
         '${weekdays[today.weekday - 1]} ${today.day} · ${months[today.month - 1]}';
@@ -591,8 +640,7 @@ class _TopBar extends StatelessWidget {
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              hintText:
-                                  'Buscar viajes, comercios o ciudades',
+                              hintText: context.l10n.appShellSearchHint,
                               hintStyle: AppText.ui(
                                 14,
                                 color: AppColors.textMuted,

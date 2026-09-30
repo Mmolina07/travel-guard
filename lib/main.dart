@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'core/l10n/language_provider.dart';
 import 'core/network/firebase_bootstrap.dart';
 import 'core/network/supabase_client.dart';
 import 'core/router/app_router.dart';
+import 'core/settings/currency_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/app_auth_provider.dart';
 import 'features/trips/providers/trip_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'shell/app_shortcuts.dart';
 
 Future<void> main() async {
@@ -29,6 +33,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
         ChangeNotifierProvider(create: (_) => TripProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()),
       ],
       child: _RoutedApp(),
     );
@@ -51,10 +57,20 @@ class _RoutedAppState extends State<_RoutedApp> {
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.watch<LanguageProvider>().locale;
+
     return MaterialApp.router(
       title: 'Travel Guard',
       theme: AppTheme.light(),
       themeMode: ThemeMode.light,
+      locale: locale,
+      supportedLocales: LanguageProvider.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: _appRouter.router,
       builder: (context, child) => AppShortcuts(
         router: _appRouter.router,

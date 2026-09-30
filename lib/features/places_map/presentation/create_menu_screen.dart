@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../presentation/menu_model.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n_extension.dart';
 
 class CreateMenuScreen extends StatefulWidget {
   const CreateMenuScreen({Key? key}) : super(key: key);
@@ -51,9 +52,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Agregar producto',
-            style: TextStyle(
+          title: Text(
+            context.l10n.createMenuAddProductDialogTitle,
+            style: const TextStyle(
               color: AppColors.ink,
               fontWeight: FontWeight.bold,
             ),
@@ -64,27 +65,27 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
               children: [
                 TextField(
                   controller: productNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del producto',
-                    hintText: 'Ej. Hamburguesa clásica',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.createMenuProductNameLabel,
+                    hintText: context.l10n.createMenuProductNameHint,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: productDescriptionController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    hintText: 'Describe el producto',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.createMenuProductDescriptionLabel,
+                    hintText: context.l10n.createMenuProductDescriptionHint,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: productPriceController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Precio',
-                    hintText: 'Ej. 18000',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.createMenuProductPriceLabel,
+                    hintText: context.l10n.createMenuProductPriceHint,
                   ),
                 ),
               ],
@@ -95,9 +96,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(color: AppColors.ink),
+              child: Text(
+                context.l10n.createMenuCancelButton,
+                style: const TextStyle(color: AppColors.ink),
               ),
             ),
             ElevatedButton(
@@ -112,8 +113,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
 
                 if (name.isEmpty || description.isEmpty || price == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Completa correctamente todos los campos.'),
+                    SnackBar(
+                      content: Text(context.l10n.createMenuFieldsInvalidSnackbar),
                     ),
                   );
                   return;
@@ -121,8 +122,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
 
                 if (price < 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('El precio no puede ser negativo.'),
+                    SnackBar(
+                      content: Text(context.l10n.createMenuNegativePriceSnackbar),
                     ),
                   );
                   return;
@@ -136,7 +137,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
 
                 Navigator.pop(dialogContext, true);
               },
-              child: const Text('Agregar'),
+              child: Text(context.l10n.createMenuAddProductButton),
             ),
           ],
         );
@@ -167,8 +168,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
 
     if (_products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Agrega al menos un producto al menú.'),
+        SnackBar(
+          content: Text(context.l10n.createMenuNoProductsSnackbar),
         ),
       );
       return;
@@ -255,9 +256,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
-        title: const Text(
-          'Crear menú',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.createMenuAppBarTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
@@ -272,18 +273,18 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Nuevo menú',
-                  style: TextStyle(
+                Text(
+                  context.l10n.createMenuHeading,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.ink,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Crea un menú para mostrar tus productos a los turistas.',
-                  style: TextStyle(
+                Text(
+                  context.l10n.createMenuSubtitle,
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
                   ),
@@ -293,12 +294,12 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 // Nombre del menú
                 _buildTextField(
                   controller: _nameController,
-                  label: 'Nombre del menú',
-                  hint: 'Ej. Menú de comidas rápidas',
+                  label: context.l10n.createMenuNameLabel,
+                  hint: context.l10n.createMenuNameHint,
                   icon: Icons.restaurant_menu_outlined,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa el nombre del menú';
+                      return context.l10n.createMenuNameRequired;
                     }
                     return null;
                   },
@@ -309,13 +310,13 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 // Descripción del menú
                 _buildTextField(
                   controller: _descriptionController,
-                  label: 'Descripción',
-                  hint: 'Describe de qué trata este menú',
+                  label: context.l10n.createMenuDescriptionLabel,
+                  hint: context.l10n.createMenuDescriptionHint,
                   icon: Icons.description_outlined,
                   maxLines: 4,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa una descripción';
+                      return context.l10n.createMenuDescriptionRequired;
                     }
                     return null;
                   },
@@ -327,7 +328,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'Categoría',
+                    labelText: context.l10n.createMenuCategoryLabel,
                     prefixIcon: const Icon(
                       Icons.category_outlined,
                       color: AppColors.ink,
@@ -364,16 +365,16 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Productos del menú',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.createMenuProductsHeading,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppColors.ink,
                       ),
                     ),
                     Text(
-                      '${_products.length} productos',
+                      context.l10n.createMenuProductsCount(_products.length),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontWeight: FontWeight.w600,
@@ -396,26 +397,26 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                         color: AppColors.hair,
                       ),
                     ),
-                    child: const Column(
+                    child: Column(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.fastfood_outlined,
                           size: 48,
                           color: AppColors.hair,
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
-                          'Todavía no hay productos',
-                          style: TextStyle(
+                          context.l10n.createMenuEmptyProductsTitle,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppColors.ink,
                           ),
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Text(
-                          'Agrega los productos que formarán parte de este menú.',
+                          context.l10n.createMenuEmptyProductsSubtitle,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.grey,
                           ),
                         ),
@@ -513,7 +514,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _addProduct,
                     icon: const Icon(Icons.add),
-                    label: const Text('Agregar producto'),
+                    label: Text(context.l10n.createMenuAddProductLabel),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.ink,
                       side: const BorderSide(
@@ -532,12 +533,14 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 // Estado del menú
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Menú disponible',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  title: Text(
+                    context.l10n.createMenuAvailableTitle,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
-                    _isAvailable ? 'Los turistas podrán verlo.' : 'El menú estará oculto.',
+                    _isAvailable
+                        ? context.l10n.createMenuAvailableSubtitleOn
+                        : context.l10n.createMenuAvailableSubtitleOff,
                   ),
                   value: _isAvailable,
                   activeColor: AppColors.ink,
@@ -566,9 +569,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        child: Text(
+                          context.l10n.createMenuCancelButton,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -593,9 +596,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'Crear menú',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                            : Text(
+                                context.l10n.createMenuCreateButton,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),

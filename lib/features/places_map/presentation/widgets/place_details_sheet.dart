@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../data/models/actividad_model.dart';
 import '../../data/models/category_visuals.dart';
 import '../../data/models/map_place.dart';
 import '../../data/places_map_repository.dart';
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'category_label.dart';
 
 /// Vista de detalles de un comercio/lugar de interés (TG-152), usada
 /// tanto desde el mapa como desde "Comercios cercanos": nombre,
@@ -68,13 +71,14 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el mapa.')),
+        SnackBar(content: Text(context.l10n.placeDetailsErrorOpenMap)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     final place = widget.place;
     final visual = CategoryVisual.forCategory(place.categoria);
     return SafeArea(
@@ -149,8 +153,9 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
             const SizedBox(height: 4),
             Text(
               widget.distanceLabel.isEmpty
-                  ? place.categoria
-                  : '${place.categoria} · a ${widget.distanceLabel} de ti',
+                  ? localizedCategoryLabel(context, place.categoria)
+                  : context.l10n.placeDetailsCategoryDistance(
+                      localizedCategoryLabel(context, place.categoria), widget.distanceLabel),
               style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
@@ -181,7 +186,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               child: ElevatedButton.icon(
                 onPressed: _openDirections,
                 icon: const Icon(Icons.directions),
-                label: const Text('Cómo llegar'),
+                label: Text(context.l10n.placeDetailsDirectionsButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.ink,
                   foregroundColor: Colors.white,
@@ -193,9 +198,9 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Actividades disponibles',
-              style: TextStyle(
+            Text(
+              context.l10n.placeDetailsActivitiesTitle,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: AppColors.ink,
@@ -217,9 +222,9 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 }
                 final actividades = snapshot.data ?? [];
                 if (actividades.isEmpty) {
-                  return const Text(
-                    'Sin actividades registradas todavía.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                  return Text(
+                    context.l10n.placeDetailsNoActivities,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                   );
                 }
                 return Column(
@@ -234,7 +239,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                                 Expanded(child: Text(a.nombre)),
                                 if (a.precio != null)
                                   Text(
-                                    formatCOP(a.precio!),
+                                    context.formatMoney(a.precio!),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.ink,

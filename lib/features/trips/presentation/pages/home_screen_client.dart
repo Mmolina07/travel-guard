@@ -12,8 +12,9 @@ import '../../../places_map/data/models/map_place.dart';
 import '../../../places_map/data/places_map_repository.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
+import '../../../../core/l10n/l10n_extension.dart';
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/boarding_pass_card.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/responsive_center.dart';
@@ -48,9 +49,19 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   List<MapPlace> _nearbyPlaces = [];
   bool _isLoadingPlaces = true;
 
-  static const _monthAbbrs = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+  List<String> get _monthAbbrs => [
+    context.l10n.homeClientMonthAbbrJan,
+    context.l10n.homeClientMonthAbbrFeb,
+    context.l10n.homeClientMonthAbbrMar,
+    context.l10n.homeClientMonthAbbrApr,
+    context.l10n.homeClientMonthAbbrMay,
+    context.l10n.homeClientMonthAbbrJun,
+    context.l10n.homeClientMonthAbbrJul,
+    context.l10n.homeClientMonthAbbrAug,
+    context.l10n.homeClientMonthAbbrSep,
+    context.l10n.homeClientMonthAbbrOct,
+    context.l10n.homeClientMonthAbbrNov,
+    context.l10n.homeClientMonthAbbrDec,
   ];
 
   String get userName => context.watch<AppAuthProvider>().displayName;
@@ -169,16 +180,16 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        title: Text(context.l10n.homeClientSignOutDialogTitle),
+        content: Text(context.l10n.homeClientSignOutDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.homeClientCancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar sesión'),
+            child: Text(context.l10n.homeClientSignOutConfirmButton),
           ),
         ],
       ),
@@ -212,7 +223,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   /// pedir que se elija — se abre directo el formulario.
   Future<void> _quickAddExpense() async {
     if (_trips.isEmpty) {
-      _showSnack('Crea un viaje primero para poder registrar un gasto.');
+      _showSnack(context.l10n.homeClientCreateTripFirstSnackbar);
       return;
     }
     final trip = _trips.length == 1 ? _trips.first : await _pickTripForExpense();
@@ -239,10 +250,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('¿A qué viaje pertenece?', style: AppText.display(22)),
+              Text(context.l10n.homeClientPickTripTitle, style: AppText.display(22)),
               const SizedBox(height: 4),
               Text(
-                'Elige el viaje para registrar el gasto.',
+                context.l10n.homeClientPickTripSubtitle,
                 style: AppText.ui(13, color: AppColors.textMuted),
               ),
               const SizedBox(height: 16),
@@ -273,7 +284,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   Future<void> _addExpenseToTrip(Trip trip) async {
     if (trip.id == null) {
-      _showSnack('Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.');
+      _showSnack(context.l10n.homeClientTripNotSavedSnackbar);
       return;
     }
 
@@ -283,12 +294,12 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     } catch (e, st) {
       debugPrint('HomeScreenClient._addExpenseToTrip fetchCategorias error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudieron cargar las categorías de gasto.');
+      _showSnack(context.l10n.homeClientCategoriesLoadErrorSnackbar);
       return;
     }
     if (categorias.isEmpty) {
       if (!mounted) return;
-      _showSnack('No se pudieron cargar las categorías de gasto.');
+      _showSnack(context.l10n.homeClientCategoriesLoadErrorSnackbar);
       return;
     }
     if (!mounted) return;
@@ -317,13 +328,17 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         _gastosPorViaje[trip.id!] = (_gastosPorViaje[trip.id!] ?? 0) + result.monto;
       });
       _showSnack(
-        'Gasto de ${formatCOP(result.monto)} en ${result.categoria.nombre} agregado a ${trip.name}',
+        context.l10n.homeClientExpenseAddedSnackbar(
+          context.formatMoney(result.monto),
+          result.categoria.nombre,
+          trip.name,
+        ),
         color: AppColors.ink,
       );
     } catch (e, st) {
       debugPrint('HomeScreenClient._addExpenseToTrip createGasto error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo guardar el gasto. Intenta de nuevo.');
+      _showSnack(context.l10n.homeClientExpenseSaveErrorSnackbar);
     }
   }
 
@@ -357,6 +372,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < AppBreakpoints.mobile) {
@@ -398,11 +414,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Hola, ${_firstName(userName)}.', style: AppText.display(42)),
+              Text(context.l10n.homeClientGreeting(_firstName(userName)), style: AppText.display(42)),
               Text(
-                _trips.length == 1
-                    ? '1 viaje activo'
-                    : '${_trips.length} viajes activos',
+                context.l10n.homeClientActiveTripsCount(_trips.length),
                 style: AppText.displayItalic(42),
               ),
             ],
@@ -495,12 +509,12 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Mis viajes', style: AppText.display(26)),
+            Text(context.l10n.homeClientMyTripsTitle, style: AppText.display(26)),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {},
-                child: Text('VER TODOS', style: AppText.label(11, color: AppColors.inkSoft)),
+                child: Text(context.l10n.homeClientViewAllLabel, style: AppText.label(11, color: AppColors.inkSoft)),
               ),
             ),
           ],
@@ -544,10 +558,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Aún no tienes viajes', style: AppText.display(22)),
+          Text(context.l10n.homeClientNoTripsTitle, style: AppText.display(22)),
           const SizedBox(height: 6),
           Text(
-            'Crea tu primer viaje para comenzar a planificar.',
+            context.l10n.homeClientNoTripsSubtitle,
             style: AppText.ui(13, color: AppColors.textMuted),
           ),
           const SizedBox(height: 14),
@@ -555,7 +569,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Crear viaje',
+                context.l10n.homeClientCreateTripLabel,
                 style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
               ),
               const SizedBox(width: 6),
@@ -572,7 +586,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Cerca de ti', style: AppText.display(26)),
+        Text(context.l10n.homeClientNearbyTitle, style: AppText.display(26)),
         const SizedBox(height: 16),
         if (_isLoadingPlaces)
           const Padding(
@@ -587,7 +601,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
               borderRadius: BorderRadius.circular(AppRadius.card),
             ),
             child: Text(
-              'Todavía no hay comercios ni lugares cerca registrados.',
+              context.l10n.homeClientNoNearbyPlaces,
               style: AppText.ui(13, color: AppColors.textMuted),
             ),
           )
@@ -598,7 +612,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             imageUrl: featured.fotoUrl,
             categoryLabel: featured.categoria.toUpperCase(),
             address: featured.direccion,
-            tags: const [PlaceCardTag('Verificado', emphasis: true)],
+            tags: [PlaceCardTag(context.l10n.homeClientVerifiedTag, emphasis: true)],
             onTap: _openComercios,
           ),
         const SizedBox(height: 16),
@@ -612,7 +626,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 borderRadius: BorderRadius.circular(AppRadius.button),
               ),
             ),
-            child: Text('Ver los ${_nearbyPlaces.length} lugares →'),
+            child: Text(context.l10n.homeClientViewPlacesButton(_nearbyPlaces.length)),
           ),
         ),
       ],
@@ -622,17 +636,16 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   String _firstName(String name) => name.trim().split(' ').first;
 
   String _contextLine(Trip? next) {
-    if (next == null) return 'Explora, planifica y viaja seguro.';
+    if (next == null) return context.l10n.homeClientExploreTagline;
     final pct = next.getBudgetPercentage().clamp(0, 999).round();
     final start = parseDdMmYyyy(next.startDate);
     if (start != null) {
       final days = start.difference(DateTime.now()).inDays;
       if (days > 0) {
-        return '${next.destination} empieza en $days '
-            '${days == 1 ? 'día' : 'días'}. El presupuesto va al $pct%.';
+        return context.l10n.homeClientContextLineDays(next.destination, days, pct);
       }
     }
-    return '${next.destination} · el presupuesto va al $pct%.';
+    return context.l10n.homeClientContextLineNoDays(next.destination, pct);
   }
 
   // ─── Móvil ───
@@ -657,10 +670,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   FadeSlideIn(
                     child: _buildFeatureCard(
                       icon: Icons.luggage_outlined,
-                      title: 'Crear un viaje',
-                      description:
-                          'Organiza tu próxima aventura, establece tu presupuesto y descubre los mejores destinos.',
-                      buttonText: '+ Crear viaje',
+                      title: context.l10n.homeClientCreateTripCardTitle,
+                      description: context.l10n.homeClientCreateTripCardDescription,
+                      buttonText: context.l10n.homeClientCreateTripButtonPlus,
                       onButtonPressed: _createTrip,
                     ),
                   ),
@@ -673,15 +685,15 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Mis viajes',
-                        style: TextStyle(
+                      Text(
+                        context.l10n.homeClientMyTripsTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.ink,
                         ),
                       ),
-                      TextButton(onPressed: () {}, child: const Text('Ver todos')),
+                      TextButton(onPressed: () {}, child: Text(context.l10n.homeClientViewAllMobileLabel)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -752,16 +764,16 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                         InkWell(
                           onTap: () => _confirmSignOut(context),
                           borderRadius: BorderRadius.circular(20),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.logout, size: 16, color: Colors.white),
-                                SizedBox(width: 6),
+                                const Icon(Icons.logout, size: 16, color: Colors.white),
+                                const SizedBox(width: 6),
                                 Text(
-                                  'Cerrar sesión',
-                                  style: TextStyle(
+                                  context.l10n.homeClientSignOutButton,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -775,7 +787,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '¡Hola, $userName!',
+                      context.l10n.homeClientMobileGreeting(userName),
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -784,7 +796,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Explora, planifica y viaja seguro',
+                      context.l10n.homeClientMobileHeroSubtitle,
                       style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
                     ),
                   ],
@@ -810,7 +822,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         Expanded(
           child: _StatChip(
             icon: Icons.luggage_outlined,
-            label: 'Viajes activos',
+            label: context.l10n.homeClientStatActiveTripsLabel,
             value: '${_trips.length}',
           ),
         ),
@@ -818,7 +830,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         Expanded(
           child: _StatChip(
             icon: Icons.flight_takeoff,
-            label: 'Próximo viaje',
+            label: context.l10n.homeClientStatNextTripLabel,
             value: next?.destination ?? '—',
           ),
         ),
@@ -826,8 +838,8 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         Expanded(
           child: _StatChip(
             icon: Icons.savings_outlined,
-            label: 'Presupuesto total',
-            value: _trips.isEmpty ? '—' : formatCOP(_totalBudget),
+            label: context.l10n.homeClientStatTotalBudgetLabel,
+            value: _trips.isEmpty ? '—' : context.formatMoney(_totalBudget),
           ),
         ),
       ],
@@ -841,13 +853,13 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         children: [
           const Icon(Icons.luggage_outlined, size: 44, color: Color(0xFFB0D9E8)),
           const SizedBox(height: 10),
-          const Text(
-            'Aún no tienes viajes',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
+          Text(
+            context.l10n.homeClientNoTripsTitle,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
           ),
           const SizedBox(height: 4),
           Text(
-            'Crea tu primer viaje para comenzar a planificar.',
+            context.l10n.homeClientNoTripsSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: AppColors.textMuted),
           ),
@@ -901,17 +913,17 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Mapa',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
+                Text(
+                  context.l10n.homeClientMapCardTitle,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Explora destinos, encuentra comercios seguros y planifica tu ruta.',
+                  context.l10n.homeClientMapCardDescription,
                   style: TextStyle(fontSize: 12.5, color: AppColors.textMuted, height: 1.4),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton(onPressed: _openMap, child: const Text('Ver mapa')),
+                OutlinedButton(onPressed: _openMap, child: Text(context.l10n.homeClientViewMapButton)),
               ],
             ),
           ),
@@ -1022,10 +1034,10 @@ class _CrearViajeCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Crear un viaje', style: AppText.display(26, color: AppColors.paper)),
+                Text(context.l10n.homeClientCreateTripCardTitle, style: AppText.display(26, color: AppColors.paper)),
                 const SizedBox(height: 4),
                 Text(
-                  'Presupuesto, hospedaje e itinerario en 3 pasos',
+                  context.l10n.homeClientCreateTripCardSubtitle,
                   style: AppText.ui(12, color: AppColors.textOnInk),
                 ),
               ],
@@ -1068,9 +1080,9 @@ class _MapaCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mapa', style: AppText.display(22)),
+                Text(context.l10n.homeClientMapCardTitle, style: AppText.display(22)),
                 const SizedBox(height: 4),
-                Text('14 lugares cerca', style: AppText.ui(12, color: AppColors.textMuted)),
+                Text(context.l10n.homeClientMapCardPlacesCount, style: AppText.ui(12, color: AppColors.textMuted)),
               ],
             ),
           ],
@@ -1107,7 +1119,7 @@ class _ProximoGastoCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('PRÓXIMO GASTO', style: AppText.label(10)),
+                Text(context.l10n.homeClientNextExpenseLabel, style: AppText.label(10)),
                 Container(
                   width: 26,
                   height: 26,
@@ -1125,19 +1137,19 @@ class _ProximoGastoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    trip!.lodgingType.isNotEmpty ? trip!.lodgingType : 'Hospedaje',
+                    trip!.lodgingType.isNotEmpty ? trip!.lodgingType : context.l10n.homeClientLodgingFallback,
                     style: AppText.display(24),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Se paga antes del ${trip!.startDate} · ${formatCOP(trip!.lodgingCost)}',
+                    context.l10n.homeClientLodgingPaymentDue(trip!.startDate, context.formatMoney(trip!.lodgingCost)),
                     style: AppText.ui(12, color: AppColors.textMuted),
                   ),
                 ],
               )
             else
               Text(
-                'Registra un gasto de tu viaje en segundos.',
+                context.l10n.homeClientRegisterExpenseHint,
                 style: AppText.ui(13, color: AppColors.textMuted),
               ),
           ],

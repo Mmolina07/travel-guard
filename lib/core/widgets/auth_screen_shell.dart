@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n_extension.dart';
 import '../theme/app_theme.dart';
 import 'responsive_center.dart';
 import 'route_pattern_background.dart';
@@ -17,8 +18,7 @@ class AuthScreenShell extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.content,
-    this.brandTagline =
-        'Tu itinerario, tu presupuesto y tu seguridad, en un solo lugar.',
+    this.brandTagline,
     this.badgeSize = 64,
     this.maxContentWidth = 480,
   });
@@ -26,7 +26,7 @@ class AuthScreenShell extends StatelessWidget {
   final String title;
   final String subtitle;
   final WidgetBuilder content;
-  final String brandTagline;
+  final String? brandTagline;
   final double badgeSize;
   final double maxContentWidth;
 
@@ -116,7 +116,7 @@ class AuthScreenShell extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        brandTagline,
+                        brandTagline ?? context.l10n.authBrandTagline,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,

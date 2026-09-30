@@ -1,3 +1,7 @@
+import 'package:flutter/widgets.dart';
+
+import '../../../../core/l10n/l10n_extension.dart';
+
 /// HU-16: una fila del historial de cambios de un viaje (tabla
 /// `viaje_historial`). `valorAnterior`/`valorNuevo` ya vienen
 /// formateados para mostrar (p.ej. "$ 500.000") — este historial es de
@@ -40,18 +44,18 @@ class TripHistoryEntry {
 
 /// Traduce el nombre técnico de la columna a una etiqueta legible para
 /// el historial (`viaje_historial.campo`).
-String tripHistoryFieldLabel(String campo) {
+String tripHistoryFieldLabel(BuildContext context, String campo) {
   switch (campo) {
     case 'presupuesto_maximo':
-      return 'Presupuesto máximo';
+      return context.l10n.tripHistoryPresupuestoMaximo;
     case 'pagos_anticipados':
-      return 'Pagos anticipados';
+      return context.l10n.tripHistoryPagosAnticipados;
     case 'costo_hospedaje':
-      return 'Costo hospedaje';
+      return context.l10n.tripHistoryCostoHospedaje;
     case 'dinero_emergencias':
-      return 'Dinero emergencias';
+      return context.l10n.tripHistoryDineroEmergencias;
     case 'categorias_presupuesto':
-      return 'Categorías de presupuesto';
+      return context.l10n.tripHistoryCategoriasPresupuesto;
     default:
       return campo;
   }

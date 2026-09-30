@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/app_auth_provider.dart';
+import '../../../../core/l10n/l10n_extension.dart';
+import '../../../../core/l10n/language_provider.dart';
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../trips/presentation/pages/home_screen_client.dart';
+import '../../../../core/utils/money_formatter.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -13,28 +17,27 @@ class ConfigScreen extends StatefulWidget {
 }
 
 class _ConfigScreenState extends State<ConfigScreen> {
-  late String _selectedLanguage;
-  late String _selectedCurrency;
   late bool _notificationsEnabled;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Obtener valores reales de SharedPreferences o Provider
-    _selectedLanguage = 'es'; // español
-    _selectedCurrency = 'COP';
+    // TODO: Obtener valor real de SharedPreferences o Provider
     _notificationsEnabled = true;
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
+    final languageCode = context.watch<LanguageProvider>().locale.languageCode;
+    final currencyProvider = context.watch<CurrencyProvider>();
+    final selectedCurrency = currencyProvider.currency;
 
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
         title: Text(
-          'Configuración',
+          context.l10n.configScreenTitle,
           style: AppText.ui(18, weight: FontWeight.w600),
         ),
         backgroundColor: AppColors.paper,
@@ -43,7 +46,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () {Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreenClient()));},
+          onPressed: () => context.go('/'),
         ),
       ),
       body: Center(
@@ -56,7 +59,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
               children: [
                 // ========== SECCIÓN: IDIOMA Y REGIÓN ==========
                 Text(
-                  'Idioma y región',
+                  context.l10n.configSectionLanguageRegion,
                   style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
                 ),
                 const SizedBox(height: 12),
@@ -64,8 +67,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Selector de Idioma
                 _SettingCard(
                   icon: Icons.language,
-                  label: 'Idioma',
-                  value: _getLanguageName(_selectedLanguage),
+                  label: context.l10n.configLanguageLabel,
+                  value: _getLanguageName(languageCode),
                   onTap: () => _showLanguageBottomSheet(context),
                 ),
                 const SizedBox(height: 12),
@@ -73,15 +76,26 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Selector de Moneda
                 _SettingCard(
                   icon: Icons.currency_exchange,
-                  label: 'Moneda',
-                  value: _selectedCurrency,
+                  label: context.l10n.configCurrencyLabel,
+                  value: selectedCurrency,
                   onTap: () => _showCurrencyBottomSheet(context),
+                ),
+                const SizedBox(height: 12),
+
+                // Tasa de cambio manual (sin API, la define el usuario)
+                _SettingCard(
+                  icon: Icons.sync_alt,
+                  label: context.l10n.configExchangeRateLabel,
+                  value: context.l10n.configExchangeRatePreview(
+                    formatCOP(currencyProvider.rateFor('USD')),
+                  ),
+                  onTap: () => _showExchangeRateDialog(context),
                 ),
                 const SizedBox(height: 32),
 
                 // ========== SECCIÓN: NOTIFICACIONES ==========
                 Text(
-                  'Notificaciones',
+                  context.l10n.configSectionNotifications,
                   style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
                 ),
                 const SizedBox(height: 12),
@@ -89,7 +103,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Toggle Notificaciones
                 _SettingToggle(
                   icon: Icons.notifications_outlined,
-                  label: 'Activar notificaciones',
+                  label: context.l10n.configNotificationsToggleLabel,
                   value: _notificationsEnabled,
                   onChanged: (value) {
                     setState(() {
@@ -102,7 +116,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
                 // ========== SECCIÓN: SEGURIDAD ==========
                 Text(
-                  'Seguridad',
+                  context.l10n.configSectionSecurity,
                   style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
                 ),
                 const SizedBox(height: 12),
@@ -110,7 +124,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Botón Cambiar Contraseña
                 _ActionButton(
                   icon: Icons.lock_outline,
-                  label: 'Cambiar contraseña',
+                  label: context.l10n.configChangePasswordLabel,
                   onTap: () {
                     _showChangePasswordModal(context, auth);
                   },
@@ -120,10 +134,27 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Botón Cerrar Sesión
                 _ActionButton(
                   icon: Icons.logout,
-                  label: 'Cerrar sesión',
+                  label: context.l10n.configLogoutLabel,
                   isDestructive: true,
                   onTap: () {
                     _showLogoutDialog(context, auth);
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // ========== SECCIÓN: RESTABLECER ==========
+                Text(
+                  context.l10n.configSectionReset,
+                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                ),
+                const SizedBox(height: 12),
+
+                // Botón Restaurar valores predeterminados
+                _ActionButton(
+                  icon: Icons.restore,
+                  label: context.l10n.configResetDefaultsLabel,
+                  onTap: () {
+                    _showResetDefaultsDialog(context);
                   },
                 ),
                 const SizedBox(height: 40),
@@ -131,7 +162,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // ========== FOOTER CON VERSIÓN ==========
                 Center(
                   child: Text(
-                    'Versión 1.0.0',
+                    context.l10n.configVersionLabel,
                     style: AppText.label(10, color: AppColors.textMuted),
                   ),
                 ),
@@ -162,7 +193,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             borderRadius: BorderRadius.circular(AppRadius.card),
           ),
           title: Text(
-            'Cambiar contraseña',
+            context.l10n.configChangePasswordLabel,
             style: AppText.display(18),
           ),
           content: SingleChildScrollView(
@@ -190,7 +221,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
                 // Campo: Contraseña actual
                 Text(
-                  'Contraseña actual',
+                  context.l10n.configCurrentPasswordLabel,
                   style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
                 ),
                 const SizedBox(height: 8),
@@ -199,7 +230,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   obscureText: !showPassword,
                   enabled: !isLoading,
                   decoration: InputDecoration(
-                    hintText: 'Ingresa tu contraseña actual',
+                    hintText: context.l10n.configCurrentPasswordHint,
                     hintStyle: AppText.ui(13, color: AppColors.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
@@ -223,7 +254,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
                 // Campo: Nueva contraseña
                 Text(
-                  'Nueva contraseña',
+                  context.l10n.configNewPasswordLabel,
                   style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
                 ),
                 const SizedBox(height: 8),
@@ -232,7 +263,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   obscureText: !showPassword,
                   enabled: !isLoading,
                   decoration: InputDecoration(
-                    hintText: 'Ingresa tu nueva contraseña',
+                    hintText: context.l10n.configNewPasswordHint,
                     hintStyle: AppText.ui(13, color: AppColors.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
@@ -256,7 +287,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
                 // Campo: Confirmar contraseña
                 Text(
-                  'Confirmar contraseña',
+                  context.l10n.commonConfirmPasswordLabel,
                   style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
                 ),
                 const SizedBox(height: 8),
@@ -265,7 +296,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   obscureText: !showPassword,
                   enabled: !isLoading,
                   decoration: InputDecoration(
-                    hintText: 'Confirma tu nueva contraseña',
+                    hintText: context.l10n.configConfirmNewPasswordHint,
                     hintStyle: AppText.ui(13, color: AppColors.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
@@ -302,7 +333,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       activeColor: AppColors.inkSoft,
                     ),
                     Text(
-                      'Mostrar contraseña',
+                      context.l10n.configShowPasswordCheckbox,
                       style: AppText.ui(12),
                     ),
                   ],
@@ -314,7 +345,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             TextButton(
               onPressed: isLoading ? null : () => Navigator.pop(context),
               child: Text(
-                'Cancelar',
+                context.l10n.configCancelButton,
                 style: AppText.ui(14, color: AppColors.ink),
               ),
             ),
@@ -325,25 +356,25 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       // Validaciones
                       if (currentPasswordController.text.isEmpty) {
                         setDialogState(() {
-                          errorMessage = 'Ingresa tu contraseña actual';
+                          errorMessage = context.l10n.configCurrentPasswordHint;
                         });
                         return;
                       }
                       if (newPasswordController.text.isEmpty) {
                         setDialogState(() {
-                          errorMessage = 'Ingresa tu nueva contraseña';
+                          errorMessage = context.l10n.configNewPasswordHint;
                         });
                         return;
                       }
                       if (newPasswordController.text.length < 6) {
                         setDialogState(() {
-                          errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+                          errorMessage = context.l10n.clientRegisterPasswordMin;
                         });
                         return;
                       }
                       if (newPasswordController.text != confirmPasswordController.text) {
                         setDialogState(() {
-                          errorMessage = 'Las contraseñas no coinciden';
+                          errorMessage = context.l10n.commonPasswordsMismatch;
                         });
                         return;
                       }
@@ -368,7 +399,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Contraseña actualizada correctamente',
+                                context.l10n.configPasswordUpdatedSnackbar,
                                 style: AppText.ui(13, color: AppColors.paper),
                               ),
                               backgroundColor: Colors.green[600],
@@ -378,7 +409,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                         }
                       } catch (e) {
                         setDialogState(() {
-                          errorMessage = 'Error al cambiar la contraseña: $e';
+                          errorMessage = context.l10n.configErrorChangePassword(e.toString());
                           isLoading = false;
                         });
                       }
@@ -394,7 +425,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       ),
                     )
                   : Text(
-                      'Guardar',
+                      context.l10n.configSaveButton,
                       style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
                     ),
             ),
@@ -407,6 +438,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
   // ========== BOTTOM SHEETS ==========
 
   void _showLanguageBottomSheet(BuildContext context) {
+    final languageProvider = context.read<LanguageProvider>();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.paper,
@@ -423,46 +456,38 @@ class _ConfigScreenState extends State<ConfigScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Selecciona idioma',
+              context.l10n.configSelectLanguageTitle,
               style: AppText.display(20),
             ),
             const SizedBox(height: 24),
             _LanguageOption(
               language: 'Español',
               code: 'es',
-              isSelected: _selectedLanguage == 'es',
+              isSelected: languageProvider.locale.languageCode == 'es',
               onTap: () {
-                setState(() {
-                  _selectedLanguage = 'es';
-                });
+                languageProvider.setLocale(const Locale('es'));
                 Navigator.pop(context);
-                // TODO: Cambiar idioma en la app
               },
             ),
             const SizedBox(height: 12),
             _LanguageOption(
               language: 'English',
               code: 'en',
-              isSelected: _selectedLanguage == 'en',
+              isSelected: languageProvider.locale.languageCode == 'en',
               onTap: () {
-                setState(() {
-                  _selectedLanguage = 'en';
-                });
+                languageProvider.setLocale(const Locale('en'));
                 Navigator.pop(context);
-                // TODO: Cambiar idioma en la app
               },
             ),
             const SizedBox(height: 12),
             _LanguageOption(
               language: 'Português',
               code: 'pt',
-              isSelected: _selectedLanguage == 'pt',
+              isSelected: false,
               onTap: () {
-                setState(() {
-                  _selectedLanguage = 'pt';
-                });
+                // TODO: fuera de alcance de la HU actual (solo ES/EN);
+                // habilitar cuando se agregue soporte real a pt.
                 Navigator.pop(context);
-                // TODO: Cambiar idioma en la app
               },
             ),
             const SizedBox(height: 24),
@@ -473,6 +498,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
   }
 
   void _showCurrencyBottomSheet(BuildContext context) {
+    final currencyProvider = context.read<CurrencyProvider>();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.paper,
@@ -489,51 +516,192 @@ class _ConfigScreenState extends State<ConfigScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Selecciona moneda',
+              context.l10n.configSelectCurrencyTitle,
               style: AppText.display(20),
             ),
             const SizedBox(height: 24),
             _CurrencyOption(
-              currency: 'Peso Colombiano',
+              currency: context.l10n.configCurrencyCOP,
               code: 'COP',
-              isSelected: _selectedCurrency == 'COP',
+              isSelected: currencyProvider.currency == 'COP',
               onTap: () {
-                setState(() {
-                  _selectedCurrency = 'COP';
-                });
+                currencyProvider.setCurrency('COP');
                 Navigator.pop(context);
-                // TODO: Cambiar moneda en la app
               },
             ),
             const SizedBox(height: 12),
             _CurrencyOption(
-              currency: 'Dólar estadounidense',
+              currency: context.l10n.configCurrencyUSD,
               code: 'USD',
-              isSelected: _selectedCurrency == 'USD',
+              isSelected: currencyProvider.currency == 'USD',
               onTap: () {
-                setState(() {
-                  _selectedCurrency = 'USD';
-                });
+                currencyProvider.setCurrency('USD');
                 Navigator.pop(context);
-                // TODO: Cambiar moneda en la app
               },
             ),
             const SizedBox(height: 12),
             _CurrencyOption(
-              currency: 'Euro',
+              currency: context.l10n.configCurrencyEUR,
               code: 'EUR',
-              isSelected: _selectedCurrency == 'EUR',
+              isSelected: currencyProvider.currency == 'EUR',
               onTap: () {
-                setState(() {
-                  _selectedCurrency = 'EUR';
-                });
+                currencyProvider.setCurrency('EUR');
                 Navigator.pop(context);
-                // TODO: Cambiar moneda en la app
               },
             ),
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showExchangeRateDialog(BuildContext context) {
+    final currencyProvider = context.read<CurrencyProvider>();
+    final usdController = TextEditingController(
+      text: currencyProvider.rateFor('USD').toStringAsFixed(0),
+    );
+    final eurController = TextEditingController(
+      text: currencyProvider.rateFor('EUR').toStringAsFixed(0),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text(
+          context.l10n.configExchangeRateDialogTitle,
+          style: AppText.display(18),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.configExchangeRateDialogHint,
+                style: AppText.ui(12, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.configExchangeRateUsdLabel,
+                style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: usdController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  prefixText: '\$ ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    borderSide: const BorderSide(color: AppColors.line),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                style: AppText.ui(13),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.configExchangeRateEurLabel,
+                style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: eurController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  prefixText: '\$ ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    borderSide: const BorderSide(color: AppColors.line),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                style: AppText.ui(13),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              context.l10n.configCancelButton,
+              style: AppText.ui(14, color: AppColors.ink),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final usdRate = double.tryParse(usdController.text.trim());
+              final eurRate = double.tryParse(eurController.text.trim());
+              if (usdRate == null || usdRate <= 0 || eurRate == null || eurRate <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(context.l10n.configExchangeRateInvalid)),
+                );
+                return;
+              }
+              currencyProvider.setRate('USD', usdRate);
+              currencyProvider.setRate('EUR', eurRate);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10n.configExchangeRateSavedSnackbar)),
+              );
+            },
+            child: Text(
+              context.l10n.configSaveButton,
+              style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showResetDefaultsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text(
+          context.l10n.configResetDefaultsDialogTitle,
+          style: AppText.display(18),
+        ),
+        content: Text(
+          context.l10n.configResetDefaultsDialogContent,
+          style: AppText.ui(14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              context.l10n.configCancelButton,
+              style: AppText.ui(14, color: AppColors.ink),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<LanguageProvider>().resetToDefault();
+              context.read<CurrencyProvider>().resetToDefault();
+              setState(() => _notificationsEnabled = true);
+
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10n.configResetDefaultsSnackbar)),
+              );
+            },
+            child: Text(
+              context.l10n.configResetDefaultsConfirmButton,
+              style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -547,18 +715,18 @@ class _ConfigScreenState extends State<ConfigScreen> {
           borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         title: Text(
-          '¿Cerrar sesión?',
+          context.l10n.configLogoutDialogTitle,
           style: AppText.display(18),
         ),
         content: Text(
-          'Se cerrará tu sesión en la aplicación.',
+          context.l10n.configLogoutDialogContent,
           style: AppText.ui(14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancelar',
+              context.l10n.configCancelButton,
               style: AppText.ui(14, color: AppColors.ink),
             ),
           ),
@@ -570,7 +738,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
               }
             },
             child: Text(
-              'Cerrar sesión',
+              context.l10n.configLogoutLabel,
               style: AppText.ui(14, color: Colors.red),
             ),
           ),

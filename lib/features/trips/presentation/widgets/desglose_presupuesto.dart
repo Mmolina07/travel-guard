@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/trip_model.dart'; // Ajustar la ruta según la estructura
 
@@ -60,7 +61,7 @@ class DesglosePresupuesto extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Desglose de Presupuesto',
+              context.l10n.desglosePresupuestoTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -70,35 +71,35 @@ class DesglosePresupuesto extends StatelessWidget {
             const SizedBox(height: 8),
             _buildItemCategoria(
               context,
-              titulo: 'Hospedaje',
+              titulo: context.l10n.desglosePresupuestoHospedaje,
               monto: viaje.presupuestoHospedaje,
               icon: Icons.hotel,
               color: Colors.indigo,
             ),
             _buildItemCategoria(
               context,
-              titulo: 'Transporte',
+              titulo: context.l10n.desglosePresupuestoTransporte,
               monto: viaje.presupuestoTransporte,
               icon: Icons.directions_car,
               color: Colors.orange,
             ),
             _buildItemCategoria(
               context,
-              titulo: 'Comidas',
+              titulo: context.l10n.desglosePresupuestoComidas,
               monto: viaje.presupuestoComidas,
               icon: Icons.restaurant,
               color: AppColors.inkSoft,
             ),
             _buildItemCategoria(
               context,
-              titulo: 'Actividades',
+              titulo: context.l10n.desglosePresupuestoActividades,
               monto: viaje.presupuestoActividades,
               icon: Icons.local_activity,
               color: Colors.purple,
             ),
             _buildItemCategoria(
               context,
-              titulo: 'Emergencias',
+              titulo: context.l10n.desglosePresupuestoEmergencias,
               monto: viaje.presupuestoEmergencias,
               icon: Icons.warning_amber_rounded,
               color: Colors.redAccent,

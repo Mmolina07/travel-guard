@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
 import '../../../../core/widgets/boarding_pass_card.dart';
@@ -62,14 +63,14 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     setState(() => _isLoading = false);
 
     if (!success) {
-      _showError(auth.errorMessage ?? 'No se pudo completar el registro.');
+      _showError(auth.errorMessage ?? context.l10n.commonRegisterErrorGeneric);
       return;
     }
 
     // Feedback visual verde
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registro exitoso'),
+      SnackBar(
+        content: Text(context.l10n.clientRegisterSuccessSnackbar),
         backgroundColor: Colors.green,
       ),
     );
@@ -96,8 +97,8 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registro exitoso'),
+      SnackBar(
+        content: Text(context.l10n.clientRegisterSuccessSnackbar),
         backgroundColor: Colors.green,
       ),
     );
@@ -119,8 +120,8 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthScreenShell(
-      title: 'Regístrate como turista',
-      subtitle: 'Crea tu cuenta para empezar a planificar tu viaje',
+      title: context.l10n.clientRegisterTitle,
+      subtitle: context.l10n.clientRegisterSubtitle,
       content: (context) => Form(
         key: _formKey,
         child: Column(
@@ -135,48 +136,48 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel('Nombre completo'),
+                  _buildLabel(context.l10n.clientRegisterNameLabel),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameController,
                     enabled: !_isLoading,
-                    decoration: const InputDecoration(
-                      hintText: 'Ingresa tu nombre',
-                      prefixIcon: Icon(Icons.person_outline),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.clientRegisterNameHint,
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Por favor ingresa tu nombre';
+                        return context.l10n.clientRegisterNameRequired;
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel('Correo electrónico'),
+                  _buildLabel(context.l10n.commonEmailLabel),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     enabled: !_isLoading,
-                    decoration: const InputDecoration(
-                      hintText: 'ejemplo@correo.com',
-                      prefixIcon: Icon(Icons.email_outlined),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.commonEmailHint,
+                      prefixIcon: const Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Por favor ingresa tu correo';
+                        return context.l10n.commonEmailRequired;
                       }
                       final emailRegex = RegExp(
                         r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                       );
                       if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Correo inválido';
+                        return context.l10n.commonEmailInvalid;
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel('Contraseña'),
+                  _buildLabel(context.l10n.commonPasswordLabel),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _passwordController,
@@ -184,7 +185,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                     enabled: !_isLoading,
                     decoration: InputDecoration(
                       hintText: '••••••••',
-                      helperText: 'Mínimo 6 caracteres',
+                      helperText: context.l10n.clientRegisterPasswordHelper,
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -199,16 +200,16 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu contraseña';
+                        return context.l10n.commonPasswordRequired;
                       }
                       if (value.length < 6) {
-                        return 'La contraseña debe tener al menos 6 caracteres';
+                        return context.l10n.clientRegisterPasswordMin;
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel('Confirmar contraseña'),
+                  _buildLabel(context.l10n.commonConfirmPasswordLabel),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _confirmPasswordController,
@@ -220,10 +221,10 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Por favor confirma tu contraseña';
+                        return context.l10n.clientRegisterConfirmPasswordRequired;
                       }
                       if (value != _passwordController.text) {
-                        return 'Las contraseñas no coinciden';
+                        return context.l10n.commonPasswordsMismatch;
                       }
                       return null;
                     },
@@ -246,7 +247,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                               AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Registrarse'),
+                    : Text(context.l10n.commonRegisterButton),
               ),
             ),
             const SizedBox(height: 20),
@@ -256,7 +257,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'o continúa con',
+                    context.l10n.clientRegisterOrContinueWith,
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 12,
@@ -272,13 +273,13 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
               child: OutlinedButton.icon(
                 onPressed: _isLoading ? null : _onGoogleSignUpPressed,
                 icon: const Icon(Icons.g_mobiledata, size: 28),
-                label: const Text('Registrarse con Google'),
+                label: Text(context.l10n.clientRegisterGoogleButton),
               ),
             ),
             const SizedBox(height: 16),
             Center(
               child: Text(
-                'Al registrarte aceptas nuestros Términos y Condiciones',
+                context.l10n.commonTermsNotice,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,

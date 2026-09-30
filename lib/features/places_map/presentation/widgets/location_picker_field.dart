@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../data/location_service.dart';
+import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// Mapa interactivo para elegir la ubicación de un comercio al
@@ -75,10 +76,8 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No se pudo obtener tu ubicación. Toca el mapa para ubicar tu negocio manualmente.',
-          ),
+        SnackBar(
+          content: Text(context.l10n.locationPickerErrorSnackbar),
           backgroundColor: AppColors.error,
         ),
       );
@@ -153,11 +152,11 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
         const SizedBox(height: 6),
         Text(
           _selected == null
-              ? 'Toca el mapa o usa el botón para ubicar tu negocio.'
-              : 'Ubicación seleccionada: '
-                  '${_selected!.latitude.toStringAsFixed(5)}, '
-                  '${_selected!.longitude.toStringAsFixed(5)} '
-                  '(puedes arrastrar el marcador para ajustar)',
+              ? context.l10n.locationPickerHintTapMap
+              : context.l10n.locationPickerSelectedLocation(
+                  _selected!.latitude.toStringAsFixed(5),
+                  _selected!.longitude.toStringAsFixed(5),
+                ),
           style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
         ),
       ],

@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/l10n/l10n_extension.dart';
+import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/widgets/route_pattern_background.dart';
 import '../../../../shell/app_shell.dart';
 import '../../../../widgets/budget_bar.dart';
@@ -104,7 +105,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       debugPrint('TripDetailScreen._loadGastos error: $e\n$st');
       if (!mounted) return;
       setState(() {
-        _gastosError = 'No se pudieron cargar los gastos.';
+        _gastosError = context.l10n.tripDetailLoadExpensesError;
         _isLoadingGastos = false;
       });
     }
@@ -144,7 +145,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       debugPrint('TripDetailScreen._loadGrupo error: $e\n$st');
       if (!mounted) return;
       setState(() {
-        _grupoError = 'No se pudo cargar el grupo del viaje.';
+        _grupoError = context.l10n.tripDetailLoadGroupError;
         _isLoadingGrupo = false;
       });
     }
@@ -157,22 +158,22 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final email = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Invitar colaborador'),
+        title: Text(context.l10n.tripDetailInviteDialogTitle),
         content: TextField(
           controller: emailController,
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
           onSubmitted: (value) => Navigator.pop(ctx, value),
-          decoration: const InputDecoration(
-            hintText: 'correo@ejemplo.com',
-            helperText: 'Debe estar registrado en TravelGuard como turista.',
+          decoration: InputDecoration(
+            hintText: context.l10n.tripDetailInviteEmailHint,
+            helperText: context.l10n.tripDetailInviteEmailHelper,
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.tripDetailCancelButton)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, emailController.text),
-            child: const Text('Invitar'),
+            child: Text(context.l10n.tripDetailInviteButton),
           ),
         ],
       ),
@@ -189,14 +190,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       );
       if (!mounted) return;
       setState(() => _collaborators = [..._collaborators, collaborator]);
-      _showSnack('${collaborator.nombreCompleto} ahora puede ver y editar este viaje', color: AppColors.ink);
+      _showSnack(
+        context.l10n.tripDetailCollaboratorAddedSnackbar(collaborator.nombreCompleto),
+        color: AppColors.ink,
+      );
     } on TripInviteException catch (e) {
       if (!mounted) return;
       _showSnack(e.message);
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleInvite error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo invitar a esa persona. Intenta de nuevo.');
+      _showSnack(context.l10n.tripDetailInviteErrorSnackbar);
     }
   }
 
@@ -205,16 +209,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Quitar colaborador'),
+        title: Text(context.l10n.tripDetailRemoveCollaboratorDialogTitle),
         content: Text(
-          '¿Quitar a ${member.nombreCompleto} de este viaje? Dejará de poder verlo y editarlo.',
+          context.l10n.tripDetailRemoveCollaboratorDialogContent(member.nombreCompleto),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.tripDetailCancelButton)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Quitar'),
+            child: Text(context.l10n.tripDetailRemoveButton),
           ),
         ],
       ),
@@ -228,7 +232,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleRemoveCollaborator error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo quitar al colaborador.');
+      _showSnack(context.l10n.tripDetailRemoveCollaboratorErrorSnackbar);
     }
   }
 
@@ -242,11 +246,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Future<void> _handleAddExpense() async {
     if (trip.id == null) {
-      _showSnack('Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.');
+      _showSnack(context.l10n.tripDetailTripNotSavedSnackbar);
       return;
     }
     if (_categorias.isEmpty) {
-      _showSnack('No se pudieron cargar las categorías de gasto.');
+      _showSnack(context.l10n.tripDetailCategoriesLoadErrorSnackbar);
       return;
     }
 
@@ -272,13 +276,13 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       if (!mounted) return;
       setState(() => _gastos = [gasto, ..._gastos]);
       _showSnack(
-        'Gasto de ${formatCOP(result.monto)} en ${result.categoria.nombre} agregado',
+        context.l10n.tripDetailExpenseAddedSnackbar(context.formatMoney(result.monto), result.categoria.nombre),
         color: AppColors.ink,
       );
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleAddExpense error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo guardar el gasto. Intenta de nuevo.');
+      _showSnack(context.l10n.tripDetailExpenseSaveErrorSnackbar);
     }
   }
 
@@ -286,19 +290,19 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar gasto'),
+        title: Text(context.l10n.tripDetailDeleteExpenseDialogTitle),
         content: Text(
-          '¿Eliminar el gasto de ${formatCOP(gasto.monto)} en ${gasto.categoriaNombre}?',
+          context.l10n.tripDetailDeleteExpenseDialogContent(context.formatMoney(gasto.monto), gasto.categoriaNombre),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.tripDetailCancelButton),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar'),
+            child: Text(context.l10n.tripDetailDeleteButton),
           ),
         ],
       ),
@@ -312,7 +316,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleDeleteGasto error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo eliminar el gasto.');
+      _showSnack(context.l10n.tripDetailDeleteExpenseErrorSnackbar);
     }
   }
 
@@ -337,20 +341,19 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar viaje'),
+        title: Text(context.l10n.tripDetailDeleteTripDialogTitle),
         content: Text(
-          '¿Estás seguro de que deseas eliminar el viaje "${trip.name}"? '
-          'Esta acción no se puede deshacer.',
+          context.l10n.tripDetailDeleteTripDialogContent(trip.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.tripDetailCancelButton),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar'),
+            child: Text(context.l10n.tripDetailDeleteButton),
           ),
         ],
       ),
@@ -368,11 +371,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       await _tripRepository.archiveTrip(trip.id!);
       if (!mounted) return;
       context.go('/');
-      _showSnack('Viaje eliminado', color: AppColors.error);
+      _showSnack(context.l10n.tripDetailTripDeletedSnackbar, color: AppColors.error);
     } catch (e, st) {
       debugPrint('TripDetailScreen._confirmDeleteTrip error: $e\n$st');
       if (!mounted) return;
-      _showSnack('No se pudo eliminar el viaje. Intenta de nuevo.');
+      _showSnack(context.l10n.tripDetailDeleteTripErrorSnackbar);
     }
   }
 
@@ -403,6 +406,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     final totalSpent = trip.getTotalSpent() + _gastosTotal;
     final remaining = trip.maxBudget - totalSpent;
 
@@ -445,12 +449,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           labelStyle: AppText.ui(14, weight: FontWeight.w700),
           unselectedLabelStyle: AppText.ui(14, weight: FontWeight.w500),
           tabAlignment: TabAlignment.start,
-          tabs: const [
-            Tab(text: 'Resumen'),
-            Tab(text: 'Hospedaje'),
-            Tab(text: 'Transporte'),
-            Tab(text: 'Gastos'),
-            Tab(text: 'Grupo'),
+          tabs: [
+            Tab(text: context.l10n.tripDetailTabResumen),
+            Tab(text: context.l10n.tripDetailTabHospedaje),
+            Tab(text: context.l10n.tripDetailTabTransporte),
+            Tab(text: context.l10n.tripDetailTabGastos),
+            Tab(text: context.l10n.tripDetailTabGrupo),
           ],
         ),
         const SizedBox(height: 24),
@@ -498,17 +502,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                           children: [
                             const Icon(Icons.arrow_back, size: 14, color: AppColors.textOnInk),
                             const SizedBox(width: 6),
-                            Text('INICIO / MIS VIAJES', style: AppText.label(11, color: AppColors.textOnInk)),
+                            Text(context.l10n.tripDetailBreadcrumbHome, style: AppText.label(11, color: AppColors.textOnInk)),
                           ],
                         ),
                       ),
                     ),
                     Row(
                       children: [
-                        _HeaderButton(label: 'Editar', translucent: true, onTap: _editBudget),
+                        _HeaderButton(label: context.l10n.tripDetailEditButton, translucent: true, onTap: _editBudget),
                         const SizedBox(width: 10),
                         _HeaderButton(
-                          label: 'Añadir gasto',
+                          label: context.l10n.tripDetailAddExpenseButton,
                           translucent: false,
                           onTap: _handleAddExpense,
                         ),
@@ -539,7 +543,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                       child: Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Text('Viaje a ', style: AppText.display(40, color: Colors.white)),
+                          Text(context.l10n.tripDetailHeaderTripToPrefix, style: AppText.display(40, color: Colors.white)),
                           Text(trip.destination, style: AppText.displayItalic(40)),
                         ],
                       ),
@@ -548,8 +552,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '${trip.startDate} – ${trip.endDate} · ${trip.persons} '
-                  '${trip.persons == 1 ? 'PERSONA' : 'PERSONAS'} · ${trip.tripType.toUpperCase()}',
+                  context.l10n.tripDetailHeaderSubtitle(
+                    trip.startDate,
+                    trip.endDate,
+                    trip.persons,
+                    trip.tripType.toUpperCase(),
+                  ),
                   style: AppText.label(11, color: AppColors.textOnInk),
                 ),
                 const SizedBox(height: 30),
@@ -560,18 +568,18 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('GASTADO', style: AppText.label(10, color: AppColors.textOnInk)),
+                          Text(context.l10n.tripDetailSpentLabel, style: AppText.label(10, color: AppColors.textOnInk)),
                           const SizedBox(height: 4),
-                          Text(formatCOP(totalSpent), style: AppText.display(44, color: AppColors.paper)),
+                          Text(context.formatMoney(totalSpent), style: AppText.display(44, color: AppColors.paper)),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('TOPE', style: AppText.label(10, color: AppColors.textOnInk)),
+                        Text(context.l10n.tripDetailCapLabel, style: AppText.label(10, color: AppColors.textOnInk)),
                         const SizedBox(height: 4),
-                        Text(formatCOP(trip.maxBudget), style: AppText.ui(18, color: AppColors.textOnInk)),
+                        Text(context.formatMoney(trip.maxBudget), style: AppText.ui(18, color: AppColors.textOnInk)),
                       ],
                     ),
                   ],
@@ -603,8 +611,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final pct = (totalSpent / trip.maxBudget * 100).round();
     final color = overBudget ? AppColors.error : AppColors.mint;
     final label = overBudget
-        ? 'Te pasaste del tope por ${formatCOP(remaining.abs())}'
-        : 'Vas bien: $pct% del presupuesto usado';
+        ? context.l10n.tripDetailOverBudgetLabel(context.formatMoney(remaining.abs()))
+        : context.l10n.tripDetailOnTrackLabel(pct);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -665,13 +673,13 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildHospedajeSummaryCard() {
     return _SectionCard(
-      title: 'Hospedaje',
-      trailing: formatCOP(trip.lodgingCost),
+      title: context.l10n.tripDetailLodgingTitle,
+      trailing: context.formatMoney(trip.lodgingCost),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _kv('Tipo', trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
-          _kv('Costo', formatCOP(trip.lodgingCost)),
+          _kv(context.l10n.tripDetailLodgingTypeLabel, trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
+          _kv(context.l10n.tripDetailCostLabel, context.formatMoney(trip.lodgingCost)),
           if (trip.includedServices.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -704,9 +712,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               labelColor: AppColors.textOnInk,
               titleColor: AppColors.paper,
               detailColor: AppColors.textOnInk,
-              label: 'TRANSPORTE',
+              label: context.l10n.tripDetailTransportLabel,
               title: trip.startTransport.isNotEmpty ? trip.startTransport : '—',
-              detail: trip.duringTransport.isNotEmpty ? 'Durante: ${trip.duringTransport}' : '',
+              detail: trip.duringTransport.isNotEmpty
+                  ? context.l10n.tripDetailDuringTransportDetail(trip.duringTransport)
+                  : '',
             ),
           ),
           const SizedBox(width: 16),
@@ -716,7 +726,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               labelColor: AppColors.inkSoft,
               titleColor: AppColors.ink,
               detailColor: AppColors.textMuted,
-              label: 'PERSONAS',
+              label: context.l10n.tripDetailPersonsLabel,
               title: '${trip.persons}',
               detail: trip.tripType,
             ),
@@ -729,7 +739,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   Widget _buildUltimosGastosCard() {
     final recent = _gastos.take(5).toList();
     return _SectionCard(
-      title: 'Últimos gastos',
+      title: context.l10n.tripDetailRecentExpensesTitle,
       child: _isLoadingGastos
           ? const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -737,7 +747,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             )
           : recent.isEmpty
           ? Text(
-              'Aún no has registrado gastos. Usa "Añadir gasto" arriba para anotar el primero.',
+              context.l10n.tripDetailNoExpensesYetHint,
               style: AppText.ui(13, color: AppColors.textMuted),
             )
           : Column(
@@ -773,7 +783,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               ],
             ),
           ),
-          Text(formatCOP(gasto.monto), style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
+          Text(context.formatMoney(gasto.monto), style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
         ],
       ),
     );
@@ -790,23 +800,23 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       persons: trip.persons,
     );
     return _SectionCard(
-      title: 'Presupuesto disponible',
-      trailing: formatCOP(remaining),
+      title: context.l10n.tripDetailAvailableBudgetTitle,
+      trailing: context.formatMoney(remaining),
       child: Row(
         children: [
           Expanded(
             child: _buildDailyStat(
               icon: Icons.calendar_today,
-              label: 'Por día (${breakdown.days} días)',
-              value: formatCOP(breakdown.perDay),
+              label: context.l10n.tripDetailPerDayLabel(breakdown.days),
+              value: context.formatMoney(breakdown.perDay),
             ),
           ),
           Container(width: 1, height: 36, color: AppColors.line),
           Expanded(
             child: _buildDailyStat(
               icon: Icons.groups_outlined,
-              label: 'Por persona (${trip.persons})',
-              value: formatCOP(breakdown.perPerson),
+              label: context.l10n.tripDetailPerPersonLabel(trip.persons),
+              value: context.formatMoney(breakdown.perPerson),
             ),
           ),
         ],
@@ -836,17 +846,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     }
 
     final rows = <(String, double)>[
-      ('Pagos anticipados', trip.advancePayment),
-      ('Hospedaje (planeado)', trip.lodgingCost),
+      (context.l10n.tripDetailAdvancePayments, trip.advancePayment),
+      (context.l10n.tripDetailLodgingPlanned, trip.lodgingCost),
       for (final categoria in trip.categories) (categoria.nombre, categoria.monto),
-      ('Emergencias', trip.emergencyMoney),
-      ...gastosByCategory.entries.map((e) => ('${e.key} (real)', e.value)),
+      (context.l10n.tripDetailEmergencies, trip.emergencyMoney),
+      ...gastosByCategory.entries.map((e) => (context.l10n.tripDetailCategoryRealSuffix(e.key), e.value)),
     ].where((e) => e.$2 > 0).toList();
 
     return _SectionCard(
-      title: 'Desglose de gastos',
+      title: context.l10n.tripDetailExpenseBreakdownTitle,
       child: rows.isEmpty
-          ? Text('No hay gastos registrados aún.', style: AppText.ui(13, color: AppColors.textMuted))
+          ? Text(context.l10n.tripDetailNoExpensesRegistered, style: AppText.ui(13, color: AppColors.textMuted))
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [for (final row in rows) _buildSimpleExpenseRow(row.$1, row.$2)],
@@ -866,7 +876,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             children: [
               Text(label, style: AppText.ui(13, color: AppColors.textMuted)),
               Text(
-                '${formatCOP(amount)} (${(percentage * 100).toStringAsFixed(1)}%)',
+                '${context.formatMoney(amount)} (${(percentage * 100).toStringAsFixed(1)}%)',
                 style: AppText.ui(13, weight: FontWeight.w600),
               ),
             ],
@@ -882,16 +892,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildHospedajeTab() {
     return _SectionCard(
-      title: 'Hospedaje',
-      trailing: formatCOP(trip.lodgingCost),
+      title: context.l10n.tripDetailLodgingTitle,
+      trailing: context.formatMoney(trip.lodgingCost),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _kv('Tipo de hospedaje', trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
-          _kv('Costo', formatCOP(trip.lodgingCost)),
+          _kv(context.l10n.tripDetailLodgingTypeFullLabel, trip.lodgingType.isNotEmpty ? trip.lodgingType : '—'),
+          _kv(context.l10n.tripDetailCostLabel, context.formatMoney(trip.lodgingCost)),
           if (trip.includedServices.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('Servicios incluidos', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+            Text(context.l10n.tripDetailIncludedServicesLabel, style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -908,12 +918,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildTransporteTab() {
     return _SectionCard(
-      title: 'Transporte',
+      title: context.l10n.tripDetailTransportTabTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _kv('Transporte de inicio', trip.startTransport.isNotEmpty ? trip.startTransport : '—'),
-          _kv('Transporte durante el viaje', trip.duringTransport.isNotEmpty ? trip.duringTransport : '—'),
+          _kv(context.l10n.tripDetailStartTransportLabel, trip.startTransport.isNotEmpty ? trip.startTransport : '—'),
+          _kv(context.l10n.tripDetailDuringTransportKvLabel, trip.duringTransport.isNotEmpty ? trip.duringTransport : '—'),
         ],
       ),
     );
@@ -926,8 +936,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionCard(
-          title: 'Gastos registrados',
-          trailing: formatCOP(_gastosTotal),
+          title: context.l10n.tripDetailExpensesRegisteredTitle,
+          trailing: context.formatMoney(_gastosTotal),
           child: _buildGastosList(),
         ),
         const SizedBox(height: 16),
@@ -947,7 +957,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     }
     if (trip.id == null) {
       return Text(
-        'Este viaje no quedó guardado en el servidor, así que no se pueden registrar gastos reales.',
+        context.l10n.tripDetailTripNotSavedExpensesHint,
         style: AppText.ui(13, color: AppColors.textMuted),
       );
     }
@@ -955,13 +965,13 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       return Row(
         children: [
           Expanded(child: Text(_gastosError!, style: AppText.ui(13, color: AppColors.error))),
-          TextButton(onPressed: _loadGastos, child: const Text('Reintentar')),
+          TextButton(onPressed: _loadGastos, child: Text(context.l10n.tripDetailRetryButton)),
         ],
       );
     }
     if (_gastos.isEmpty) {
       return Text(
-        'Aún no has registrado gastos reales para este viaje.',
+        context.l10n.tripDetailNoRealExpensesYet,
         style: AppText.ui(13, color: AppColors.textMuted),
       );
     }
@@ -999,11 +1009,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   ],
                 ),
               ),
-              Text(formatCOP(gasto.monto), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
+              Text(context.formatMoney(gasto.monto), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
               IconButton(
                 icon: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
                 onPressed: () => _handleDeleteGasto(gasto),
-                tooltip: 'Eliminar gasto',
+                tooltip: context.l10n.tripDetailDeleteExpenseTooltip,
               ),
             ],
           ),
@@ -1026,16 +1036,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     String phaseLabel;
     int? remainingDays;
     if (start == null || end == null) {
-      phaseLabel = 'Agrega fechas válidas para ver tu ritmo de gasto.';
+      phaseLabel = context.l10n.tripDetailInvalidDatesHint;
     } else if (today.isBefore(start)) {
       final daysUntil = start.difference(today).inDays;
-      phaseLabel = 'Tu viaje empieza en $daysUntil día${daysUntil == 1 ? '' : 's'}.';
+      phaseLabel = context.l10n.tripDetailTripStartsIn(daysUntil);
       remainingDays = end.difference(start).inDays + 1;
     } else if (today.isAfter(end)) {
-      phaseLabel = 'Este viaje ya terminó.';
+      phaseLabel = context.l10n.tripDetailTripEnded;
     } else {
       remainingDays = end.difference(today).inDays + 1;
-      phaseLabel = 'Quedan $remainingDays día${remainingDays == 1 ? '' : 's'} de viaje.';
+      phaseLabel = context.l10n.tripDetailDaysRemaining(remainingDays);
     }
 
     final safePersons = trip.persons < 1 ? 1 : trip.persons;
@@ -1050,16 +1060,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           Expanded(
             child: _buildDailyStat(
               icon: Icons.groups_outlined,
-              label: 'Grupo debería gastar/día',
-              value: formatCOP(dailyForGroup),
+              label: context.l10n.tripDetailGroupDailySpendLabel,
+              value: context.formatMoney(dailyForGroup),
             ),
           ),
           Container(width: 1, height: 36, color: AppColors.line),
           Expanded(
             child: _buildDailyStat(
               icon: Icons.person_outline,
-              label: 'Por persona/día',
-              value: formatCOP(dailyPerPerson),
+              label: context.l10n.tripDetailPerPersonDailyLabel,
+              value: context.formatMoney(dailyPerPerson),
             ),
           ),
         ],
@@ -1067,7 +1077,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     }
 
     return _SectionCard(
-      title: 'Ritmo de gasto',
+      title: context.l10n.tripDetailSpendingPaceTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1086,8 +1096,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Llevas gastado por persona', style: AppText.ui(12, color: AppColors.textMuted)),
-                Text(formatCOP(perPersonSpent), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
+                Text(context.l10n.tripDetailSpentPerPersonLabel, style: AppText.ui(12, color: AppColors.textMuted)),
+                Text(context.formatMoney(perPersonSpent), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
               ],
             ),
           ],
@@ -1132,10 +1142,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             children: [
               const Icon(Icons.flight_takeoff, size: 18, color: Color(0xFF8A6D1D)),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '¿Eres turista extranjero?',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF8A6D1D)),
+                  context.l10n.tripDetailForeignTouristQuestion,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF8A6D1D)),
                 ),
               ),
               Switch(
@@ -1149,21 +1159,19 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             const SizedBox(height: 8),
             Text(
               comprasTotal > 0
-                  ? 'De lo que llevas en "Compras" (${formatCOP(comprasTotal)}), aprox. '
-                        '${formatCOP(ivaEstimado)} fue IVA — en Colombia los turistas '
-                        'extranjeros no residentes pueden pedirlo de vuelta completo '
-                        'antes de salir del país.'
-                  : 'Cuando registres compras (ropa, calzado, artesanías, joyería, '
-                        'electrodomésticos, etc.) con factura electrónica, aquí verás '
-                        'cuánto IVA podrías recuperar antes de salir del país.',
+                  ? context.l10n.tripDetailTaxRefundWithPurchases(
+                      context.formatMoney(comprasTotal),
+                      context.formatMoney(ivaEstimado),
+                    )
+                  : context.l10n.tripDetailTaxRefundNoPurchases,
               style: const TextStyle(fontSize: 12, color: Color(0xFF6B5416), height: 1.4),
             ),
             const SizedBox(height: 8),
             Text(
-              'Requisitos: factura electrónica de mínimo ${formatCOP(minPurchase)} por '
-              'compra, pasaporte o Tarjeta Andina Migratoria, y solicitarlo en la DIAN '
-              'del aeropuerto antes de viajar. Tope: ${formatCOP(maxRefund)} por '
-              'solicitud. Verifica el trámite vigente en dian.gov.co.',
+              context.l10n.tripDetailTaxRefundRequirements(
+                context.formatMoney(minPurchase),
+                context.formatMoney(maxRefund),
+              ),
               style: const TextStyle(fontSize: 10, color: Color(0xFF8A6D1D), height: 1.4),
             ),
           ],
@@ -1187,7 +1195,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildColaboradoresCard() {
     return _SectionCard(
-      title: 'Colaboradores',
+      title: context.l10n.tripDetailCollaboratorsTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1196,11 +1204,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             children: [
               Expanded(
                 child: Text(
-                  'Quiénes pueden ver y editar este viaje',
+                  context.l10n.tripDetailCollaboratorsSubtitle,
                   style: AppText.ui(12, color: AppColors.textMuted),
                 ),
               ),
-              if (_isOwner) _addActionButton('Invitar', _handleInvite),
+              if (_isOwner) _addActionButton(context.l10n.tripDetailInviteButton, _handleInvite),
             ],
           ),
           const SizedBox(height: 14),
@@ -1213,7 +1221,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             Row(
               children: [
                 Expanded(child: Text(_grupoError!, style: AppText.ui(13, color: AppColors.error))),
-                TextButton(onPressed: _loadGrupo, child: const Text('Reintentar')),
+                TextButton(onPressed: _loadGrupo, child: Text(context.l10n.tripDetailRetryButton)),
               ],
             )
           else ...[
@@ -1248,15 +1256,15 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             ),
           ),
           if (isOwnerRow)
-            _tag('Dueño')
+            _tag(context.l10n.tripDetailOwnerTag)
           else ...[
-            if (isMe) _tag('Tú'),
+            if (isMe) _tag(context.l10n.tripDetailYouTag),
             if (_isOwner) ...[
               const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
                 onPressed: () => _handleRemoveCollaborator(member),
-                tooltip: 'Quitar colaborador',
+                tooltip: context.l10n.tripDetailRemoveCollaboratorTooltip,
               ),
             ],
           ],
@@ -1284,7 +1292,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildHistorialCard() {
     return _SectionCard(
-      title: 'Historial de cambios',
+      title: context.l10n.tripDetailHistoryTitle,
       child: _isLoadingGrupo
           ? const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -1292,7 +1300,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             )
           : _history.isEmpty
           ? Text(
-              'Todavía no hay cambios registrados. Cuando alguien edite el presupuesto, quedará aquí.',
+              context.l10n.tripDetailNoHistoryYet,
               style: AppText.ui(13, color: AppColors.textMuted),
             )
           : Column(
@@ -1329,9 +1337,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     style: AppText.ui(13, color: AppColors.ink),
                     children: [
                       TextSpan(text: entry.editorNombre, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const TextSpan(text: ' cambió '),
+                      TextSpan(text: context.l10n.tripDetailHistoryChangedText),
                       TextSpan(
-                        text: tripHistoryFieldLabel(entry.campo),
+                        text: tripHistoryFieldLabel(context, entry.campo),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -1355,11 +1363,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   String _relativeTime(DateTime dateTime) {
     final local = dateTime.toLocal();
     final diff = DateTime.now().difference(local);
-    if (diff.inMinutes < 1) return 'Justo ahora';
-    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'Hace ${diff.inHours} h';
-    if (diff.inDays == 1) return 'Ayer';
-    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
+    if (diff.inMinutes < 1) return context.l10n.tripDetailJustNow;
+    if (diff.inMinutes < 60) return context.l10n.tripDetailMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.l10n.tripDetailHoursAgo(diff.inHours);
+    if (diff.inDays == 1) return context.l10n.tripDetailYesterday;
+    if (diff.inDays < 7) return context.l10n.tripDetailDaysAgo(diff.inDays);
     return DateFormat('dd/MM/yyyy').format(local);
   }
 
@@ -1392,7 +1400,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final percentage = trip.maxBudget > 0 ? (totalSpent / trip.maxBudget) * 100 : 0.0;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle del Viaje', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.l10n.tripDetailMobileAppBarTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -1401,9 +1409,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           onPressed: () => context.go('/'),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.edit_outlined), tooltip: 'Editar presupuesto', onPressed: _editBudget),
+          IconButton(icon: const Icon(Icons.edit_outlined), tooltip: context.l10n.tripDetailEditBudgetTooltip, onPressed: _editBudget),
           if (_isOwner)
-            IconButton(icon: const Icon(Icons.more_vert), tooltip: 'Más', onPressed: _confirmDeleteTrip),
+            IconButton(icon: const Icon(Icons.more_vert), tooltip: context.l10n.tripDetailMoreTooltip, onPressed: _confirmDeleteTrip),
         ],
       ),
       body: SingleChildScrollView(
@@ -1416,16 +1424,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             Text(trip.destination, style: AppText.ui(14, color: AppColors.textMuted)),
             const SizedBox(height: 20),
             _SectionCard(
-              title: 'Presupuesto',
+              title: context.l10n.tripDetailBudgetTitle,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _kv('Gastado', formatCOP(totalSpent)),
-                  _kv('Disponible', formatCOP(remaining)),
+                  _kv(context.l10n.tripDetailSpentKvLabel, context.formatMoney(totalSpent)),
+                  _kv(context.l10n.tripDetailAvailableKvLabel, context.formatMoney(remaining)),
                   const SizedBox(height: 10),
                   BudgetBar(progress: (percentage / 100).clamp(0, 1)),
                   const SizedBox(height: 6),
-                  Text('${percentage.toStringAsFixed(1)}% del presupuesto utilizado', style: AppText.label(10)),
+                  Text(context.l10n.tripDetailBudgetUsedPercent(percentage.toStringAsFixed(1)), style: AppText.label(10)),
                 ],
               ),
             ),
@@ -1434,7 +1442,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             const SizedBox(height: 16),
             _buildTransporteTab(),
             const SizedBox(height: 16),
-            _SectionCard(title: 'Gastos registrados', trailing: formatCOP(_gastosTotal), child: _buildGastosList()),
+            _SectionCard(title: context.l10n.tripDetailExpensesRegisteredTitle, trailing: context.formatMoney(_gastosTotal), child: _buildGastosList()),
             const SizedBox(height: 16),
             _buildGrupoTab(),
           ],

@@ -1,0 +1,1025 @@
+{
+  "@@locale": "es",
+  "appTitle": "Travel Guard",
+  "@appTitle": {
+    "description": "Nombre de la aplicación mostrado en la barra de título"
+  },
+  "registerTypeTitle": "¿Cómo te quieres registrar?",
+  "@registerTypeTitle": {
+    "description": "Título de la pantalla de selección de tipo de registro"
+  },
+  "registerTypeSubtitle": "Selecciona cómo quieres registrarte en TravelGuard.",
+  "@registerTypeSubtitle": {
+    "description": "Subtítulo de la pantalla de selección de tipo de registro"
+  },
+  "registerTypeTouristTitle": "Turista",
+  "@registerTypeTouristTitle": {
+    "description": "Título de la tarjeta de registro como turista"
+  },
+  "registerTypeTouristDescription": "Accede a experiencias, mapas, recomendaciones y más.",
+  "@registerTypeTouristDescription": {
+    "description": "Descripción de la tarjeta de registro como turista"
+  },
+  "registerTypeCommerceTitle": "Comercio",
+  "@registerTypeCommerceTitle": {
+    "description": "Título de la tarjeta de registro como comercio"
+  },
+  "registerTypeCommerceDescription": "Registra tu negocio y llega a más visitantes.",
+  "@registerTypeCommerceDescription": {
+    "description": "Descripción de la tarjeta de registro como comercio"
+  },
+  "authBrandTagline": "Tu itinerario, tu presupuesto y tu seguridad, en un solo lugar.",
+  "@authBrandTagline": {
+    "description": "Eslogan de marca mostrado en el panel de las pantallas de autenticación"
+  },
+  "loginErrorGeneric": "No se pudo iniciar sesión.",
+  "loginSuccessSnackbar": "¡Ingreso exitoso!",
+  "loginErrorEnterEmail": "Por favor ingresa tu correo",
+  "loginErrorInvalidEmail": "Correo inválido",
+  "loginErrorEnterPassword": "Por favor ingresa tu contraseña",
+  "loginWelcome": "Bienvenido",
+  "loginWelcomeBack": "de nuevo",
+  "loginHeroSubtitle": "Explora Medellín con seguridad y control de tu presupuesto.",
+  "loginStatStepsLabel": "PASOS PARA CREAR TU VIAJE",
+  "loginStatBudgetLabel": "CONTROL DE TU PRESUPUESTO",
+  "loginRoleTourist": "Turista",
+  "loginRoleCommerce": "Comercio",
+  "loginFieldEmailLabel": "CORREO",
+  "loginFieldEmailHint": "ejemplo@correo.com",
+  "loginFieldPasswordLabel": "CONTRASEÑA",
+  "loginPasswordHide": "OCULTAR",
+  "loginPasswordShow": "VER",
+  "loginFeatureInDevelopment": "Función en desarrollo",
+  "loginForgotPassword": "¿Olvidaste tu contraseña?",
+  "loginSubmitAsCommerce": "Ingresar como comercio",
+  "loginSubmitAsTourist": "Ingresar como turista",
+  "loginContinueWithGoogle": "Continuar con Google",
+  "loginNoAccountQuestion": "¿No tienes cuenta?",
+  "loginRegisterLink": "Regístrate",
+  "commonRegisterButton": "Registrarse",
+  "commonEmailLabel": "Correo electrónico",
+  "commonEmailHint": "ejemplo@correo.com",
+  "commonPasswordLabel": "Contraseña",
+  "commonConfirmPasswordLabel": "Confirmar contraseña",
+  "commonTermsNotice": "Al registrarte aceptas nuestros Términos y Condiciones",
+  "commonRegisterErrorGeneric": "No se pudo completar el registro.",
+  "commonEmailRequired": "Por favor ingresa tu correo",
+  "commonEmailInvalid": "Correo inválido",
+  "commonPasswordRequired": "Por favor ingresa tu contraseña",
+  "commonPasswordsMismatch": "Las contraseñas no coinciden",
+  "clientRegisterTitle": "Regístrate como turista",
+  "clientRegisterSubtitle": "Crea tu cuenta para empezar a planificar tu viaje",
+  "clientRegisterNameLabel": "Nombre completo",
+  "clientRegisterNameHint": "Ingresa tu nombre",
+  "clientRegisterNameRequired": "Por favor ingresa tu nombre",
+  "clientRegisterPasswordHelper": "Mínimo 6 caracteres",
+  "clientRegisterPasswordMin": "La contraseña debe tener al menos 6 caracteres",
+  "clientRegisterConfirmPasswordRequired": "Por favor confirma tu contraseña",
+  "clientRegisterSuccessSnackbar": "Registro exitoso",
+  "clientRegisterOrContinueWith": "o continúa con",
+  "clientRegisterGoogleButton": "Registrarse con Google",
+  "commerceRegisterTitle": "Registra tu comercio",
+  "commerceRegisterSubtitle": "Llega a más viajeros con tu negocio en TravelGuard",
+  "commerceRegisterNitLabel": "NIT",
+  "commerceRegisterNitHint": "Ingresa el NIT",
+  "commerceRegisterNameLabel": "Nombre del negocio",
+  "commerceRegisterNameHint": "Ingresa el nombre del negocio",
+  "commerceRegisterAddressLabel": "Dirección",
+  "commerceRegisterAddressHint": "Ingresa la dirección",
+  "commerceRegisterAddressHelper": "Escribe la dirección y toca el ícono de ubicación (o presiona Enter) para verla en el mapa de abajo.",
+  "commerceRegisterAddressSearchTooltip": "Buscar esta dirección en el mapa",
+  "commerceRegisterPhoneLabel": "Número telefónico",
+  "commerceRegisterPhoneHint": "Ingresa el número",
+  "commerceRegisterSedeLabel": "Sede",
+  "commerceRegisterSedeHint": "Ingresa la sede",
+  "commerceRegisterLocationLabel": "Ubicación del negocio",
+  "commerceRegisterPasswordHelper": "Mínimo 8 caracteres",
+  "commerceRegisterSuccessSnackbar": "¡Registro exitoso!",
+  "commerceRegisterOr": "o",
+  "commerceRegisterGoogleVerified": "Cuenta de Google verificada",
+  "commerceRegisterGoogleVerify": "Verificar con Google",
+  "commerceRegisterGoogleVerifiedSnackbar": "Cuenta de Google verificada. Completa los datos del negocio y presiona \"Registrarse\" para terminar.",
+  "commerceRegisterFieldsRequired": "Debe completar todos los campos obligatorios",
+  "commerceRegisterLocationRequired": "Selecciona la ubicación de tu negocio en el mapa",
+  "commerceRegisterNitInvalid": "NIT inválido o ya registrado",
+  "commerceRegisterEmailInvalidOrTaken": "Email inválido o ya registrado",
+  "commerceRegisterPasswordMin": "La contraseña debe tener mínimo 8 caracteres",
+  "commerceRegisterGeocodeNotFound": "No se encontró esa dirección en el mapa. Ubica tu negocio manualmente tocando el mapa de abajo.",
+  "commerceRegisterGeocodeFound": "Ubicación encontrada — ajusta el marcador si hace falta.",
+  "configScreenTitle": "Configuración",
+  "configSectionLanguageRegion": "Idioma y región",
+  "configLanguageLabel": "Idioma",
+  "configCurrencyLabel": "Moneda",
+  "configSectionNotifications": "Notificaciones",
+  "configNotificationsToggleLabel": "Activar notificaciones",
+  "configSectionSecurity": "Seguridad",
+  "configChangePasswordLabel": "Cambiar contraseña",
+  "configLogoutLabel": "Cerrar sesión",
+  "configVersionLabel": "Versión 1.0.0",
+  "configCurrentPasswordLabel": "Contraseña actual",
+  "configCurrentPasswordHint": "Ingresa tu contraseña actual",
+  "configNewPasswordLabel": "Nueva contraseña",
+  "configNewPasswordHint": "Ingresa tu nueva contraseña",
+  "configConfirmNewPasswordHint": "Confirma tu nueva contraseña",
+  "configShowPasswordCheckbox": "Mostrar contraseña",
+  "configCancelButton": "Cancelar",
+  "configSaveButton": "Guardar",
+  "configPasswordUpdatedSnackbar": "Contraseña actualizada correctamente",
+  "configErrorChangePassword": "Error al cambiar la contraseña: {error}",
+  "@configErrorChangePassword": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "configSelectLanguageTitle": "Selecciona idioma",
+  "configSelectCurrencyTitle": "Selecciona moneda",
+  "configCurrencyCOP": "Peso Colombiano",
+  "configCurrencyUSD": "Dólar estadounidense",
+  "configCurrencyEUR": "Euro",
+  "configLogoutDialogTitle": "¿Cerrar sesión?",
+  "configLogoutDialogContent": "Se cerrará tu sesión en la aplicación.",
+  "addExpenseInvalidAmount": "Ingresa un monto válido",
+  "addExpenseTitle": "Agregar gasto",
+  "addExpenseSubtitle": "Registra un nuevo gasto real de este viaje",
+  "addExpenseCategoryLabel": "Categoría",
+  "addExpenseAmountLabel": "Monto",
+  "addExpenseAmountHint": "Ej. 50000",
+  "addExpenseDateLabel": "Fecha del gasto",
+  "addExpenseDescriptionLabel": "Descripción (opcional)",
+  "addExpenseDescriptionHint": "Ej. Cena en el centro",
+  "addExpenseAddButton": "Agregar",
+  "mapScreenUserHereLabel": "Tú estás aquí",
+  "mapScreenActionEnableGps": "Activar GPS",
+  "mapScreenActionAllow": "Permitir",
+  "mapScreenActionSettings": "Ajustes",
+  "mapScreenLocationServiceDisabled": "El GPS está desactivado. Actívalo para ver tu ubicación.",
+  "mapScreenLocationPermissionDenied": "Necesitamos permiso de ubicación para centrar el mapa en ti.",
+  "mapScreenLocationPermissionDeniedForever": "El permiso de ubicación está bloqueado. Actívalo desde los ajustes de la app.",
+  "mapScreenTitle": "Mapa",
+  "mapScreenSearchingNearbyPlaces": "Buscando lugares cercanos...",
+  "mapScreenPlacesFoundCount": "{count} lugar(es) encontrados",
+  "@mapScreenPlacesFoundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comerciosCercanosLoadError": "No se pudieron cargar los comercios. Intenta de nuevo.",
+  "comerciosCercanosPlacesCountLabel": "{count} LUGAR(ES)",
+  "@comerciosCercanosPlacesCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comerciosCercanosHeaderTitle1": "Cerca ",
+  "comerciosCercanosHeaderTitle2": "de ti",
+  "comerciosCercanosHeaderSubtitle": "Comercios y lugares verificados cerca de tu ubicación.",
+  "comerciosCercanosTagVerified": "Verificado",
+  "comerciosCercanosTagOpenNow": "Abierto ahora",
+  "comerciosCercanosRetryLabel": "Reintentar",
+  "comerciosCercanosEmptyAll": "Todavía no hay comercios ni lugares registrados",
+  "comerciosCercanosEmptyCategory": "No hay lugares en esta categoría",
+  "comerciosCercanosEmptyHint": "Prueba con otra categoría o vuelve más tarde.",
+  "comerciosCercanosTitle": "Comercios cercanos",
+  "comerciosCercanosNearYourLocation": "Cerca de tu ubicación actual",
+  "comerciosCercanosLocationUnavailable": "Ubicación no disponible",
+  "comerciosCercanosPlacesFoundCount": "{count} lugar(es) encontrados",
+  "@comerciosCercanosPlacesFoundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "placeDetailsErrorOpenMap": "No se pudo abrir el mapa.",
+  "placeDetailsCategoryDistance": "{category} · a {distance} de ti",
+  "@placeDetailsCategoryDistance": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "placeDetailsDirectionsButton": "Cómo llegar",
+  "placeDetailsActivitiesTitle": "Actividades disponibles",
+  "placeDetailsNoActivities": "Sin actividades registradas todavía.",
+  "locationPickerErrorSnackbar": "No se pudo obtener tu ubicación. Toca el mapa para ubicar tu negocio manualmente.",
+  "locationPickerHintTapMap": "Toca el mapa o usa el botón para ubicar tu negocio.",
+  "locationPickerSelectedLocation": "Ubicación seleccionada: {lat}, {lng} (puedes arrastrar el marcador para ajustar)",
+  "@locationPickerSelectedLocation": {
+    "placeholders": {
+      "lat": {
+        "type": "String"
+      },
+      "lng": {
+        "type": "String"
+      }
+    }
+  },
+  "appShellNavHome": "Inicio",
+  "appShellNavMyTrips": "Mis viajes",
+  "appShellNavCommerces": "Comercios",
+  "appShellNavMap": "Mapa",
+  "appShellNavSectionLabel": "NAVEGACIÓN",
+  "appShellCreateTripButton": "Crear viaje",
+  "appShellBudgetLabel": "PRESUPUESTO {month}",
+  "@appShellBudgetLabel": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "appShellBudgetPercentOf": "{percent}% de {amount}",
+  "@appShellBudgetPercentOf": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "appShellNoActiveTrip": "Sin viaje activo",
+  "appShellRoleTourist": "Turista",
+  "appShellRoleCommerce": "Comercio",
+  "appShellSettingsTooltip": "Configuración",
+  "appShellSignOutTooltip": "Cerrar sesión",
+  "appShellSignOutDialogTitle": "Cerrar sesión",
+  "appShellSignOutDialogContent": "¿Seguro que quieres cerrar tu sesión?",
+  "appShellCancelButton": "Cancelar",
+  "appShellSignOutConfirmButton": "Cerrar sesión",
+  "appShellSearchHint": "Buscar viajes, comercios o ciudades",
+  "appShellMonthJan": "ene",
+  "appShellMonthFeb": "feb",
+  "appShellMonthMar": "mar",
+  "appShellMonthApr": "abr",
+  "appShellMonthMay": "may",
+  "appShellMonthJun": "jun",
+  "appShellMonthJul": "jul",
+  "appShellMonthAug": "ago",
+  "appShellMonthSep": "sep",
+  "appShellMonthOct": "oct",
+  "appShellMonthNov": "nov",
+  "appShellMonthDec": "dic",
+  "appShellWeekdayMonday": "lunes",
+  "appShellWeekdayTuesday": "martes",
+  "appShellWeekdayWednesday": "miércoles",
+  "appShellWeekdayThursday": "jueves",
+  "appShellWeekdayFriday": "viernes",
+  "appShellWeekdaySaturday": "sábado",
+  "appShellWeekdaySunday": "domingo",
+  "floatingNavBarHome": "Inicio",
+  "floatingNavBarMap": "Mapa",
+  "floatingNavBarCommerces": "Comercios",
+  "floatingNavBarCreateTripSemanticLabel": "Crear viaje",
+  "createActivityDatePickerHelpText": "Selecciona una fecha",
+  "createActivityDatePickerCancel": "Cancelar",
+  "createActivityDatePickerConfirm": "Aceptar",
+  "createActivityStartDateSnackbar": "Selecciona la fecha de inicio de la actividad.",
+  "createActivityEndDateSnackbar": "Selecciona la fecha de finalización o marca \"Sin fecha de fin\".",
+  "createActivityAppBarTitle": "Crear actividad",
+  "createActivityHeading": "Nueva actividad",
+  "createActivitySubtitle": "Completa la información para publicar una actividad para los turistas.",
+  "createActivityNameLabel": "Nombre de la actividad",
+  "createActivityNameHint": "Ej. Happy Hour",
+  "createActivityNameRequired": "Ingresa el nombre de la actividad",
+  "createActivityDescriptionLabel": "Descripción",
+  "createActivityDescriptionHint": "Explica de qué trata la actividad",
+  "createActivityDescriptionRequired": "Ingresa una descripción",
+  "createActivityDescriptionTooShort": "La descripción debe ser más detallada",
+  "createActivityCategoryLabel": "Tipo o categoría",
+  "createActivityCategoryHint": "Selecciona una categoría",
+  "createActivityCategoryRequired": "Selecciona una categoría",
+  "createActivityPriceLabel": "Precio",
+  "createActivityPriceHint": "Ej. 25000",
+  "createActivityPriceRequired": "Ingresa el precio o marca \"Gratis\"",
+  "createActivityPriceInvalid": "Ingresa un precio válido",
+  "createActivityFreeCheckbox": "Actividad gratuita",
+  "createActivityStartDateLabel": "Fecha de inicio",
+  "createActivityStartDateHint": "Selecciona la fecha de inicio",
+  "createActivityStartDateRequired": "Selecciona la fecha de inicio",
+  "createActivityEndDateLabel": "Fecha de finalización",
+  "createActivityEndDateHint": "Selecciona la fecha de finalización",
+  "createActivityNoEndDateCheckbox": "Sin fecha de fin",
+  "createActivityStatusLabel": "Estado de la actividad",
+  "createActivityCancelButton": "Cancelar",
+  "createActivityCreateButton": "Crear",
+  "createMenuAddProductDialogTitle": "Agregar producto",
+  "createMenuProductNameLabel": "Nombre del producto",
+  "createMenuProductNameHint": "Ej. Hamburguesa clásica",
+  "createMenuProductDescriptionLabel": "Descripción",
+  "createMenuProductDescriptionHint": "Describe el producto",
+  "createMenuProductPriceLabel": "Precio",
+  "createMenuProductPriceHint": "Ej. 18000",
+  "createMenuCancelButton": "Cancelar",
+  "createMenuFieldsInvalidSnackbar": "Completa correctamente todos los campos.",
+  "createMenuNegativePriceSnackbar": "El precio no puede ser negativo.",
+  "createMenuAddProductButton": "Agregar",
+  "createMenuNoProductsSnackbar": "Agrega al menos un producto al menú.",
+  "createMenuAppBarTitle": "Crear menú",
+  "createMenuHeading": "Nuevo menú",
+  "createMenuSubtitle": "Crea un menú para mostrar tus productos a los turistas.",
+  "createMenuNameLabel": "Nombre del menú",
+  "createMenuNameHint": "Ej. Menú de comidas rápidas",
+  "createMenuNameRequired": "Ingresa el nombre del menú",
+  "createMenuDescriptionLabel": "Descripción",
+  "createMenuDescriptionHint": "Describe de qué trata este menú",
+  "createMenuDescriptionRequired": "Ingresa una descripción",
+  "createMenuCategoryLabel": "Categoría",
+  "createMenuProductsHeading": "Productos del menú",
+  "createMenuProductsCount": "{count} productos",
+  "@createMenuProductsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createMenuEmptyProductsTitle": "Todavía no hay productos",
+  "createMenuEmptyProductsSubtitle": "Agrega los productos que formarán parte de este menú.",
+  "createMenuAddProductLabel": "Agregar producto",
+  "createMenuAvailableTitle": "Menú disponible",
+  "createMenuAvailableSubtitleOn": "Los turistas podrán verlo.",
+  "createMenuAvailableSubtitleOff": "El menú estará oculto.",
+  "createMenuCreateButton": "Crear menú",
+  "homeComercioSignOut": "Cerrar sesión",
+  "homeComercioSignOutDialogContent": "¿Seguro que quieres cerrar tu sesión?",
+  "homeComercioCancelButton": "Cancelar",
+  "homeComercioActivityCreatedSnackbar": "Actividad \"{name}\" creada",
+  "@homeComercioActivityCreatedSnackbar": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeComercioCreateFirstMenuSnackbar": "Crea tu primer menú",
+  "homeComercioAddMenuTitle": "Agregar menú",
+  "homeComercioAddMenuDescription": "Crea y gestiona los platos, bebidas y servicios que ofrece tu negocio.",
+  "homeComercioAddMenuButton": "+ Menú",
+  "homeComercioMenuCreatedSnackbar": "Menú \"{name}\" creado",
+  "@homeComercioMenuCreatedSnackbar": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeComercioCreateActivityTitle": "Crear actividad",
+  "homeComercioCreateActivityDescription": "Organiza eventos, promociones y actividades especiales para tus clientes.",
+  "homeComercioCreateActivityButton": "+ Actividad",
+  "homeComercioMyActivitiesTitle": "Mis actividades",
+  "homeComercioSeeAllButton": "Ver todas",
+  "homeComercioNoNameFallback": "Sin nombre",
+  "homeComercioGreeting": "¡Hola, {businessName}!",
+  "@homeComercioGreeting": {
+    "placeholders": {
+      "businessName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeComercioHeroSubtitle": "Gestiona tu negocio fácilmente",
+  "homeComercioStatActivitiesLabel": "Actividades",
+  "homeComercioStatMenusLabel": "Menús creados",
+  "homeComercioEmptyActivitiesTitle": "Aún no tienes actividades",
+  "homeComercioEmptyActivitiesSubtitle": "Crea tu primera actividad para tus visitantes.",
+  "homeComercioNavHome": "Inicio",
+  "homeComercioNavActivities": "Actividades",
+  "homeComercioNavMenu": "Menú",
+  "menuDetailAppBarTitle": "Detalle del Menú",
+  "menuDetailStatusAvailable": "Disponible",
+  "menuDetailStatusUnavailable": "No disponible",
+  "menuDetailDescriptionLabel": "Descripción",
+  "menuDetailStatProductsLabel": "Productos",
+  "menuDetailStatAverageLabel": "Promedio",
+  "menuDetailStatTotalLabel": "Total",
+  "menuDetailProductsCount": "Productos ({count})",
+  "@menuDetailProductsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuDetailNoProductsTitle": "No hay productos",
+  "menuDetailFeatureInDevelopmentSnackbar": "Función en desarrollo",
+  "menuDetailEditButton": "Editar",
+  "menuDetailDeleteButton": "Eliminar",
+  "menuDetailDeleteDialogTitle": "Eliminar menú",
+  "menuDetailDeleteDialogContent": "¿Estás seguro de que deseas eliminar el menú \"{name}\"? Esta acción no se puede deshacer.",
+  "@menuDetailDeleteDialogContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "menuDetailCancelButton": "Cancelar",
+  "menuDetailMenuDeletedSnackbar": "Menú eliminado",
+  "createTripBarrierLabel": "Crear viaje",
+  "createTripStep0TitleLine1": "¿A dónde",
+  "createTripStep0TitleLine2": "vamos?",
+  "createTripStep1TitleLine1": "¿Dónde",
+  "createTripStep1TitleLine2": "dormimos?",
+  "createTripStep2TitleLine1": "¿Cómo nos",
+  "createTripStep2TitleLine2": "movemos?",
+  "createTripStepNameDestination": "Destino y fechas",
+  "createTripStepNameLodging": "Hospedaje",
+  "createTripStepNameTransport": "Transporte",
+  "createTripErrorSelectStartDateFirst": "Primero selecciona la fecha de inicio",
+  "createTripErrorNameDestinationRequired": "Ingresa el nombre y el destino del viaje",
+  "createTripErrorInvalidDates": "Selecciona fechas válidas",
+  "createTripErrorEndDateAfterStart": "La fecha de fin debe ser posterior a la de inicio",
+  "createTripErrorMinOnePerson": "Debe haber mínimo 1 persona",
+  "createTripErrorRequiredFields": "Debe completar todos los campos obligatorios",
+  "createTripErrorBudgetMustBePositive": "El presupuesto debe ser mayor a 0",
+  "createTripErrorInvalidDatesEntered": "Las fechas ingresadas no son válidas",
+  "createTripErrorEndDateAfterStartFull": "La fecha de fin debe ser posterior a la fecha de inicio",
+  "createTripErrorLodgingCostMustBePositive": "El costo debe ser mayor a 0",
+  "createTripErrorEmergencyAmountMustBePositive": "El monto debe ser mayor a 0",
+  "createTripIncompleteDataDialogTitle": "Datos incompletos",
+  "createTripIncompleteDataDialogContent": "La estimación será menos precisa. ¿Deseas continuar?",
+  "createTripCancelButton": "Cancelar",
+  "createTripConfirmCreateButton": "Sí, crear viaje",
+  "createTripErrorMustBeLoggedIn": "Debes iniciar sesión como turista para crear un viaje.",
+  "createTripCreatedSnackbar": "¡Viaje creado! Presupuesto total: {amount}",
+  "@createTripCreatedSnackbar": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "createTripErrorSaveGeneric": "No se pudo guardar el viaje. Intenta nuevamente.",
+  "createTripErrorDbOutdated": "La base de datos no está actualizada para guardar el viaje (falta una columna o tabla). Revisa docs/db/hu05_viajes_costos.sql.",
+  "createTripErrorNoPermission": "No tienes permiso para guardar el viaje (revisa las políticas de seguridad de la tabla viajes en Supabase).",
+  "createTripErrorNotRegisteredAsTourist": "Tu usuario no está registrado como turista todavía.",
+  "createTripCancelDialogTitle": "¿Estás seguro?",
+  "createTripCancelDialogContent": "Se descartarán los datos ingresados.",
+  "createTripCancelDialogNoButton": "No",
+  "createTripCancelDialogConfirmButton": "Sí, descartar",
+  "createTripStepIndicator": "PASO {current} DE {total}",
+  "@createTripStepIndicator": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "createTripBackButton": "Atrás",
+  "createTripNextStepLabel": "SIGUIENTE · {stepName}",
+  "@createTripNextStepLabel": {
+    "placeholders": {
+      "stepName": {
+        "type": "String"
+      }
+    }
+  },
+  "createTripContinueButton": "Continuar →",
+  "createTripCreateButton": "Crear viaje",
+  "createTripNextLabel": "SIGUIENTE",
+  "createTripDoneLabel": "LISTO",
+  "createTripNameLabel": "Nombre del viaje",
+  "createTripNameHint": "Ej: Viaje a Cartagena",
+  "createTripDestinationLabel": "Destino",
+  "createTripDestinationHint": "Ej: Cartagena, Colombia",
+  "createTripStartDateLabel": "INICIO",
+  "createTripEndDateLabel": "FIN",
+  "createTripDurationLabel": "Duración: {days, plural, one{{days} día} other{{days} días}}",
+  "@createTripDurationLabel": {
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "createTripTypeLabel": "TIPO DE VIAJE",
+  "createTripLodgingTypeLabel": "TIPO DE HOSPEDAJE",
+  "createTripLodgingCostLabel": "Costo hospedaje",
+  "createTripLodgingCostHint": "Ej: 2000000",
+  "createTripAdvancePaymentLabel": "Pagos anticipados",
+  "createTripAdvancePaymentHint": "Ej: 1500000",
+  "createTripIncludedServicesLabel": "SERVICIOS INCLUIDOS",
+  "createTripServiceBreakfast": "Desayuno",
+  "createTripServiceLunch": "Almuerzo",
+  "createTripServiceDinner": "Cena",
+  "createTripServiceTransfer": "Traslado",
+  "createTripStartTransportLabel": "TRANSPORTE DE INICIO",
+  "createTripDuringTransportLabel": "TRANSPORTE DURANTE EL VIAJE",
+  "createTripAdditionalExpensesLabel": "GASTOS ADICIONALES",
+  "createTripAddButton": "Agregar",
+  "createTripEmergencyMoneyLabel": "Dinero emergencias",
+  "createTripEmergencyMoneyHint": "Ej: 500000",
+  "createTripPersonsLabel": "PERSONAS",
+  "createTripMaxBudgetLabel": "PRESUPUESTO MÁXIMO",
+  "createTripCategoryLabel": "Categoría",
+  "createTripCategoryHint": "Ej: Transporte interno",
+  "createTripAmountLabel": "Monto",
+  "createTripCategoryAmountHint": "Ej: 500000",
+  "createTripRemoveCategoryTooltip": "Quitar categoría",
+  "createTripBudgetSummaryPlaceholder": "Define el presupuesto máximo en el paso 1 para ver aquí el resumen.",
+  "createTripBudgetSummaryTitle": "Resumen de presupuesto",
+  "createTripEstimatedLabel": "Estimado (con lo ingresado)",
+  "createTripOverBudgetLabel": "Te excedes por",
+  "createTripAvailableLabel": "Disponible",
+  "createTripOverBudgetWarning": "Lo estimado supera tu presupuesto máximo.",
+  "createTripEnterDatesForDailyBudget": "Ingresa las fechas del viaje para ver el presupuesto por día.",
+  "createTripRemainingBudgetSplitLabel": "Presupuesto restante, repartido en:",
+  "createTripPerDayLabel": "Por día ({days} días)",
+  "@createTripPerDayLabel": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "createTripPerPersonLabel": "Por persona ({persons})",
+  "@createTripPerPersonLabel": {
+    "placeholders": {
+      "persons": {
+        "type": "int"
+      }
+    }
+  },
+  "createTripPerPersonPerDayLabel": "Por persona, por día",
+  "editTripBudgetErrorMaxBudgetPositive": "El presupuesto máximo debe ser mayor a 0",
+  "editTripBudgetErrorMustBeLoggedIn": "Debes iniciar sesión para guardar cambios.",
+  "editTripBudgetErrorSaveGeneric": "No se pudo guardar el presupuesto. Intenta de nuevo.",
+  "editTripBudgetTitle": "Editar presupuesto",
+  "editTripBudgetMaxBudgetLabel": "Presupuesto máximo",
+  "editTripBudgetAdvancePaymentLabel": "Pagos anticipados",
+  "editTripBudgetLodgingCostLabel": "Costo hospedaje",
+  "editTripBudgetEmergencyMoneyLabel": "Dinero emergencias",
+  "editTripBudgetCategoriesTitle": "Categorías de gasto",
+  "editTripBudgetAddButton": "Agregar",
+  "editTripBudgetEstimatedLabel": "Estimado",
+  "editTripBudgetOverBudgetLabel": "Te excedes por",
+  "editTripBudgetAvailableLabel": "Disponible",
+  "editTripBudgetPerDayLabel": "Por día ({days}d)",
+  "@editTripBudgetPerDayLabel": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "editTripBudgetPerPersonLabel": "Por persona ({persons})",
+  "@editTripBudgetPerPersonLabel": {
+    "placeholders": {
+      "persons": {
+        "type": "int"
+      }
+    }
+  },
+  "editTripBudgetSaveButton": "Guardar cambios",
+  "editTripBudgetCategoryLabel": "Categoría",
+  "editTripBudgetAmountLabel": "Monto",
+  "editTripBudgetRemoveCategoryTooltip": "Quitar categoría",
+  "homeClientSignOutDialogTitle": "Cerrar sesión",
+  "homeClientSignOutDialogContent": "¿Seguro que quieres cerrar tu sesión?",
+  "homeClientCancelButton": "Cancelar",
+  "homeClientSignOutConfirmButton": "Cerrar sesión",
+  "homeClientCreateTripFirstSnackbar": "Crea un viaje primero para poder registrar un gasto.",
+  "homeClientPickTripTitle": "¿A qué viaje pertenece?",
+  "homeClientPickTripSubtitle": "Elige el viaje para registrar el gasto.",
+  "homeClientTripNotSavedSnackbar": "Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.",
+  "homeClientCategoriesLoadErrorSnackbar": "No se pudieron cargar las categorías de gasto.",
+  "homeClientExpenseAddedSnackbar": "Gasto de {amount} en {category} agregado a {tripName}",
+  "@homeClientExpenseAddedSnackbar": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      },
+      "tripName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeClientExpenseSaveErrorSnackbar": "No se pudo guardar el gasto. Intenta de nuevo.",
+  "homeClientGreeting": "Hola, {name}.",
+  "@homeClientGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeClientActiveTripsCount": "{count, plural, one{1 viaje activo} other{{count} viajes activos}}",
+  "@homeClientActiveTripsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeClientMyTripsTitle": "Mis viajes",
+  "homeClientViewAllLabel": "VER TODOS",
+  "homeClientNoTripsTitle": "Aún no tienes viajes",
+  "homeClientNoTripsSubtitle": "Crea tu primer viaje para comenzar a planificar.",
+  "homeClientCreateTripLabel": "Crear viaje",
+  "homeClientNearbyTitle": "Cerca de ti",
+  "homeClientNoNearbyPlaces": "Todavía no hay comercios ni lugares cerca registrados.",
+  "homeClientVerifiedTag": "Verificado",
+  "homeClientViewPlacesButton": "Ver los {count} lugares →",
+  "@homeClientViewPlacesButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeClientExploreTagline": "Explora, planifica y viaja seguro.",
+  "homeClientContextLineDays": "{destination} empieza en {days, plural, one{{days} día} other{{days} días}}. El presupuesto va al {pct}%.",
+  "@homeClientContextLineDays": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "days": {
+        "type": "num"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "homeClientContextLineNoDays": "{destination} · el presupuesto va al {pct}%.",
+  "@homeClientContextLineNoDays": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "homeClientCreateTripCardTitle": "Crear un viaje",
+  "homeClientCreateTripCardDescription": "Organiza tu próxima aventura, establece tu presupuesto y descubre los mejores destinos.",
+  "homeClientCreateTripButtonPlus": "+ Crear viaje",
+  "homeClientCreateTripCardSubtitle": "Presupuesto, hospedaje e itinerario en 3 pasos",
+  "homeClientMapCardTitle": "Mapa",
+  "homeClientMapCardDescription": "Explora destinos, encuentra comercios seguros y planifica tu ruta.",
+  "homeClientViewMapButton": "Ver mapa",
+  "homeClientMapCardPlacesCount": "14 lugares cerca",
+  "homeClientNextExpenseLabel": "PRÓXIMO GASTO",
+  "homeClientLodgingFallback": "Hospedaje",
+  "homeClientLodgingPaymentDue": "Se paga antes del {date} · {amount}",
+  "@homeClientLodgingPaymentDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeClientRegisterExpenseHint": "Registra un gasto de tu viaje en segundos.",
+  "homeClientSignOutButton": "Cerrar sesión",
+  "homeClientMobileGreeting": "¡Hola, {name}!",
+  "@homeClientMobileGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeClientMobileHeroSubtitle": "Explora, planifica y viaja seguro",
+  "homeClientStatActiveTripsLabel": "Viajes activos",
+  "homeClientStatNextTripLabel": "Próximo viaje",
+  "homeClientStatTotalBudgetLabel": "Presupuesto total",
+  "homeClientViewAllMobileLabel": "Ver todos",
+  "homeClientMonthAbbrJan": "Ene",
+  "homeClientMonthAbbrFeb": "Feb",
+  "homeClientMonthAbbrMar": "Mar",
+  "homeClientMonthAbbrApr": "Abr",
+  "homeClientMonthAbbrMay": "May",
+  "homeClientMonthAbbrJun": "Jun",
+  "homeClientMonthAbbrJul": "Jul",
+  "homeClientMonthAbbrAug": "Ago",
+  "homeClientMonthAbbrSep": "Sep",
+  "homeClientMonthAbbrOct": "Oct",
+  "homeClientMonthAbbrNov": "Nov",
+  "homeClientMonthAbbrDec": "Dic",
+  "tripDetailTripNotSavedSnackbar": "Este viaje no quedó guardado en el servidor; no se pueden registrar gastos.",
+  "tripDetailLoadExpensesError": "No se pudieron cargar los gastos.",
+  "tripDetailLoadGroupError": "No se pudo cargar el grupo del viaje.",
+  "tripDetailInviteDialogTitle": "Invitar colaborador",
+  "tripDetailInviteEmailHint": "correo@ejemplo.com",
+  "tripDetailInviteEmailHelper": "Debe estar registrado en TravelGuard como turista.",
+  "tripDetailCancelButton": "Cancelar",
+  "tripDetailInviteButton": "Invitar",
+  "tripDetailCollaboratorAddedSnackbar": "{name} ahora puede ver y editar este viaje",
+  "@tripDetailCollaboratorAddedSnackbar": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailInviteErrorSnackbar": "No se pudo invitar a esa persona. Intenta de nuevo.",
+  "tripDetailRemoveCollaboratorDialogTitle": "Quitar colaborador",
+  "tripDetailRemoveCollaboratorDialogContent": "¿Quitar a {name} de este viaje? Dejará de poder verlo y editarlo.",
+  "@tripDetailRemoveCollaboratorDialogContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailRemoveButton": "Quitar",
+  "tripDetailRemoveCollaboratorErrorSnackbar": "No se pudo quitar al colaborador.",
+  "tripDetailCategoriesLoadErrorSnackbar": "No se pudieron cargar las categorías de gasto.",
+  "tripDetailExpenseAddedSnackbar": "Gasto de {amount} en {category} agregado",
+  "@tripDetailExpenseAddedSnackbar": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailExpenseSaveErrorSnackbar": "No se pudo guardar el gasto. Intenta de nuevo.",
+  "tripDetailDeleteExpenseDialogTitle": "Eliminar gasto",
+  "tripDetailDeleteExpenseDialogContent": "¿Eliminar el gasto de {amount} en {category}?",
+  "@tripDetailDeleteExpenseDialogContent": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailDeleteButton": "Eliminar",
+  "tripDetailDeleteExpenseErrorSnackbar": "No se pudo eliminar el gasto.",
+  "tripDetailDeleteTripDialogTitle": "Eliminar viaje",
+  "tripDetailDeleteTripDialogContent": "¿Estás seguro de que deseas eliminar el viaje \"{name}\"? Esta acción no se puede deshacer.",
+  "@tripDetailDeleteTripDialogContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailTripDeletedSnackbar": "Viaje eliminado",
+  "tripDetailDeleteTripErrorSnackbar": "No se pudo eliminar el viaje. Intenta de nuevo.",
+  "tripDetailTabResumen": "Resumen",
+  "tripDetailTabHospedaje": "Hospedaje",
+  "tripDetailTabTransporte": "Transporte",
+  "tripDetailTabGastos": "Gastos",
+  "tripDetailTabGrupo": "Grupo",
+  "tripDetailBreadcrumbHome": "INICIO / MIS VIAJES",
+  "tripDetailEditButton": "Editar",
+  "tripDetailAddExpenseButton": "Añadir gasto",
+  "tripDetailHeaderTripToPrefix": "Viaje a ",
+  "tripDetailHeaderSubtitle": "{startDate} – {endDate} · {persons, plural, one{{persons} PERSONA} other{{persons} PERSONAS}} · {tripType}",
+  "@tripDetailHeaderSubtitle": {
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      },
+      "endDate": {
+        "type": "String"
+      },
+      "persons": {
+        "type": "num"
+      },
+      "tripType": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailSpentLabel": "GASTADO",
+  "tripDetailCapLabel": "TOPE",
+  "tripDetailOverBudgetLabel": "Te pasaste del tope por {amount}",
+  "@tripDetailOverBudgetLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailOnTrackLabel": "Vas bien: {pct}% del presupuesto usado",
+  "@tripDetailOnTrackLabel": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailLodgingTitle": "Hospedaje",
+  "tripDetailLodgingTypeLabel": "Tipo",
+  "tripDetailCostLabel": "Costo",
+  "tripDetailTransportLabel": "TRANSPORTE",
+  "tripDetailDuringTransportDetail": "Durante: {value}",
+  "@tripDetailDuringTransportDetail": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailPersonsLabel": "PERSONAS",
+  "tripDetailRecentExpensesTitle": "Últimos gastos",
+  "tripDetailNoExpensesYetHint": "Aún no has registrado gastos. Usa \"Añadir gasto\" arriba para anotar el primero.",
+  "tripDetailAvailableBudgetTitle": "Presupuesto disponible",
+  "tripDetailPerDayLabel": "Por día ({days} días)",
+  "@tripDetailPerDayLabel": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailPerPersonLabel": "Por persona ({persons})",
+  "@tripDetailPerPersonLabel": {
+    "placeholders": {
+      "persons": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailExpenseBreakdownTitle": "Desglose de gastos",
+  "tripDetailNoExpensesRegistered": "No hay gastos registrados aún.",
+  "tripDetailAdvancePayments": "Pagos anticipados",
+  "tripDetailLodgingPlanned": "Hospedaje (planeado)",
+  "tripDetailEmergencies": "Emergencias",
+  "tripDetailCategoryRealSuffix": "{category} (real)",
+  "@tripDetailCategoryRealSuffix": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailLodgingTypeFullLabel": "Tipo de hospedaje",
+  "tripDetailIncludedServicesLabel": "Servicios incluidos",
+  "tripDetailTransportTabTitle": "Transporte",
+  "tripDetailStartTransportLabel": "Transporte de inicio",
+  "tripDetailDuringTransportKvLabel": "Transporte durante el viaje",
+  "tripDetailExpensesRegisteredTitle": "Gastos registrados",
+  "tripDetailTripNotSavedExpensesHint": "Este viaje no quedó guardado en el servidor, así que no se pueden registrar gastos reales.",
+  "tripDetailRetryButton": "Reintentar",
+  "tripDetailNoRealExpensesYet": "Aún no has registrado gastos reales para este viaje.",
+  "tripDetailDeleteExpenseTooltip": "Eliminar gasto",
+  "tripDetailInvalidDatesHint": "Agrega fechas válidas para ver tu ritmo de gasto.",
+  "tripDetailTripStartsIn": "Tu viaje empieza en {days, plural, one{{days} día} other{{days} días}}.",
+  "@tripDetailTripStartsIn": {
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "tripDetailTripEnded": "Este viaje ya terminó.",
+  "tripDetailDaysRemaining": "Quedan {days, plural, one{{days} día} other{{days} días}} de viaje.",
+  "@tripDetailDaysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "tripDetailGroupDailySpendLabel": "Grupo debería gastar/día",
+  "tripDetailPerPersonDailyLabel": "Por persona/día",
+  "tripDetailSpendingPaceTitle": "Ritmo de gasto",
+  "tripDetailSpentPerPersonLabel": "Llevas gastado por persona",
+  "tripDetailForeignTouristQuestion": "¿Eres turista extranjero?",
+  "tripDetailTaxRefundWithPurchases": "De lo que llevas en \"Compras\" ({comprasTotal}), aprox. {ivaEstimado} fue IVA — en Colombia los turistas extranjeros no residentes pueden pedirlo de vuelta completo antes de salir del país.",
+  "@tripDetailTaxRefundWithPurchases": {
+    "placeholders": {
+      "comprasTotal": {
+        "type": "String"
+      },
+      "ivaEstimado": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailTaxRefundNoPurchases": "Cuando registres compras (ropa, calzado, artesanías, joyería, electrodomésticos, etc.) con factura electrónica, aquí verás cuánto IVA podrías recuperar antes de salir del país.",
+  "tripDetailTaxRefundRequirements": "Requisitos: factura electrónica de mínimo {minPurchase} por compra, pasaporte o Tarjeta Andina Migratoria, y solicitarlo en la DIAN del aeropuerto antes de viajar. Tope: {maxRefund} por solicitud. Verifica el trámite vigente en dian.gov.co.",
+  "@tripDetailTaxRefundRequirements": {
+    "placeholders": {
+      "minPurchase": {
+        "type": "String"
+      },
+      "maxRefund": {
+        "type": "String"
+      }
+    }
+  },
+  "tripDetailCollaboratorsTitle": "Colaboradores",
+  "tripDetailCollaboratorsSubtitle": "Quiénes pueden ver y editar este viaje",
+  "tripDetailOwnerTag": "Dueño",
+  "tripDetailYouTag": "Tú",
+  "tripDetailRemoveCollaboratorTooltip": "Quitar colaborador",
+  "tripDetailHistoryTitle": "Historial de cambios",
+  "tripDetailNoHistoryYet": "Todavía no hay cambios registrados. Cuando alguien edite el presupuesto, quedará aquí.",
+  "tripDetailHistoryChangedText": " cambió ",
+  "tripDetailJustNow": "Justo ahora",
+  "tripDetailMinutesAgo": "Hace {minutes} min",
+  "@tripDetailMinutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailHoursAgo": "Hace {hours} h",
+  "@tripDetailHoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailYesterday": "Ayer",
+  "tripDetailDaysAgo": "Hace {days} días",
+  "@tripDetailDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tripDetailMobileAppBarTitle": "Detalle del Viaje",
+  "tripDetailEditBudgetTooltip": "Editar presupuesto",
+  "tripDetailMoreTooltip": "Más",
+  "tripDetailBudgetTitle": "Presupuesto",
+  "tripDetailSpentKvLabel": "Gastado",
+  "tripDetailAvailableKvLabel": "Disponible",
+  "tripDetailBudgetUsedPercent": "{percent}% del presupuesto utilizado",
+  "@tripDetailBudgetUsedPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "desglosePresupuestoTitle": "Desglose de Presupuesto",
+  "desglosePresupuestoHospedaje": "Hospedaje",
+  "desglosePresupuestoTransporte": "Transporte",
+  "desglosePresupuestoComidas": "Comidas",
+  "desglosePresupuestoActividades": "Actividades",
+  "desglosePresupuestoEmergencias": "Emergencias",
+  "tripHistoryPresupuestoMaximo": "Presupuesto máximo",
+  "tripHistoryPagosAnticipados": "Pagos anticipados",
+  "tripHistoryCostoHospedaje": "Costo hospedaje",
+  "tripHistoryDineroEmergencias": "Dinero emergencias",
+  "tripHistoryCategoriasPresupuesto": "Categorías de presupuesto",
+  "categoryFilterAll": "Todos",
+  "placeCategoryComercio": "Comercio",
+  "placeCategoryDiscoteca": "Discoteca",
+  "placeCategoryMirador": "Mirador",
+  "placeCategoryMuseo": "Museo",
+  "placeCategoryOtro": "Otro",
+  "placeCategoryParque": "Parque",
+  "placeCategoryRestaurante": "Restaurante",
+  "placeCategoryTour": "Tour",
+  "placeCategoryHotel": "Hotel",
+  "placeCategoryTienda": "Tienda",
+  "placeCategoryTransporte": "Transporte",
+  "configSectionReset": "Restablecer",
+  "configResetDefaultsLabel": "Restaurar valores predeterminados",
+  "configResetDefaultsDialogTitle": "¿Restaurar valores predeterminados?",
+  "configResetDefaultsDialogContent": "Se restablecerán el idioma, la moneda y las notificaciones a sus valores originales.",
+  "configResetDefaultsConfirmButton": "Restaurar",
+  "configResetDefaultsSnackbar": "Configuración restaurada",
+  "configExchangeRateLabel": "Tasa de cambio",
+  "configExchangeRatePreview": "1 USD = {rate}",
+  "@configExchangeRatePreview": {
+    "placeholders": { "rate": {"type": "String"} }
+  },
+  "configExchangeRateDialogTitle": "Tasa de cambio",
+  "configExchangeRateDialogHint": "Sin conexión a ningún servicio: ingresa tú mismo cuántos pesos colombianos equivalen a 1 dólar y a 1 euro. Solo cambia cómo se ven los montos en la app — lo guardado en tus viajes y gastos sigue siendo el valor real en pesos.",
+  "configExchangeRateUsdLabel": "1 USD equivale a (COP)",
+  "configExchangeRateEurLabel": "1 EUR equivale a (COP)",
+  "configExchangeRateInvalid": "Ingresa valores válidos, mayores a 0",
+  "configExchangeRateSavedSnackbar": "Tasa de cambio actualizada",
+  "tripCardSpentOfBudget": "{spent} gastado de {maxBudget}",
+  "@tripCardSpentOfBudget": {
+    "placeholders": { "spent": {"type": "String"}, "maxBudget": {"type": "String"} }
+  }
+}
