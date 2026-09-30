@@ -603,5 +603,28 @@
   "tripCardSpentOfBudget": "{spent} spent of {maxBudget}",
   "@tripCardSpentOfBudget": {
     "placeholders": { "spent": {"type": "String"}, "maxBudget": {"type": "String"} }
-  }
+  },
+  "forgotPasswordTitle": "Recover your password",
+  "forgotPasswordSubtitle": "We'll send a link to your email to create a new one",
+  "forgotPasswordSubmitButton": "Send link",
+  "forgotPasswordBackToLogin": "Back to sign in",
+  "forgotPasswordSuccessTitle": "Check your email",
+  "forgotPasswordSuccessBody": "If {email} is registered, we sent a link to reset your password. Check your spam folder too.",
+  "@forgotPasswordSuccessBody": {
+    "placeholders": { "email": {"type": "String"} }
+  },
+  "resetPasswordTitle": "Create a new password",
+  "resetPasswordSubtitle": "Choose a secure password for your account",
+  "resetPasswordInvalidLink": "This link is no longer valid. Request a new one from the recovery screen.",
+  "resetPasswordInvalidLinkTitle": "Invalid link",
+  "resetPasswordRequestNewLink": "Request a new link",
+  "resetPasswordForEmail": "Resetting the password for {email}",
+  "@resetPasswordForEmail": {
+    "placeholders": { "email": {"type": "String"} }
+  },
+  "resetPasswordMinLength": "Password must be at least 8 characters",
+  "resetPasswordSubmitButton": "Change password",
+  "resetPasswordSuccessTitle": "Password updated",
+  "resetPasswordSuccessBody": "Your password was changed successfully. You can now sign in with it.",
+  "resetPasswordGoToLogin": "Go to sign in"
 }

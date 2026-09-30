@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/underline_field.dart';
 import '../../../../widgets/pressable.dart';
 import '../../../../widgets/segmented_pill.dart';
 import '../../providers/app_auth_provider.dart';
@@ -354,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onChanged: _isLoading ? (_) {} : (i) => setState(() => _roleIndex = i),
           ),
           const SizedBox(height: 22),
-          _UnderlineField(
+          UnderlineField(
             label: context.l10n.loginFieldEmailLabel,
             hint: context.l10n.loginFieldEmailHint,
             controller: _emailController,
@@ -363,18 +364,15 @@ class _LoginScreenState extends State<LoginScreen> {
             enabled: !_isLoading,
           ),
           const SizedBox(height: 20),
-          _UnderlineField(
+          UnderlineField(
             label: context.l10n.loginFieldPasswordLabel,
             hint: '••••••••',
             controller: _passwordController,
             obscure: !_isPasswordVisible,
             enabled: !_isLoading,
-            trailing: GestureDetector(
+            trailing: UnderlineFieldPasswordToggle(
+              visible: _isPasswordVisible,
               onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-              child: Text(
-                _isPasswordVisible ? context.l10n.loginPasswordHide : context.l10n.loginPasswordShow,
-                style: AppText.label(11, color: AppColors.ink),
-              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -383,11 +381,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.loginFeatureInDevelopment)),
-                  );
-                },
+                onTap: () => context.go('/recuperar-contrasena'),
                 child: Text(
                   context.l10n.loginForgotPassword,
                   style: AppText.ui(13, color: AppColors.textMuted),
@@ -477,71 +471,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _UnderlineField extends StatelessWidget {
-  const _UnderlineField({
-    required this.label,
-    required this.hint,
-    required this.controller,
-    this.emphasized = false,
-    this.obscure = false,
-    this.enabled = true,
-    this.keyboardType,
-    this.trailing,
-  });
-
-  final String label;
-  final String hint;
-  final TextEditingController controller;
-  final bool emphasized;
-  final bool obscure;
-  final bool enabled;
-  final TextInputType? keyboardType;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppText.label(10)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                obscureText: obscure,
-                enabled: enabled,
-                keyboardType: keyboardType,
-                style: AppText.ui(18, weight: FontWeight.w500),
-                cursorColor: AppColors.inkSoft,
-                decoration: InputDecoration(
-                  isDense: true,
-                  filled: false,
-                  hintText: hint,
-                  hintStyle: AppText.ui(18, color: AppColors.textMuted),
-                  contentPadding: const EdgeInsets.only(bottom: 8),
-                  border: InputBorder.none,
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: emphasized ? AppColors.ink : AppColors.hair,
-                      width: emphasized ? 2 : 1,
-                    ),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.ink, width: 2),
-                  ),
-                ),
-              ),
-            ),
-            if (trailing != null) ...[const SizedBox(width: 10), trailing!],
-          ],
-        ),
-      ],
     );
   }
 }

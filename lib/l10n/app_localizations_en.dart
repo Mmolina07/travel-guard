@@ -2029,4 +2029,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripCardSpentOfBudget(String spent, String maxBudget) {
     return '$spent spent of $maxBudget';
   }
+
+  @override
+  String get forgotPasswordTitle => 'Recover your password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'We\'ll send a link to your email to create a new one';
+
+  @override
+  String get forgotPasswordSubmitButton => 'Send link';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Back to sign in';
+
+  @override
+  String get forgotPasswordSuccessTitle => 'Check your email';
+
+  @override
+  String forgotPasswordSuccessBody(String email) {
+    return 'If $email is registered, we sent a link to reset your password. Check your spam folder too.';
+  }
+
+  @override
+  String get resetPasswordTitle => 'Create a new password';
+
+  @override
+  String get resetPasswordSubtitle =>
+      'Choose a secure password for your account';
+
+  @override
+  String get resetPasswordInvalidLink =>
+      'This link is no longer valid. Request a new one from the recovery screen.';
+
+  @override
+  String get resetPasswordInvalidLinkTitle => 'Invalid link';
+
+  @override
+  String get resetPasswordRequestNewLink => 'Request a new link';
+
+  @override
+  String resetPasswordForEmail(String email) {
+    return 'Resetting the password for $email';
+  }
+
+  @override
+  String get resetPasswordMinLength => 'Password must be at least 8 characters';
+
+  @override
+  String get resetPasswordSubmitButton => 'Change password';
+
+  @override
+  String get resetPasswordSuccessTitle => 'Password updated';
+
+  @override
+  String get resetPasswordSuccessBody =>
+      'Your password was changed successfully. You can now sign in with it.';
+
+  @override
+  String get resetPasswordGoToLogin => 'Go to sign in';
 }

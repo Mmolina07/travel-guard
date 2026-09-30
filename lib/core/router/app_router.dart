@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/auth/presentation/pages/reset_password_screen.dart';
 import '../../features/auth/providers/app_auth_provider.dart';
 import '../../features/places_map/presentation/comercios_cercanos_screen.dart';
 import '../../features/places_map/presentation/home_screen_comercio.dart';
@@ -33,6 +35,22 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Ingresar');
             return const LoginScreen();
+          },
+        ),
+        GoRoute(
+          path: '/recuperar-contrasena',
+          name: 'recuperarContrasena',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Recuperar contraseña');
+            return const ForgotPasswordScreen();
+          },
+        ),
+        GoRoute(
+          path: '/restablecer-contrasena',
+          name: 'restablecerContrasena',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Nueva contraseña');
+            return ResetPasswordScreen(oobCode: state.uri.queryParameters['oobCode']);
           },
         ),
 
@@ -131,7 +149,18 @@ class AppRouter {
   /// recargar la página) no redirige a ningún lado — `_RootHome` es
   /// quien muestra el loader mientras tanto, igual que el `AuthGate`
   /// que reemplaza.
+  /// HU-04: la recuperación de contraseña es independiente de la sesión
+  /// — el enlace del correo puede abrirse sin estar logueado (caso
+  /// normal) o estando logueado (otra pestaña/dispositivo), y en ambos
+  /// casos debe verse el formulario, no un redirect a `/` o `/login`.
+  static const _passwordRecoveryRoutes = {
+    '/recuperar-contrasena',
+    '/restablecer-contrasena',
+  };
+
   String? _redirect(BuildContext context, GoRouterState state) {
+    if (_passwordRecoveryRoutes.contains(state.matchedLocation)) return null;
+
     final loggingIn = state.matchedLocation == '/login';
     switch (_auth.status) {
       case AuthStatus.unknown:

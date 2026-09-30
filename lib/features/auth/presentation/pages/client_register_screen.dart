@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
-import '../../../../core/widgets/boarding_pass_card.dart';
+import '../../../../core/widgets/underline_field.dart';
 import '../../../trips/presentation/pages/home_screen_client.dart';
 import '../../providers/app_auth_provider.dart';
 
@@ -127,24 +127,14 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            BoardingPassCard(
-              leading: const Icon(
-                Icons.person_outline,
-                size: 30,
-                color: AppColors.ink,
-              ),
-              child: Column(
+            Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel(context.l10n.clientRegisterNameLabel),
-                  const SizedBox(height: 8),
-                  TextFormField(
+                  UnderlineField(
+                    label: context.l10n.clientRegisterNameLabel,
+                    hint: context.l10n.clientRegisterNameHint,
                     controller: _nameController,
                     enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.clientRegisterNameHint,
-                      prefixIcon: const Icon(Icons.person_outline),
-                    ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return context.l10n.clientRegisterNameRequired;
@@ -152,17 +142,13 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
-                  _buildLabel(context.l10n.commonEmailLabel),
-                  const SizedBox(height: 8),
-                  TextFormField(
+                  const SizedBox(height: 20),
+                  UnderlineField(
+                    label: context.l10n.commonEmailLabel,
+                    hint: context.l10n.commonEmailHint,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.commonEmailHint,
-                      prefixIcon: const Icon(Icons.email_outlined),
-                    ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return context.l10n.commonEmailRequired;
@@ -176,27 +162,17 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
-                  _buildLabel(context.l10n.commonPasswordLabel),
-                  const SizedBox(height: 8),
-                  TextFormField(
+                  const SizedBox(height: 20),
+                  UnderlineField(
+                    label: context.l10n.commonPasswordLabel,
+                    hint: '••••••••',
                     controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
+                    obscure: !_isPasswordVisible,
                     enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      hintText: '••••••••',
-                      helperText: context.l10n.clientRegisterPasswordHelper,
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () => setState(
-                          () => _isPasswordVisible = !_isPasswordVisible,
-                        ),
-                      ),
+                    helperText: context.l10n.clientRegisterPasswordHelper,
+                    trailing: UnderlineFieldPasswordToggle(
+                      visible: _isPasswordVisible,
+                      onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -208,17 +184,13 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
-                  _buildLabel(context.l10n.commonConfirmPasswordLabel),
-                  const SizedBox(height: 8),
-                  TextFormField(
+                  const SizedBox(height: 20),
+                  UnderlineField(
+                    label: context.l10n.commonConfirmPasswordLabel,
+                    hint: '••••••••',
                     controller: _confirmPasswordController,
-                    obscureText: !_isPasswordVisible,
+                    obscure: !_isPasswordVisible,
                     enabled: !_isLoading,
-                    decoration: const InputDecoration(
-                      hintText: '••••••••',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return context.l10n.clientRegisterConfirmPasswordRequired;
@@ -231,7 +203,6 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                   ),
                 ],
               ),
-            ),
             const SizedBox(height: 20),
             SizedBox(
               height: 56,
@@ -289,16 +260,6 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontWeight: FontWeight.w600,
-        color: AppColors.ink,
       ),
     );
   }

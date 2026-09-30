@@ -2036,4 +2036,64 @@ class AppLocalizationsEs extends AppLocalizations {
   String tripCardSpentOfBudget(String spent, String maxBudget) {
     return '$spent gastado de $maxBudget';
   }
+
+  @override
+  String get forgotPasswordTitle => 'Recupera tu contraseña';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Te enviaremos un enlace a tu correo para crear una nueva';
+
+  @override
+  String get forgotPasswordSubmitButton => 'Enviar enlace';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Volver a iniciar sesión';
+
+  @override
+  String get forgotPasswordSuccessTitle => 'Revisa tu correo';
+
+  @override
+  String forgotPasswordSuccessBody(String email) {
+    return 'Si $email está registrado, te enviamos un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.';
+  }
+
+  @override
+  String get resetPasswordTitle => 'Crea una nueva contraseña';
+
+  @override
+  String get resetPasswordSubtitle =>
+      'Elige una contraseña segura para tu cuenta';
+
+  @override
+  String get resetPasswordInvalidLink =>
+      'Este enlace ya no es válido. Solicita uno nuevo desde la pantalla de recuperación.';
+
+  @override
+  String get resetPasswordInvalidLinkTitle => 'Enlace no válido';
+
+  @override
+  String get resetPasswordRequestNewLink => 'Solicitar un nuevo enlace';
+
+  @override
+  String resetPasswordForEmail(String email) {
+    return 'Restableciendo la contraseña de $email';
+  }
+
+  @override
+  String get resetPasswordMinLength =>
+      'La contraseña debe tener al menos 8 caracteres';
+
+  @override
+  String get resetPasswordSubmitButton => 'Cambiar contraseña';
+
+  @override
+  String get resetPasswordSuccessTitle => 'Contraseña actualizada';
+
+  @override
+  String get resetPasswordSuccessBody =>
+      'Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con ella.';
+
+  @override
+  String get resetPasswordGoToLogin => 'Ir a iniciar sesión';
 }

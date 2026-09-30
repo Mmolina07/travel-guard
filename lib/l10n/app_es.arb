@@ -1021,5 +1021,28 @@
   "tripCardSpentOfBudget": "{spent} gastado de {maxBudget}",
   "@tripCardSpentOfBudget": {
     "placeholders": { "spent": {"type": "String"}, "maxBudget": {"type": "String"} }
-  }
+  },
+  "forgotPasswordTitle": "Recupera tu contraseña",
+  "forgotPasswordSubtitle": "Te enviaremos un enlace a tu correo para crear una nueva",
+  "forgotPasswordSubmitButton": "Enviar enlace",
+  "forgotPasswordBackToLogin": "Volver a iniciar sesión",
+  "forgotPasswordSuccessTitle": "Revisa tu correo",
+  "forgotPasswordSuccessBody": "Si {email} está registrado, te enviamos un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.",
+  "@forgotPasswordSuccessBody": {
+    "placeholders": { "email": {"type": "String"} }
+  },
+  "resetPasswordTitle": "Crea una nueva contraseña",
+  "resetPasswordSubtitle": "Elige una contraseña segura para tu cuenta",
+  "resetPasswordInvalidLink": "Este enlace ya no es válido. Solicita uno nuevo desde la pantalla de recuperación.",
+  "resetPasswordInvalidLinkTitle": "Enlace no válido",
+  "resetPasswordRequestNewLink": "Solicitar un nuevo enlace",
+  "resetPasswordForEmail": "Restableciendo la contraseña de {email}",
+  "@resetPasswordForEmail": {
+    "placeholders": { "email": {"type": "String"} }
+  },
+  "resetPasswordMinLength": "La contraseña debe tener al menos 8 caracteres",
+  "resetPasswordSubmitButton": "Cambiar contraseña",
+  "resetPasswordSuccessTitle": "Contraseña actualizada",
+  "resetPasswordSuccessBody": "Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con ella.",
+  "resetPasswordGoToLogin": "Ir a iniciar sesión"
 }

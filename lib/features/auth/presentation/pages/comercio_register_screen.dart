@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
-import '../../../../core/widgets/boarding_pass_card.dart';
+import '../../../../core/widgets/underline_field.dart';
 import '../../../places_map/data/geocoding_service.dart';
 import '../../../places_map/presentation/home_screen_comercio.dart';
 import '../../../places_map/presentation/widgets/location_picker_field.dart';
@@ -254,153 +254,101 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       content: (context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          BoardingPassCard(
-            leading: const Icon(
-              Icons.storefront,
-              size: 30,
-              color: AppColors.ink,
-            ),
-            child: Column(
+          Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildLabel(context.l10n.commerceRegisterNitLabel),
-                const SizedBox(height: 8),
-                TextField(
+                UnderlineField(
+                  label: context.l10n.commerceRegisterNitLabel,
+                  hint: context.l10n.commerceRegisterNitHint,
                   controller: _nitController,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commerceRegisterNitHint,
-                    prefixIcon: const Icon(Icons.badge_outlined),
-                  ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commerceRegisterNameLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commerceRegisterNameLabel,
+                  hint: context.l10n.commerceRegisterNameHint,
                   controller: _nameController,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commerceRegisterNameHint,
-                    prefixIcon: const Icon(Icons.storefront),
-                  ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commerceRegisterAddressLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commerceRegisterAddressLabel,
+                  hint: context.l10n.commerceRegisterAddressHint,
                   controller: _directionController,
                   enabled: !_isLoading,
-                  onSubmitted: _geocodeAddress,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commerceRegisterAddressHint,
-                    prefixIcon: const Icon(Icons.location_on_outlined),
-                    suffixIcon: IconButton(
-                      icon: _isGeocoding
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.ink,
-                              ),
-                            )
-                          : const Icon(Icons.my_location),
-                      tooltip: context.l10n.commerceRegisterAddressSearchTooltip,
-                      onPressed: _isLoading || _isGeocoding
-                          ? null
-                          : () => _geocodeAddress(_directionController.text),
-                    ),
+                  onFieldSubmitted: _geocodeAddress,
+                  helperText: context.l10n.commerceRegisterAddressHelper,
+                  trailing: IconButton(
+                    icon: _isGeocoding
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.ink,
+                            ),
+                          )
+                        : const Icon(Icons.my_location),
+                    tooltip: context.l10n.commerceRegisterAddressSearchTooltip,
+                    onPressed: _isLoading || _isGeocoding
+                        ? null
+                        : () => _geocodeAddress(_directionController.text),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.commerceRegisterAddressHelper,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commerceRegisterPhoneLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commerceRegisterPhoneLabel,
+                  hint: context.l10n.commerceRegisterPhoneHint,
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commerceRegisterPhoneHint,
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                  ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commerceRegisterSedeLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commerceRegisterSedeLabel,
+                  hint: context.l10n.commerceRegisterSedeHint,
                   controller: _sedeController,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commerceRegisterSedeHint,
-                    prefixIcon: const Icon(Icons.business),
-                  ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commerceRegisterLocationLabel),
+                const SizedBox(height: 20),
+                Text(context.l10n.commerceRegisterLocationLabel, style: AppText.label(10)),
                 const SizedBox(height: 8),
                 LocationPickerField(
                   initialLocation: _comercioLocation,
                   onLocationSelected: (latLng) =>
                       setState(() => _comercioLocation = latLng),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commonEmailLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonEmailLabel,
+                  hint: context.l10n.commonEmailHint,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: context.l10n.commonEmailHint,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                  ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commonPasswordLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonPasswordLabel,
+                  hint: '••••••••',
                   controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
+                  obscure: !_isPasswordVisible,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: '••••••••',
-                    helperText: context.l10n.commerceRegisterPasswordHelper,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () => setState(
-                        () => _isPasswordVisible = !_isPasswordVisible,
-                      ),
-                    ),
+                  helperText: context.l10n.commerceRegisterPasswordHelper,
+                  trailing: UnderlineFieldPasswordToggle(
+                    visible: _isPasswordVisible,
+                    onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                   ),
                 ),
-                const SizedBox(height: 18),
-                _buildLabel(context.l10n.commonConfirmPasswordLabel),
-                const SizedBox(height: 8),
-                TextField(
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonConfirmPasswordLabel,
+                  hint: '••••••••',
                   controller: _confirmPasswordController,
-                  obscureText: !_isPasswordVisible,
+                  obscure: !_isPasswordVisible,
                   enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: '••••••••',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
                 ),
               ],
             ),
-          ),
           const SizedBox(height: 20),
           SizedBox(
             height: 56,
@@ -453,16 +401,6 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontWeight: FontWeight.w600,
-        color: AppColors.ink,
       ),
     );
   }

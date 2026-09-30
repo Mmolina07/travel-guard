@@ -3655,6 +3655,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{spent} gastado de {maxBudget}'**
   String tripCardSpentOfBudget(String spent, String maxBudget);
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recupera tu contraseña'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviaremos un enlace a tu correo para crear una nueva'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @forgotPasswordSubmitButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar enlace'**
+  String get forgotPasswordSubmitButton;
+
+  /// No description provided for @forgotPasswordBackToLogin.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a iniciar sesión'**
+  String get forgotPasswordBackToLogin;
+
+  /// No description provided for @forgotPasswordSuccessTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa tu correo'**
+  String get forgotPasswordSuccessTitle;
+
+  /// No description provided for @forgotPasswordSuccessBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Si {email} está registrado, te enviamos un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.'**
+  String forgotPasswordSuccessBody(String email);
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea una nueva contraseña'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una contraseña segura para tu cuenta'**
+  String get resetPasswordSubtitle;
+
+  /// No description provided for @resetPasswordInvalidLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Este enlace ya no es válido. Solicita uno nuevo desde la pantalla de recuperación.'**
+  String get resetPasswordInvalidLink;
+
+  /// No description provided for @resetPasswordInvalidLinkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace no válido'**
+  String get resetPasswordInvalidLinkTitle;
+
+  /// No description provided for @resetPasswordRequestNewLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitar un nuevo enlace'**
+  String get resetPasswordRequestNewLink;
+
+  /// No description provided for @resetPasswordForEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Restableciendo la contraseña de {email}'**
+  String resetPasswordForEmail(String email);
+
+  /// No description provided for @resetPasswordMinLength.
+  ///
+  /// In es, this message translates to:
+  /// **'La contraseña debe tener al menos 8 caracteres'**
+  String get resetPasswordMinLength;
+
+  /// No description provided for @resetPasswordSubmitButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar contraseña'**
+  String get resetPasswordSubmitButton;
+
+  /// No description provided for @resetPasswordSuccessTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña actualizada'**
+  String get resetPasswordSuccessTitle;
+
+  /// No description provided for @resetPasswordSuccessBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con ella.'**
+  String get resetPasswordSuccessBody;
+
+  /// No description provided for @resetPasswordGoToLogin.
+  ///
+  /// In es, this message translates to:
+  /// **'Ir a iniciar sesión'**
+  String get resetPasswordGoToLogin;
 }
 
 class _AppLocalizationsDelegate
