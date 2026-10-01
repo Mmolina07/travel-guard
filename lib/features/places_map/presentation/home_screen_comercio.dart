@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
+import '../presentation/business_settings_screen.dart';
 import '../presentation/create_activity_screen.dart';
 import '../presentation/create_menu_screen.dart';
 import '../presentation/menu_detail_screen.dart';
@@ -27,6 +28,36 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
   String get businessName => context.watch<AppAuthProvider>().displayName;
   final List<Map<String, dynamic>> _actividades = [];
   final List<Menu> _menus = []; // ← AGREGAR LISTA DE MENÚS
+
+  String _businessSchedule = '';
+  String _businessContact = '';
+
+  Future<void> _openBusinessSettings() async {
+    final result = await Navigator.push<Map<String, String>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BusinessSettingsScreen(
+          initialName: businessName,
+          initialSchedule: _businessSchedule,
+          initialContact: _businessContact,
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _businessSchedule = result['schedule'] ?? _businessSchedule;
+      _businessContact = result['contact'] ?? _businessContact;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.homeComercioBusinessUpdatedSnackbar),
+        backgroundColor: AppColors.ink,
+      ),
+    );
+  }
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -211,15 +242,14 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     children: [
                       Text(
                         context.l10n.homeComercioMyActivitiesTitle,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
+                        style: AppText.display(22),
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: Text(context.l10n.homeComercioSeeAllButton),
+                        child: Text(
+                          context.l10n.homeComercioSeeAllButton,
+                          style: AppText.label(11, color: AppColors.inkSoft),
+                        ),
                       ),
                     ],
                   ),
@@ -309,10 +339,10 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                                 const SizedBox(width: 6),
                                 Text(
                                   context.l10n.homeComercioSignOut,
-                                  style: const TextStyle(
+                                  style: AppText.ui(
+                                    13,
+                                    weight: FontWeight.w600,
                                     color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -324,17 +354,13 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     const SizedBox(height: 16),
                     Text(
                       context.l10n.homeComercioGreeting(businessName),
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: AppText.display(32, color: Colors.white),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       context.l10n.homeComercioHeroSubtitle,
-                      style: TextStyle(
-                        fontSize: 15,
+                      style: AppText.ui(
+                        15,
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
@@ -346,6 +372,11 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         ),
       ),
       actions: [
+        IconButton(
+          tooltip: context.l10n.homeComercioBusinessSettingsTooltip,
+          icon: const Icon(Icons.storefront_outlined, color: Colors.white),
+          onPressed: _openBusinessSettings,
+        ),
         IconButton(
           icon: const Icon(Icons.notifications_none, color: Colors.white),
           onPressed: () {},
@@ -389,17 +420,13 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
           const SizedBox(height: 10),
           Text(
             context.l10n.homeComercioEmptyActivitiesTitle,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
+            style: AppText.display(18),
           ),
           const SizedBox(height: 4),
           Text(
             context.l10n.homeComercioEmptyActivitiesSubtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: AppText.ui(13, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -424,20 +451,12 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.ui(17, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textMuted,
-                    height: 1.4,
-                  ),
+                  style: AppText.ui(12.5, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -479,22 +498,14 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.ui(15, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    height: 1.4,
-                  ),
+                  style: AppText.ui(12, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -511,9 +522,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                     date,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    style: AppText.label(
+                      11,
+                      weight: FontWeight.w600,
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -560,9 +571,9 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.ink.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.ink.withValues(alpha: 0.14)),
+        color: AppColors.wash,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,18 +582,14 @@ class _StatChip extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
+            style: AppText.display(20),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: AppText.label(10, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -629,15 +636,10 @@ class _ComercioBottomNav extends StatelessWidget {
       child: Container(
         height: 64,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.line),
+          borderRadius: BorderRadius.circular(AppRadius.nav),
+          boxShadow: AppShadow.raised,
         ),
         child: Row(
           children: List.generate(items.length, (index) {
@@ -647,7 +649,7 @@ class _ComercioBottomNav extends StatelessWidget {
                 selected ? AppColors.ink : AppColors.textMuted;
             return Expanded(
               child: InkWell(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppRadius.nav),
                 onTap: () => onItemSelected(index),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -660,9 +662,9 @@ class _ComercioBottomNav extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       item.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                      style: AppText.ui(
+                        11,
+                        weight: FontWeight.w600,
                         color: color,
                       ),
                     ),

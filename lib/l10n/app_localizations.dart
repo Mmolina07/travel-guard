@@ -4051,6 +4051,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Detalles'**
   String get stepProgressStep3;
+
+  /// No description provided for @homeComercioBusinessSettingsTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi negocio'**
+  String get homeComercioBusinessSettingsTooltip;
+
+  /// No description provided for @homeComercioBusinessUpdatedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos del negocio actualizados'**
+  String get homeComercioBusinessUpdatedSnackbar;
 }
 
 class _AppLocalizationsDelegate

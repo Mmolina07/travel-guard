@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
 
+import '../../../core/settings/currency_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/l10n_extension.dart';
 
@@ -54,10 +56,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
         return AlertDialog(
           title: Text(
             context.l10n.createMenuAddProductDialogTitle,
-            style: const TextStyle(
-              color: AppColors.ink,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppText.display(20),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -98,14 +97,10 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
               },
               child: Text(
                 context.l10n.createMenuCancelButton,
-                style: const TextStyle(color: AppColors.ink),
+                style: AppText.ui(14, color: AppColors.ink),
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.ink,
-                foregroundColor: Colors.white,
-              ),
               onPressed: () {
                 final String name = productNameController.text.trim();
                 final String description = productDescriptionController.text.trim();
@@ -221,49 +216,28 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
       controller: controller,
       maxLines: maxLines,
       validator: validator,
+      style: AppText.ui(15),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(
-          icon,
-          color: AppColors.ink,
-        ),
-        filled: true,
-        fillColor: AppColors.paperDeep,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AppColors.hair,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AppColors.ink,
-            width: 1.5,
-          ),
-        ),
+        prefixIcon: Icon(icon, color: AppColors.ink),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CurrencyProvider>();
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
         title: Text(
           context.l10n.createMenuAppBarTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppText.ui(18, weight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
       ),
       body: SafeArea(
         child: Form(
@@ -275,19 +249,12 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
               children: [
                 Text(
                   context.l10n.createMenuHeading,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.display(26),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.createMenuSubtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: AppText.ui(14, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 24),
 
@@ -327,23 +294,12 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 // Categoría
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
+                  style: AppText.ui(15),
                   decoration: InputDecoration(
                     labelText: context.l10n.createMenuCategoryLabel,
                     prefixIcon: const Icon(
                       Icons.category_outlined,
                       color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                        color: AppColors.hair,
-                      ),
                     ),
                   ),
                   items: _categories.map((category) {
@@ -367,18 +323,11 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                   children: [
                     Text(
                       context.l10n.createMenuProductsHeading,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink,
-                      ),
+                      style: AppText.display(20),
                     ),
                     Text(
                       context.l10n.createMenuProductsCount(_products.length),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppText.label(10, color: AppColors.textMuted, weight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -392,7 +341,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: AppColors.paperDeep,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadius.card),
                       border: Border.all(
                         color: AppColors.hair,
                       ),
@@ -407,18 +356,13 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                         const SizedBox(height: 10),
                         Text(
                           context.l10n.createMenuEmptyProductsTitle,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.ink,
-                          ),
+                          style: AppText.ui(15, weight: FontWeight.w700),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           context.l10n.createMenuEmptyProductsSubtitle,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          style: AppText.ui(13, color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -435,8 +379,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.card),
                           border: Border.all(
                             color: AppColors.hair,
                           ),
@@ -448,8 +392,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                               width: 52,
                               height: 52,
                               decoration: BoxDecoration(
-                                color: AppColors.hair,
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.wash,
+                                borderRadius: BorderRadius.circular(AppRadius.control),
                               ),
                               child: const Icon(
                                 Icons.fastfood_outlined,
@@ -463,30 +407,20 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    product['name'],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.ink,
-                                    ),
+                                    product['name'] as String,
+                                    style: AppText.ui(16, weight: FontWeight.w700),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    product['description'],
+                                    product['description'] as String,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 13,
-                                    ),
+                                    style: AppText.ui(13, color: AppColors.textMuted),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    '\$${product['price'].toStringAsFixed(0)}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.ink,
-                                    ),
+                                    context.formatMoney(product['price'] as num),
+                                    style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
                                   ),
                                 ],
                               ),
@@ -494,7 +428,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                             IconButton(
                               icon: const Icon(
                                 Icons.delete_outline,
-                                color: Colors.red,
+                                color: AppColors.error,
                               ),
                               onPressed: () {
                                 _removeProduct(index);
@@ -514,15 +448,14 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _addProduct,
                     icon: const Icon(Icons.add),
-                    label: Text(context.l10n.createMenuAddProductLabel),
+                    label: Text(
+                      context.l10n.createMenuAddProductLabel,
+                      style: AppText.ui(14, weight: FontWeight.w700),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.ink,
-                      side: const BorderSide(
-                        color: AppColors.ink,
-                      ),
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadius.button),
                       ),
                     ),
                   ),
@@ -535,12 +468,13 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     context.l10n.createMenuAvailableTitle,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppText.ui(15, weight: FontWeight.w700),
                   ),
                   subtitle: Text(
                     _isAvailable
                         ? context.l10n.createMenuAvailableSubtitleOn
                         : context.l10n.createMenuAvailableSubtitleOff,
+                    style: AppText.ui(13, color: AppColors.textMuted),
                   ),
                   value: _isAvailable,
                   activeColor: AppColors.ink,
@@ -560,18 +494,14 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                       child: OutlinedButton(
                         onPressed: _isLoading ? null : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.ink,
-                          side: const BorderSide(
-                            color: AppColors.ink,
-                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.button),
                           ),
                         ),
                         child: Text(
                           context.l10n.createMenuCancelButton,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: AppText.ui(15, weight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -580,11 +510,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleCreateMenu,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.ink,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.button),
                           ),
                         ),
                         child: _isLoading
@@ -592,13 +520,13 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: AppColors.mint,
                                   strokeWidth: 2,
                                 ),
                               )
                             : Text(
                                 context.l10n.createMenuCreateButton,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: AppText.ui(15, weight: FontWeight.w700, color: AppColors.paper),
                               ),
                       ),
                     ),

@@ -2263,4 +2263,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stepProgressStep3 => 'Detalles';
+
+  @override
+  String get homeComercioBusinessSettingsTooltip => 'Mi negocio';
+
+  @override
+  String get homeComercioBusinessUpdatedSnackbar =>
+      'Datos del negocio actualizados';
 }

@@ -158,27 +158,11 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       validator: validator,
+      style: AppText.ui(15),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.ink),
-        filled: true,
-        fillColor: AppColors.paperDeep,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.hair),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AppColors.ink,
-            width: 1.5,
-          ),
-        ),
       ),
     );
   }
@@ -190,12 +174,11 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       appBar: AppBar(
         title: Text(
           context.l10n.createActivityAppBarTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppText.ui(18, weight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.ink,
         foregroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
       ),
       body: SafeArea(
         child: Form(
@@ -207,16 +190,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               children: [
                 Text(
                   context.l10n.createActivityHeading,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.display(26),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.createActivitySubtitle,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: AppText.ui(14, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 24),
 
@@ -257,21 +236,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 // Categoría
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
+                  style: AppText.ui(15),
                   decoration: InputDecoration(
                     labelText: context.l10n.createActivityCategoryLabel,
                     prefixIcon: const Icon(
                       Icons.category_outlined,
                       color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   hint: Text(context.l10n.createActivityCategoryHint),
@@ -334,6 +304,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   controller: _startDateController,
                   readOnly: true,
                   onTap: () => _selectDate(_startDateController),
+                  style: AppText.ui(15),
                   decoration: InputDecoration(
                     labelText: context.l10n.createActivityStartDateLabel,
                     hintText: context.l10n.createActivityStartDateHint,
@@ -344,16 +315,6 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     suffixIcon: const Icon(
                       Icons.arrow_drop_down,
                       color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   validator: (value) {
@@ -375,6 +336,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                       _selectDate(_endDateController);
                     }
                   },
+                  style: AppText.ui(15),
                   decoration: InputDecoration(
                     labelText: context.l10n.createActivityEndDateLabel,
                     hintText: context.l10n.createActivityEndDateHint,
@@ -385,16 +347,6 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     suffixIcon: const Icon(
                       Icons.arrow_drop_down,
                       color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                 ),
@@ -415,21 +367,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 // Estado
                 DropdownButtonFormField<String>(
                   value: _selectedStatus,
+                  style: AppText.ui(15),
                   decoration: InputDecoration(
                     labelText: context.l10n.createActivityStatusLabel,
                     prefixIcon: const Icon(
                       Icons.toggle_on_outlined,
                       color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
                     ),
                   ),
                   items: _statuses.map((status) {
@@ -455,16 +398,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                             ? null
                             : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.ink,
-                          side: const BorderSide(color: AppColors.ink),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.button),
                           ),
                         ),
                         child: Text(
                           context.l10n.createActivityCancelButton,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: AppText.ui(15, weight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -473,11 +414,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleCreateActivity,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.ink,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.button),
                           ),
                         ),
                         child: _isLoading
@@ -485,13 +424,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                                 height: 22,
                                 width: 22,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: AppColors.mint,
                                   strokeWidth: 2,
                                 ),
                               )
                             : Text(
                                 context.l10n.createActivityCreateButton,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: AppText.ui(
+                                  15,
+                                  weight: FontWeight.w700,
+                                  color: AppColors.paper,
+                                ),
                               ),
                       ),
                     ),

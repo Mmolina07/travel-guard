@@ -681,5 +681,7 @@
   "stepProgressLabel": "Step",
   "stepProgressStep1": "Information",
   "stepProgressStep2": "Date and price",
-  "stepProgressStep3": "Details"
+  "stepProgressStep3": "Details",
+  "homeComercioBusinessSettingsTooltip": "My business",
+  "homeComercioBusinessUpdatedSnackbar": "Business information updated"
 }
