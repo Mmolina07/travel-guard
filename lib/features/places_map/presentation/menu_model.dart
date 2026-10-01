@@ -1,30 +1,43 @@
 // lib/models/menu_model.dart
+//
+// `fromRow`/`toInsertMap` mapean contra las tablas `menus`/`menu_productos`
+// (ver docs/db/hu_comercio_menus_actividades.sql) vía [MenusRepository].
+// Los nombres de campo en Dart se dejan en inglés (name/description/price)
+// porque ya los usan `create_menu_screen.dart`, `menu_detail_screen.dart` y
+// `home_screen_comercio.dart` — solo cambia cómo se serializan hacia/desde
+// Supabase, no los nombres que ve el resto de la app.
 
 class MenuItem {
+  final int? id;
   final String name;
   final String description;
   final double price;
 
   const MenuItem({
+    this.id,
     required this.name,
     required this.description,
     required this.price,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'description': description,
-      'price': price,
-    };
+  factory MenuItem.fromRow(Map<String, dynamic> row) {
+    return MenuItem(
+      id: row['id'] as int?,
+      name: row['nombre']?.toString() ?? '',
+      description: row['descripcion']?.toString() ?? '',
+      price: _parsePrice(row['precio']),
+    );
   }
 
-  factory MenuItem.fromMap(Map<String, dynamic> map) {
-    return MenuItem(
-      name: map['name']?.toString() ?? '',
-      description: map['description']?.toString() ?? '',
-      price: _parsePrice(map['price']),
-    );
+  /// Fila lista para `menu_productos` (insert o update) de este producto
+  /// dentro de [menuId].
+  Map<String, dynamic> toInsertMap(int menuId) {
+    return {
+      'menu_id': menuId,
+      'nombre': name,
+      'descripcion': description,
+      'precio': price,
+    };
   }
 
   static double _parsePrice(dynamic value) {
@@ -43,11 +56,13 @@ class MenuItem {
   }
 
   MenuItem copyWith({
+    int? id,
     String? name,
     String? description,
     double? price,
   }) {
     return MenuItem(
+      id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       price: price ?? this.price,
@@ -56,6 +71,7 @@ class MenuItem {
 }
 
 class Menu {
+  final int? id;
   final String name;
   final String description;
   final String category;
@@ -63,6 +79,7 @@ class Menu {
   final List<MenuItem> products;
 
   Menu({
+    this.id,
     required this.name,
     required this.description,
     required this.category,
@@ -88,6 +105,7 @@ class Menu {
   }
 
   Menu copyWith({
+    int? id,
     String? name,
     String? description,
     String? category,
@@ -95,6 +113,7 @@ class Menu {
     List<MenuItem>? products,
   }) {
     return Menu(
+      id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       category: category ?? this.category,
@@ -103,36 +122,26 @@ class Menu {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  /// Fila lista para `menus` (insert o update), sin productos — los
+  /// productos se manejan aparte en `menu_productos` vía
+  /// [MenusRepository].
+  Map<String, dynamic> toInsertMap(int comercioId) {
     return {
-      'name': name,
-      'description': description,
-      'category': category,
-      'isAvailable': isAvailable,
-      'products': products
-          .map((product) => product.toMap())
-          .toList(),
+      'comercio_id': comercioId,
+      'nombre': name,
+      'descripcion': description,
+      'categoria': category,
+      'disponible': isAvailable,
     };
   }
 
-  factory Menu.fromMap(Map<String, dynamic> map) {
-    final rawProducts = map['products'];
-
-    final List<MenuItem> products = [];
-
-    if (rawProducts is List) {
-      for (final item in rawProducts) {
-        if (item is Map<String, dynamic>) {
-          products.add(MenuItem.fromMap(item));
-        }
-      }
-    }
-
+  factory Menu.fromRow(Map<String, dynamic> row, {List<MenuItem> products = const []}) {
     return Menu(
-      name: map['name']?.toString() ?? '',
-      description: map['description']?.toString() ?? '',
-      category: map['category']?.toString() ?? 'Otro',
-      isAvailable: map['isAvailable'] == true,
+      id: row['id'] as int?,
+      name: row['nombre']?.toString() ?? '',
+      description: row['descripcion']?.toString() ?? '',
+      category: row['categoria']?.toString() ?? 'Otro',
+      isAvailable: row['disponible'] == true,
       products: products,
     );
   }

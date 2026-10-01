@@ -4,13 +4,18 @@ import '../../../core/theme/app_theme.dart';
 
 class BusinessSettingsScreen extends StatefulWidget {
   final String initialName;
-  final String initialSchedule;
+
+  /// `comercios.horario_apertura`/`horario_cierre`, como las devuelve
+  /// Supabase ("HH:mm:ss"), o `null` si el comercio no las ha definido.
+  final String? initialOpenTime;
+  final String? initialCloseTime;
   final String initialContact;
 
   const BusinessSettingsScreen({
     Key? key,
     required this.initialName,
-    required this.initialSchedule,
+    this.initialOpenTime,
+    this.initialCloseTime,
     required this.initialContact,
   }) : super(key: key);
 
@@ -21,8 +26,9 @@ class BusinessSettingsScreen extends StatefulWidget {
 
 class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
   late final TextEditingController _nameController;
-  late final TextEditingController _scheduleController;
   late final TextEditingController _contactController;
+  TimeOfDay? _openTime;
+  TimeOfDay? _closeTime;
 
   @override
   void initState() {
@@ -32,26 +38,56 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
       text: widget.initialName,
     );
 
-    _scheduleController = TextEditingController(
-      text: widget.initialSchedule,
-    );
-
     _contactController = TextEditingController(
       text: widget.initialContact,
     );
+
+    _openTime = _parseTime(widget.initialOpenTime);
+    _closeTime = _parseTime(widget.initialCloseTime);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _scheduleController.dispose();
     _contactController.dispose();
     super.dispose();
   }
 
+  static TimeOfDay? _parseTime(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  /// "HH:mm:00", listo para una columna `TIME` de Postgres.
+  static String? _formatTime(TimeOfDay? time) {
+    if (time == null) return null;
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute:00';
+  }
+
+  Future<void> _pickTime({required bool isOpenTime}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: (isOpenTime ? _openTime : _closeTime) ?? TimeOfDay.now(),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isOpenTime) {
+        _openTime = picked;
+      } else {
+        _closeTime = picked;
+      }
+    });
+  }
+
   void _save() {
     final name = _nameController.text.trim();
-    final schedule = _scheduleController.text.trim();
     final contact = _contactController.text.trim();
 
     if (name.isEmpty) {
@@ -65,9 +101,10 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
 
     Navigator.pop(
       context,
-      {
+      <String, String?>{
         'name': name,
-        'schedule': schedule,
+        'openTime': _formatTime(_openTime),
+        'closeTime': _formatTime(_closeTime),
         'contact': contact,
       },
     );
@@ -155,11 +192,24 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
 
                   const SizedBox(height: 8),
 
-                  TextField(
-                    controller: _scheduleController,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.businessSettingsScheduleHint,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _TimeField(
+                          label: context.l10n.businessSettingsOpenTimeLabel,
+                          time: _openTime,
+                          onTap: () => _pickTime(isOpenTime: true),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _TimeField(
+                          label: context.l10n.businessSettingsCloseTimeLabel,
+                          time: _closeTime,
+                          onTap: () => _pickTime(isOpenTime: false),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 22),
@@ -199,6 +249,39 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TimeField extends StatelessWidget {
+  const _TimeField({
+    required this.label,
+    required this.time,
+    required this.onTap,
+  });
+
+  final String label;
+  final TimeOfDay? time;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.dateField),
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: label),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              time?.format(context) ?? context.l10n.businessSettingsTimeNotSet,
+              style: AppText.ui(15),
+            ),
+            const Icon(Icons.access_time, size: 18, color: AppColors.textMuted),
+          ],
         ),
       ),
     );

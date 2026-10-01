@@ -1102,5 +1102,13 @@
   "stepProgressStep3": "Detalles",
   "homeComercioBusinessSettingsTooltip": "Mi negocio",
   "homeComercioBusinessUpdatedSnackbar": "Datos del negocio actualizados",
-  "configSectionAccount": "Cuenta"
+  "configSectionAccount": "Cuenta",
+  "homeComercioLoadErrorSnackbar": "No se pudo cargar la información del negocio",
+  "homeComercioSaveErrorSnackbar": "No se pudieron guardar los cambios, intenta de nuevo",
+  "createActivitySaveErrorSnackbar": "No se pudo crear la actividad, intenta de nuevo",
+  "createMenuSaveErrorSnackbar": "No se pudo crear el menú, intenta de nuevo",
+  "menuDetailSaveErrorSnackbar": "No se pudo guardar el cambio, intenta de nuevo",
+  "businessSettingsOpenTimeLabel": "Hora de apertura",
+  "businessSettingsCloseTimeLabel": "Hora de cierre",
+  "businessSettingsTimeNotSet": "Sin definir"
 }

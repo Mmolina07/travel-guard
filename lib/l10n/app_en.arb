@@ -684,5 +684,13 @@
   "stepProgressStep3": "Details",
   "homeComercioBusinessSettingsTooltip": "My business",
   "homeComercioBusinessUpdatedSnackbar": "Business information updated",
-  "configSectionAccount": "Account"
+  "configSectionAccount": "Account",
+  "homeComercioLoadErrorSnackbar": "Couldn't load the business information",
+  "homeComercioSaveErrorSnackbar": "Couldn't save the changes, try again",
+  "createActivitySaveErrorSnackbar": "Couldn't create the activity, try again",
+  "createMenuSaveErrorSnackbar": "Couldn't create the menu, try again",
+  "menuDetailSaveErrorSnackbar": "Couldn't save the change, try again",
+  "businessSettingsOpenTimeLabel": "Opening time",
+  "businessSettingsCloseTimeLabel": "Closing time",
+  "businessSettingsTimeNotSet": "Not set"
 }

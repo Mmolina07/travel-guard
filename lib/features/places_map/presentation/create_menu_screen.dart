@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
 
+import '../../auth/providers/app_auth_provider.dart';
+import '../data/menus_repository.dart';
 import '../../../core/settings/currency_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/l10n_extension.dart';
@@ -15,6 +17,7 @@ class CreateMenuScreen extends StatefulWidget {
 
 class _CreateMenuScreenState extends State<CreateMenuScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _menusRepository = MenusRepository();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -156,7 +159,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
   }
 
   // Valida y crea el menú.
-  void _handleCreateMenu() {
+  Future<void> _handleCreateMenu() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -174,20 +177,16 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-
-      // Convertir Map a MenuItem
+    try {
       final List<MenuItem> menuItems = _products
           .map((p) => MenuItem(
-                name: p['name'],
-                description: p['description'],
-                price: p['price'],
+                name: p['name'] as String,
+                description: p['description'] as String,
+                price: p['price'] as double,
               ))
           .toList();
 
-      // Crear objeto Menu
-      final Menu menu = Menu(
+      final draft = Menu(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _selectedCategory ?? 'Otro',
@@ -195,13 +194,22 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
         products: menuItems,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
+      final comercioId = context.read<AppAuthProvider>().usuario!.id;
+      final menu = await _menusRepository.createMenu(
+        comercioId: comercioId,
+        menu: draft,
+      );
 
-      // Regresa a la pantalla anterior enviando el menú creado
+      if (!mounted) return;
+      setState(() => _isLoading = false);
       Navigator.pop(context, menu);
-    });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.createMenuSaveErrorSnackbar)),
+      );
+    }
   }
 
   Widget _buildTextField({

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
+import '../../auth/providers/app_auth_provider.dart';
+import '../data/models/actividad_model.dart';
+import '../data/places_map_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/l10n_extension.dart';
 
@@ -13,6 +17,7 @@ class CreateActivityScreen extends StatefulWidget {
 
 class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _placesMapRepository = PlacesMapRepository();
 
   // Controladores
   final TextEditingController _nameController = TextEditingController();
@@ -105,8 +110,19 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     return true;
   }
 
+  static const Map<String, String> _estadoPorStatus = {
+    'Activa': 'activa',
+    'Pausada': 'pausada',
+    'Borrador': 'borrador',
+  };
+
+  DateTime? _parseDate(String value) {
+    if (value.isEmpty) return null;
+    return DateFormat('dd/MM/yyyy').parse(value);
+  }
+
   // ─── Crear actividad ───
-  void _handleCreateActivity() {
+  Future<void> _handleCreateActivity() async {
     if (!_validateActivity()) {
       return;
     }
@@ -115,31 +131,31 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       _isLoading = true;
     });
 
-    // Simula el envío al backend
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final comercioId = context.read<AppAuthProvider>().usuario!.id;
+      final Actividad actividad = await _placesMapRepository.createActividad(
+        comercioId: comercioId,
+        nombre: _nameController.text.trim(),
+        descripcion: _descriptionController.text.trim(),
+        categoria: _selectedCategory ?? 'Otro',
+        precio: _isFree ? null : double.tryParse(_priceController.text.trim()),
+        estado: _estadoPorStatus[_selectedStatus] ?? 'borrador',
+        fechaInicio: _parseDate(_startDateController.text),
+        fechaFin: _hasNoEndDate ? null : _parseDate(_endDateController.text),
+      );
+
       if (!mounted) return;
-
-      final Map<String, dynamic> activity = {
-        'name': _nameController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'category': _selectedCategory ?? 'Otro',
-        'price': _isFree
-            ? 0
-            : double.tryParse(_priceController.text.trim()) ?? 0,
-        'isFree': _isFree,
-        'startDate': _startDateController.text,
-        'endDate': _hasNoEndDate ? null : _endDateController.text,
-        'hasNoEndDate': _hasNoEndDate,
-        'status': _selectedStatus,
-      };
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      Navigator.pop(context, activity);
-    });
+      setState(() => _isLoading = false);
+      Navigator.pop(context, actividad);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.createActivitySaveErrorSnackbar)),
+      );
+    }
   }
+
 
   // ─── Campo de texto reutilizable ───
   Widget _buildTextField({

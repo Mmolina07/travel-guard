@@ -58,4 +58,32 @@ class ComercioRepository {
         .single();
     return ComercioModel.fromMap(row);
   }
+
+  /// Edición de perfil ("Mi negocio" en el home de comercio).
+  /// `horarioApertura`/`horarioCierre` van como "HH:mm:00" (o `null`
+  /// para dejar el horario sin definir) — siempre se mandan las dos,
+  /// a diferencia de `nombreComercio`/`telefonoContacto`/`descripcion`
+  /// que solo se incluyen en el UPDATE si vienen no nulos.
+  Future<ComercioModel> update({
+    required int usuarioId,
+    String? nombreComercio,
+    String? telefonoContacto,
+    String? descripcion,
+    String? horarioApertura,
+    String? horarioCierre,
+  }) async {
+    final row = await _client
+        .from(_table)
+        .update({
+          if (nombreComercio != null) 'nombre_comercio': nombreComercio,
+          if (telefonoContacto != null) 'telefono_contacto': telefonoContacto,
+          if (descripcion != null) 'descripcion': descripcion,
+          'horario_apertura': horarioApertura,
+          'horario_cierre': horarioCierre,
+        })
+        .eq('usuario_id', usuarioId)
+        .select()
+        .single();
+    return ComercioModel.fromMap(row);
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
+import '../data/menus_repository.dart';
 import '../../../core/settings/currency_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/l10n_extension.dart';
@@ -19,6 +20,7 @@ class MenuDetailScreen extends StatefulWidget {
 
 class _MenuDetailScreenState extends State<MenuDetailScreen> {
   late Menu menu;
+  final _menusRepository = MenusRepository();
 
   @override
   void initState() {
@@ -429,10 +431,20 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
     );
   }
 
-  void _removeProduct(int index) {
-    setState(() {
-      menu.products.removeAt(index);
-    });
+  Future<void> _removeProduct(int index) async {
+    final productId = menu.products[index].id;
+    if (productId == null) return;
+
+    try {
+      await _menusRepository.deleteProducto(productId);
+      if (!mounted) return;
+      setState(() => menu.products.removeAt(index));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.menuDetailSaveErrorSnackbar)),
+      );
+    }
   }
 
   Future<void> _addProduct(BuildContext context, {int? index}) async {
@@ -498,7 +510,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameController.text.trim();
                 final description = descriptionController.text.trim();
                 final price = double.tryParse(priceController.text.trim());
@@ -521,20 +533,41 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                   return;
                 }
 
-                setState(() {
-                  final item = MenuItem(
-                    name: name,
-                    description: description,
-                    price: price,
-                  );
+                try {
                   if (index != null) {
-                    menu.products[index] = item;
+                    final updated = MenuItem(
+                      id: existing!.id,
+                      name: name,
+                      description: description,
+                      price: price,
+                    );
+                    await _menusRepository.updateProducto(
+                      menuId: menu.id!,
+                      producto: updated,
+                    );
+                    if (!context.mounted) return;
+                    setState(() => menu.products[index] = updated);
                   } else {
-                    menu.products.add(item);
+                    final created = await _menusRepository.addProducto(
+                      menuId: menu.id!,
+                      producto: MenuItem(
+                        name: name,
+                        description: description,
+                        price: price,
+                      ),
+                    );
+                    if (!context.mounted) return;
+                    setState(() => menu.products.add(created));
                   }
-                });
 
-                Navigator.pop(dialogContext, true);
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext, true);
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.menuDetailSaveErrorSnackbar)),
+                  );
+                }
               },
               child: Text(
                 existing == null
@@ -555,7 +588,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
   void _showDeleteDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text(
             context.l10n.menuDetailDeleteDialogTitle,
@@ -567,22 +600,36 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 context.l10n.menuDetailCancelButton,
                 style: AppText.ui(14, color: AppColors.ink),
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Cerrar diálogo
-                Navigator.pop(context); // Volver a pantalla anterior
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.l10n.menuDetailMenuDeletedSnackbar),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
+              onPressed: () async {
+                Navigator.pop(dialogContext); // Cerrar diálogo
+
+                final id = menu.id;
+                if (id == null) return;
+
+                try {
+                  await _menusRepository.deleteMenu(id);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.l10n.menuDetailMenuDeletedSnackbar),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                  // Avisa al home de comercio que lo quite de su lista.
+                  Navigator.pop(context, true);
+                } catch (_) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.menuDetailSaveErrorSnackbar)),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,

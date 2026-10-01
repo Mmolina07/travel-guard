@@ -630,3 +630,42 @@ el desglose de gastos:
   ($52.374, Resolución DIAN 000238 de 2025). Es un estimado educativo
   dentro de la app, no un trámite oficial; el texto le pide al usuario
   verificar el proceso vigente en dian.gov.co antes de viajar.
+
+## Persistencia de menús, actividades y perfil de comercio
+
+Hasta ahora `home_screen_comercio.dart`, `create_menu_screen.dart`,
+`create_activity_screen.dart`, `menu_detail_screen.dart` y
+`business_settings_screen.dart` solo guardaban todo en memoria
+(`State` local) — se perdía al salir de la pantalla. Se agregó
+persistencia real:
+
+1. **Menús/productos** (`menus`, `menu_productos`): tablas nuevas, no
+   existían. `categoria` queda como texto libre (`VARCHAR`), no un FK
+   — la lista de categorías de `create_menu_screen.dart` no
+   corresponde a ninguna tabla existente y no valía la pena crear una
+   solo para esto. Repositorio: `MenusRepository`
+   (`lib/features/places_map/data/menus_repository.dart`).
+
+2. **Actividades** (tabla `actividades`, ya existía de HU-07): se le
+   agregaron las columnas que la UI de comercio ya pedía pero no
+   tenían dónde guardarse — `categoria` (texto libre, mismo motivo que
+   en menús), `estado` ('activa'/'pausada'/'borrador'), `fecha_inicio`,
+   `fecha_fin`. El booleano `activo` que ya existía se sigue llenando
+   en cada insert/update (`true` solo si `estado='activa'`) porque
+   `PlacesMapRepository.fetchActividadesDelLugar` (usado del lado
+   turista, en el detalle de un lugar del mapa) filtra por
+   `activo = true` y no debía dejar de funcionar.
+
+3. **Perfil de comercio** (tabla `comercios`, ya existía): se agregó
+   `ComercioRepository.update()` (no existía ningún método de
+   edición). `business_settings_screen.dart` pasó de un campo de
+   horario en texto libre a dos selectores de hora, uno por cada
+   columna `TIME` real (`horario_apertura`/`horario_cierre`).
+
+**Pendiente de correr en Supabase** (no tengo credenciales de DB en
+este entorno): `docs/db/hu_comercio_menus_actividades.sql`, después de
+`schema.sql` y las demás migraciones incrementales ya aplicadas. Sin
+correrla, `MenusRepository` y los métodos nuevos de
+`PlacesMapRepository` (`fetchActividadesDelComercio`,
+`createActividad`, `updateActividad`, `deleteActividad`) van a fallar
+con "relation does not exist" / "column does not exist".

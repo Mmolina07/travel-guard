@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../presentation/menu_model.dart';
 import '../presentation/business_settings_screen.dart';
 import '../presentation/create_activity_screen.dart';
 import '../presentation/create_menu_screen.dart';
 import '../presentation/menu_detail_screen.dart';
+import '../../auth/data/comercio_repository.dart';
+import '../../auth/data/models/comercio_model.dart';
 import '../../auth/providers/app_auth_provider.dart';
+import '../data/menus_repository.dart';
+import '../data/models/actividad_model.dart';
+import '../data/places_map_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/boarding_pass_card.dart';
 import '../../../core/widgets/fade_slide_in.dart';
@@ -24,39 +30,95 @@ class HomeScreenComercio extends StatefulWidget {
 
 class _HomeScreenComercioState extends State<HomeScreenComercio> {
   int _selectedIndex = 0;
+  bool _isLoading = true;
+
+  final _menusRepository = MenusRepository();
+  final _placesMapRepository = PlacesMapRepository();
+  final _comercioRepository = ComercioRepository();
 
   String get businessName => context.watch<AppAuthProvider>().displayName;
-  final List<Map<String, dynamic>> _actividades = [];
-  final List<Menu> _menus = []; // ← AGREGAR LISTA DE MENÚS
+  int get _comercioId => context.read<AppAuthProvider>().usuario!.id;
 
-  String _businessSchedule = '';
-  String _businessContact = '';
+  List<Actividad> _actividades = [];
+  List<Menu> _menus = [];
+  ComercioModel? _comercio;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final comercioId = _comercioId;
+      final results = await Future.wait([
+        _comercioRepository.find(comercioId),
+        _menusRepository.fetchMenus(comercioId),
+        _placesMapRepository.fetchActividadesDelComercio(comercioId),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _comercio = results[0] as ComercioModel?;
+        _menus = results[1] as List<Menu>;
+        _actividades = results[2] as List<Actividad>;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.homeComercioLoadErrorSnackbar),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   Future<void> _openBusinessSettings() async {
-    final result = await Navigator.push<Map<String, String>>(
+    final comercio = _comercio;
+    final result = await Navigator.push<Map<String, String?>>(
       context,
       MaterialPageRoute(
         builder: (context) => BusinessSettingsScreen(
-          initialName: businessName,
-          initialSchedule: _businessSchedule,
-          initialContact: _businessContact,
+          initialName: comercio?.nombreComercio ?? businessName,
+          initialOpenTime: comercio?.horarioApertura,
+          initialCloseTime: comercio?.horarioCierre,
+          initialContact: comercio?.telefonoContacto ?? '',
         ),
       ),
     );
 
     if (result == null || !mounted) return;
 
-    setState(() {
-      _businessSchedule = result['schedule'] ?? _businessSchedule;
-      _businessContact = result['contact'] ?? _businessContact;
-    });
+    try {
+      final updated = await _comercioRepository.update(
+        usuarioId: _comercioId,
+        nombreComercio: result['name'],
+        telefonoContacto: result['contact'],
+        horarioApertura: result['openTime'],
+        horarioCierre: result['closeTime'],
+      );
+      if (!mounted) return;
+      setState(() => _comercio = updated);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.homeComercioBusinessUpdatedSnackbar),
-        backgroundColor: AppColors.ink,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.homeComercioBusinessUpdatedSnackbar),
+          backgroundColor: AppColors.ink,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.homeComercioSaveErrorSnackbar),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
@@ -93,7 +155,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
     if (index == 0) {
       // Inicio - ya estamos aquí
     } else if (index == 1) {
-      final activity = await Navigator.push<Map<String, dynamic>>(
+      final activity = await Navigator.push<Actividad>(
         context,
         MaterialPageRoute(
           builder: (context) => const CreateActivityScreen(),
@@ -103,7 +165,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
       if (activity != null) {
         setState(() {
-          _actividades.add(activity);
+          _actividades.insert(0, activity);
           _selectedIndex = 0;
         });
 
@@ -111,7 +173,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
           SnackBar(
             content: Text(
               context.l10n.homeComercioActivityCreatedSnackbar(
-                activity['name'],
+                activity.nombre,
               ),
             ),
             backgroundColor: AppColors.ink,
@@ -120,12 +182,15 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       }
     } else if (index == 2) {
       if (_menus.isNotEmpty) {
-        Navigator.push(
+        final deleted = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => MenuDetailScreen(menu: _menus[0]),
           ),
         );
+        if (deleted == true && mounted) {
+          setState(() => _menus.removeAt(0));
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -173,14 +238,6 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                           });
 
                           if (!mounted) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MenuDetailScreen(menu: newMenu),
-                            ),
-                          );
-
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -191,6 +248,17 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                               backgroundColor: AppColors.ink,
                             ),
                           );
+
+                          final deleted = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MenuDetailScreen(menu: newMenu),
+                            ),
+                          );
+                          if (deleted == true && mounted) {
+                            setState(() => _menus.remove(newMenu));
+                          }
                         }
                       },
                     ),
@@ -206,18 +274,17 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                           context.l10n.homeComercioCreateActivityDescription,
                       buttonText: context.l10n.homeComercioCreateActivityButton,
                       onButtonPressed: () async {
-                        final activity =
-                            await Navigator.push<Map<String, dynamic>>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateActivityScreen(),
-                              ),
-                            );
+                        final activity = await Navigator.push<Actividad>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const CreateActivityScreen(),
+                          ),
+                        );
 
                         if (activity != null) {
                           setState(() {
-                            _actividades.add(activity);
+                            _actividades.insert(0, activity);
                           });
 
                           if (!mounted) return;
@@ -225,7 +292,7 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                             SnackBar(
                               content: Text(
                                 context.l10n.homeComercioActivityCreatedSnackbar(
-                                  activity['name'],
+                                  activity.nombre,
                                 ),
                               ),
                               backgroundColor: AppColors.ink,
@@ -257,7 +324,11 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
 
                   SizedBox(
                     height: 150,
-                    child: _actividades.isEmpty
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(color: AppColors.ink),
+                          )
+                        : _actividades.isEmpty
                         ? _buildEmptyActivities()
                         : ListView.separated(
                             scrollDirection: Axis.horizontal,
@@ -270,13 +341,12 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                                 delay: Duration(milliseconds: 70 * index),
                                 offset: const Offset(0.12, 0),
                                 child: _buildActivityCard(
-                                  title: activity['name'] ??
-                                      context.l10n.homeComercioNoNameFallback,
-                                  description: activity['description'] ?? '',
-                                  date: activity['hasNoEndDate'] == true
-                                      ? (activity['startDate'] ?? '')
-                                      : '${activity['startDate']} - ${activity['endDate']}',
-                                  category: activity['category'],
+                                  title: activity.nombre.isEmpty
+                                      ? context.l10n.homeComercioNoNameFallback
+                                      : activity.nombre,
+                                  description: activity.descripcion ?? '',
+                                  date: _formatActivityDate(activity),
+                                  category: activity.categoria,
                                 ),
                               );
                             },
@@ -535,6 +605,15 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         ),
       ),
     );
+  }
+
+  String _formatActivityDate(Actividad activity) {
+    final format = DateFormat('dd/MM/yyyy');
+    final start = activity.fechaInicio;
+    final end = activity.fechaFin;
+    if (start == null) return '';
+    if (end == null) return format.format(start);
+    return '${format.format(start)} - ${format.format(end)}';
   }
 
   IconData _iconForCategory(String? category) {

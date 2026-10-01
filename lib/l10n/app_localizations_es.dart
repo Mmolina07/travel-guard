@@ -2273,4 +2273,33 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get configSectionAccount => 'Cuenta';
+
+  @override
+  String get homeComercioLoadErrorSnackbar =>
+      'No se pudo cargar la información del negocio';
+
+  @override
+  String get homeComercioSaveErrorSnackbar =>
+      'No se pudieron guardar los cambios, intenta de nuevo';
+
+  @override
+  String get createActivitySaveErrorSnackbar =>
+      'No se pudo crear la actividad, intenta de nuevo';
+
+  @override
+  String get createMenuSaveErrorSnackbar =>
+      'No se pudo crear el menú, intenta de nuevo';
+
+  @override
+  String get menuDetailSaveErrorSnackbar =>
+      'No se pudo guardar el cambio, intenta de nuevo';
+
+  @override
+  String get businessSettingsOpenTimeLabel => 'Hora de apertura';
+
+  @override
+  String get businessSettingsCloseTimeLabel => 'Hora de cierre';
+
+  @override
+  String get businessSettingsTimeNotSet => 'Sin definir';
 }

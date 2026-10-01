@@ -88,17 +88,48 @@ el selector de divisa de Configuración dejan de cubrir esa pantalla.
    (tabla arriba).
 5. `flutter analyze` sin errores nuevos antes de abrir PR.
 
+## Persistencia de comercio (menús, actividades, perfil)
+
+Ya **no** viven solo en memoria — están conectados a Supabase:
+
+- **Menús y productos**: tablas nuevas `menus`/`menu_productos` (no existían antes). Repositorio:
+  `lib/features/places_map/data/menus_repository.dart`. `Menu`/`MenuItem`
+  (`lib/features/places_map/presentation/menu_model.dart`) ahora tienen `id` y sus
+  `fromRow`/`toInsertMap` mapean esas tablas (los nombres de campo en Dart siguen en inglés —
+  `name`/`description`/`price` — solo cambió cómo se serializan).
+- **Actividades**: la tabla `actividades` (HU-07) ya existía pero le faltaban columnas que la UI de
+  comercio pedía — se agregaron `categoria`, `estado` ('activa'/'pausada'/'borrador'),
+  `fecha_inicio`, `fecha_fin`. `activo` se sigue calculando (`true` solo si `estado='activa'`)
+  porque el mapa del lado turista (`PlacesMapRepository.fetchActividadesDelLugar`) filtra por ese
+  campo y no debía dejar de funcionar. Repositorio: los métodos nuevos en
+  `lib/features/places_map/data/places_map_repository.dart` (`fetchActividadesDelComercio`,
+  `createActividad`, `updateActividad`, `deleteActividad`).
+- **Perfil de comercio**: `ComercioRepository.update()` (antes no existía) edita
+  `nombre_comercio`/`telefono_contacto`/`descripcion`/`horario_apertura`/`horario_cierre`.
+  `business_settings_screen.dart` ya no pide el horario como un texto libre — son dos selectores de
+  hora (`showTimePicker`), uno por cada columna `TIME` real de `comercios`.
+
+**Migración pendiente de correr en Supabase** (igual que el resto de `docs/db/`, nadie en este
+entorno tiene credenciales de DB): `docs/db/hu_comercio_menus_actividades.sql` — créalo desde el
+SQL Editor de Supabase después de `schema.sql` (y de las demás migraciones incrementales ya
+aplicadas). Hasta que corra esa migración, `MenusRepository`/los métodos nuevos de
+`PlacesMapRepository` van a fallar (las tablas/columnas que usan todavía no existen).
+
+**Categorías de menú/actividad siguen siendo texto libre** (`categoria VARCHAR`, no un FK a una
+tabla de categorías): las listas (`_categories` en `create_menu_screen.dart`/
+`create_activity_screen.dart`) no corresponden a ninguna tabla de categorías existente
+(`categorias_lugar`/`categorias_comercio` son para lugares/comercios en el mapa, no para esto) — se
+decidió no crear una tabla nueva solo para esto. Si se necesita un lookup real más adelante, el
+patrón a copiar es `ExpenseRepository.fetchCategorias()` (la única tabla de categorías que sí se
+trae dinámicamente hoy).
+
 ## Estado conocido / pendiente
 
-- Los menús y actividades de comercio (`lib/features/places_map/presentation/menu_model.dart`,
-  `create_menu_screen.dart`, `create_activity_screen.dart`, `menu_detail_screen.dart`) viven solo en
-  memoria local (`State`) — no se persisten en Supabase todavía. No existe tabla `menus`/`productos`
-  en el esquema actual (ver `CLAUDE.md`); `actividades` sí existe pero el código no la usa aún.
-- `business_settings_screen.dart` (editar nombre/horario/contacto del comercio) tampoco persiste:
-  la tabla `comercios` ya tiene `nombre_comercio`, `horario_apertura`/`horario_cierre` (dos campos
-  `time`, no un texto libre) y `telefono_contacto`, pero `ComercioRepository` todavía no tiene un
-  método `update`. Conectar esto es trabajo pendiente, no alcance de la adaptación de idioma/divisa.
 - `design_handoff/` solo especifica 5 pantallas del lado turista (Login, Home, Crear Viaje,
   Comercios cercanos, Detalle del Viaje). Las pantallas de comercio no tienen mockup propio: se
   alinearon a los mismos tokens (`AppColors`/`AppText`/`AppRadius`/`AppShadow`) por consistencia,
   pero su layout (no sus tokens) queda a criterio de quien las toque después.
+- El nombre del comercio que se ve en el saludo del home (`AppAuthProvider.displayName`) no se
+  actualiza automáticamente si se edita `nombre_comercio` desde "Mi negocio" — `AppAuthProvider` no
+  se refresca desde ahí todavía. El cambio sí queda guardado en Supabase (y se refleja la próxima
+  vez que se inicia sesión); solo el texto del saludo en esa misma sesión queda desactualizado.

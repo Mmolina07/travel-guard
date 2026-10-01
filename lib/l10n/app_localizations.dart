@@ -4069,6 +4069,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuenta'**
   String get configSectionAccount;
+
+  /// No description provided for @homeComercioLoadErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la información del negocio'**
+  String get homeComercioLoadErrorSnackbar;
+
+  /// No description provided for @homeComercioSaveErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron guardar los cambios, intenta de nuevo'**
+  String get homeComercioSaveErrorSnackbar;
+
+  /// No description provided for @createActivitySaveErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo crear la actividad, intenta de nuevo'**
+  String get createActivitySaveErrorSnackbar;
+
+  /// No description provided for @createMenuSaveErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo crear el menú, intenta de nuevo'**
+  String get createMenuSaveErrorSnackbar;
+
+  /// No description provided for @menuDetailSaveErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar el cambio, intenta de nuevo'**
+  String get menuDetailSaveErrorSnackbar;
+
+  /// No description provided for @businessSettingsOpenTimeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora de apertura'**
+  String get businessSettingsOpenTimeLabel;
+
+  /// No description provided for @businessSettingsCloseTimeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora de cierre'**
+  String get businessSettingsCloseTimeLabel;
+
+  /// No description provided for @businessSettingsTimeNotSet.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin definir'**
+  String get businessSettingsTimeNotSet;
 }
 
 class _AppLocalizationsDelegate

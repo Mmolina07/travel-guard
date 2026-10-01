@@ -11,6 +11,15 @@ class ComercioModel {
   final double? latitud;
   final double? longitud;
   final String? fotoUrl;
+  final String? descripcion;
+
+  /// `comercios.horario_apertura`/`horario_cierre` — columnas `TIME` de
+  /// Postgres, tal cual las serializa PostgREST ("HH:mm:ss"). Se dejan
+  /// como String crudo aquí; el parseo a `TimeOfDay` para mostrarlas o
+  /// editarlas vive en la UI (`business_settings_screen.dart`), no en
+  /// el modelo.
+  final String? horarioApertura;
+  final String? horarioCierre;
   final String estado;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -25,6 +34,9 @@ class ComercioModel {
     this.latitud,
     this.longitud,
     this.fotoUrl,
+    this.descripcion,
+    this.horarioApertura,
+    this.horarioCierre,
     this.estado = 'activo',
     this.createdAt,
     this.updatedAt,
@@ -41,6 +53,9 @@ class ComercioModel {
       latitud: _toDouble(map['latitud']),
       longitud: _toDouble(map['longitud']),
       fotoUrl: map['foto_url'] as String?,
+      descripcion: map['descripcion'] as String?,
+      horarioApertura: map['horario_apertura'] as String?,
+      horarioCierre: map['horario_cierre'] as String?,
       estado: map['estado'] as String? ?? 'activo',
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String)
