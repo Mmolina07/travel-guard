@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../auth/providers/app_auth_provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../trips/presentation/pages/home_screen_client.dart';
 
 const double _subscriptionsMonthlyPriceCop = 3990;
 const double _subscriptionsAnnualPriceCop = 29990;
@@ -30,7 +28,6 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AppAuthProvider>();
     context.watch<CurrencyProvider>();
     final isMobile = MediaQuery.of(context).size.width < 600;
     final priceCop = _isAnnual
@@ -46,12 +43,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreenClient()),
-            );
-          },
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
           context.l10n.subscriptionsAppBarTitle,

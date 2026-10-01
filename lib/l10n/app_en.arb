@@ -683,5 +683,6 @@
   "stepProgressStep2": "Date and price",
   "stepProgressStep3": "Details",
   "homeComercioBusinessSettingsTooltip": "My business",
-  "homeComercioBusinessUpdatedSnackbar": "Business information updated"
+  "homeComercioBusinessUpdatedSnackbar": "Business information updated",
+  "configSectionAccount": "Account"
 }

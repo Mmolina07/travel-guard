@@ -2270,4 +2270,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get homeComercioBusinessUpdatedSnackbar =>
       'Datos del negocio actualizados';
+
+  @override
+  String get configSectionAccount => 'Cuenta';
 }

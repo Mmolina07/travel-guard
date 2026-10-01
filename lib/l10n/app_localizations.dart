@@ -4063,6 +4063,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Datos del negocio actualizados'**
   String get homeComercioBusinessUpdatedSnackbar;
+
+  /// No description provided for @configSectionAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get configSectionAccount;
 }
 
 class _AppLocalizationsDelegate

@@ -1101,5 +1101,6 @@
   "stepProgressStep2": "Fecha y precio",
   "stepProgressStep3": "Detalles",
   "homeComercioBusinessSettingsTooltip": "Mi negocio",
-  "homeComercioBusinessUpdatedSnackbar": "Datos del negocio actualizados"
+  "homeComercioBusinessUpdatedSnackbar": "Datos del negocio actualizados",
+  "configSectionAccount": "Cuenta"
 }

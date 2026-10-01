@@ -114,6 +114,23 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 ),
                 const SizedBox(height: 32),
 
+                // ========== SECCIÓN: CUENTA ==========
+                if (auth.usuario?.tipoUsuario == 'turista') ...[
+                  Text(
+                    context.l10n.configSectionAccount,
+                    style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Planes y suscripciones premium
+                  _ActionButton(
+                    icon: Icons.workspace_premium_outlined,
+                    label: context.l10n.subscriptionsAppBarTitle,
+                    onTap: () => context.push('/suscripciones'),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
                 // ========== SECCIÓN: SEGURIDAD ==========
                 Text(
                   context.l10n.configSectionSecurity,
