@@ -109,11 +109,9 @@ Ya **no** viven solo en memoria — están conectados a Supabase:
   `business_settings_screen.dart` ya no pide el horario como un texto libre — son dos selectores de
   hora (`showTimePicker`), uno por cada columna `TIME` real de `comercios`.
 
-**Migración pendiente de correr en Supabase** (igual que el resto de `docs/db/`, nadie en este
-entorno tiene credenciales de DB): `docs/db/hu_comercio_menus_actividades.sql` — créalo desde el
-SQL Editor de Supabase después de `schema.sql` (y de las demás migraciones incrementales ya
-aplicadas). Hasta que corra esa migración, `MenusRepository`/los métodos nuevos de
-`PlacesMapRepository` van a fallar (las tablas/columnas que usan todavía no existen).
+**La migración `docs/db/hu_comercio_menus_actividades.sql` ya se corrió en Supabase** — las tablas
+`menus`/`menu_productos` y las columnas nuevas de `actividades` ya existen en la base real.
+`MenusRepository` y los métodos nuevos de `PlacesMapRepository` ya pueden leer/escribir contra ellas.
 
 **Categorías de menú/actividad siguen siendo texto libre** (`categoria VARCHAR`, no un FK a una
 tabla de categorías): las listas (`_categories` en `create_menu_screen.dart`/

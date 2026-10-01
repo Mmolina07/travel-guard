@@ -662,10 +662,11 @@ persistencia real:
    horario en texto libre a dos selectores de hora, uno por cada
    columna `TIME` real (`horario_apertura`/`horario_cierre`).
 
-**Pendiente de correr en Supabase** (no tengo credenciales de DB en
-este entorno): `docs/db/hu_comercio_menus_actividades.sql`, después de
-`schema.sql` y las demás migraciones incrementales ya aplicadas. Sin
-correrla, `MenusRepository` y los métodos nuevos de
-`PlacesMapRepository` (`fetchActividadesDelComercio`,
-`createActividad`, `updateActividad`, `deleteActividad`) van a fallar
-con "relation does not exist" / "column does not exist".
+**`docs/db/hu_comercio_menus_actividades.sql` ya se corrió en Supabase**
+(confirmado por el equipo) — las tablas `menus`/`menu_productos` y las
+columnas nuevas de `actividades` (`categoria`, `estado`,
+`fecha_inicio`, `fecha_fin`) ya existen en la base real. `MenusRepository`
+y los métodos nuevos de `PlacesMapRepository`
+(`fetchActividadesDelComercio`, `createActividad`, `updateActividad`,
+`deleteActividad`) deberían funcionar sin el error de "relation does
+not exist" / "column does not exist" que daban antes de correrla.
