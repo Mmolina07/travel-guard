@@ -12,6 +12,8 @@ import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/responsive_center.dart';
 import '../../../core/widgets/route_pattern_background.dart';
 import '../../../core/widgets/travel_guard_badge.dart';
+import '../presentation/business_settings_screen.dart';
+
 
 class HomeScreenComercio extends StatefulWidget {
   const HomeScreenComercio({Key? key}) : super(key: key);
@@ -26,6 +28,9 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
   final List<Menu> _menus = [];
   bool _isLoadingActividades = false;
   bool _isLoadingMenus = false;
+  String _businessSchedule = '';
+  String _businessContact = '';
+
 
   // ========== GETTERS ==========
   String get businessName => context.watch<AppAuthProvider>().displayName;
@@ -161,6 +166,29 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
     );
   }
 
+  Future<void> _editBusiness() async {
+  final result = await Navigator.push<Map<String, dynamic>>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => BusinessSettingsScreen(
+        initialName: businessName,
+        initialSchedule: _businessSchedule,
+        initialContact: _businessContact,
+      ),
+    ),
+  );
+
+  if (!mounted || result == null) return;
+
+  setState(() {
+    _businessSchedule = result['schedule'] ?? '';
+    _businessContact = result['contact'] ?? '';
+  });
+
+  _showSnack('Datos del negocio actualizados');
+}
+
+
   // ========== DESKTOP ==========
   Widget _buildDesktop() {
     return Scaffold(
@@ -187,31 +215,73 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
   }
 
   Widget _buildGreetingRow() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Hola, ${_firstName(businessName)}.', style: AppText.display(42)),
-              Text('Gestiona tu negocio fácilmente', style: AppText.displayItalic(42)),
-            ],
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // SALUDO
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hola, ${_firstName(businessName)}.',
+              style: AppText.display(42),
+            ),
+            Text(
+              'Gestiona tu negocio fácilmente',
+              style: AppText.displayItalic(42),
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(width: 24),
+
+      // PRÓXIMA ACTIVIDAD
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          _nextActividad != null
+              ? 'Próxima: ${_nextActividad!['name']}'
+              : 'Crea tu primera actividad para tus clientes.',
+          style: AppText.ui(
+            14,
+            color: AppColors.textMuted,
           ),
         ),
-        const SizedBox(width: 24),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 300),
-          child: Text(
-            _nextActividad != null
-                ? 'Próxima: ${_nextActividad!['name']}'
-                : 'Crea tu primera actividad para tus clientes.',
-            style: AppText.ui(14, color: AppColors.textMuted),
+      ),
+
+      const SizedBox(width: 24),
+
+      // BOTONES
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _editBusiness,
+            icon: const Icon(
+              Icons.store_outlined,
+              size: 18,
+            ),
+            label: const Text('Mi negocio'),
           ),
-        ),
-      ],
-    );
-  }
+
+          const SizedBox(height: 8),
+
+          OutlinedButton.icon(
+            onPressed: () => _confirmSignOut(context),
+            icon: const Icon(
+              Icons.logout,
+              size: 18,
+            ),
+            label: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 
   Widget _buildActionGrid() {
     return Column(
