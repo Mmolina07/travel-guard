@@ -586,7 +586,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(10, color: AppColors.textOnInk)),
+          Text(
+            'PASO ${_step + 1} DE $_stepCount',
+            style: AppText.label(
+              10,
+              weight: FontWeight.w600,
+              color: AppColors.textOnInk,
+            ),
+          ),
           const SizedBox(height: 20),
           // Tabla de movimiento del README: título de paso con fade + y
           // 12→0 cada vez que cambia — la `key` distinta por paso hace
@@ -705,7 +712,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           Row(
             children: [
               if (_step < _stepCount - 1) ...[
-                Text('SIGUIENTE · ${_stepNames[_step + 1]}', style: AppText.label(10)),
+                Text(
+                  'SIGUIENTE · ${_stepNames[_step + 1]}',
+                  style: AppText.label(
+                    10,
+                    weight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(width: 16),
               ],
               SizedBox(
@@ -744,7 +757,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           icon: const Icon(Icons.arrow_back),
           onPressed: _isLoading ? null : (_step > 0 ? _goBack : _handleCancel),
         ),
-        title: Text('PASO ${_step + 1} DE $_stepCount', style: AppText.label(11, color: Colors.white)),
+        title: Text(
+          'PASO ${_step + 1} DE $_stepCount',
+          style: AppText.label(
+            11,
+            weight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -784,7 +804,10 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                       children: [
                         Text(
                           _step < _stepCount - 1 ? 'SIGUIENTE' : 'LISTO',
-                          style: AppText.label(10),
+                          style: AppText.label(
+                            10,
+                            weight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           _step < _stepCount - 1 ? _stepNames[_step + 1] : 'Crear viaje',
@@ -867,7 +890,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           ),
         ],
         const SizedBox(height: 26),
-        Text('TIPO DE VIAJE', style: AppText.label(10)),
+        Text(
+          'TIPO DE VIAJE',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _tripTypes,
@@ -884,7 +913,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('TIPO DE HOSPEDAJE', style: AppText.label(10)),
+        Text(
+          'TIPO DE HOSPEDAJE',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _lodgingTypes,
@@ -919,7 +954,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           ],
         ),
         const SizedBox(height: 26),
-        Text('SERVICIOS INCLUIDOS', style: AppText.label(10)),
+        Text(
+          'SERVICIOS INCLUIDOS',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -939,15 +980,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('TRANSPORTE DE INICIO', style: AppText.label(10)),
-        const SizedBox(height: 10),
-        FilterChipsRow(
-          items: _transportTypes,
-          selected: _transportTypes.indexOf(_startTransport),
-          onSelect: (i) => setState(() => _startTransport = _transportTypes[i]),
+        Text(
+          'TRANSPORTE DE INICIO',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
         ),
-        const SizedBox(height: 20),
-        Text('TRANSPORTE DURANTE EL VIAJE', style: AppText.label(10)),
         const SizedBox(height: 10),
         FilterChipsRow(
           items: _transportTypes,
@@ -958,7 +997,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('GASTOS ADICIONALES', style: AppText.label(10)),
+            Text(
+              'GASTOS ADICIONALES',
+              style: AppText.label(
+                10,
+                weight: FontWeight.w600,
+              ),
+            ),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
@@ -1040,7 +1085,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppText.label(10)),
+              Text(
+                label,
+                style: AppText.label(
+                  10,
+                  weight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 controller.text.isEmpty ? '—' : controller.text,
@@ -1062,7 +1113,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PERSONAS', style: AppText.label(10)),
+          Text(
+            'PERSONAS',
+            style: AppText.label(
+              10,
+              weight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
           TextField(
             controller: _personsController,
@@ -1118,7 +1175,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('PRESUPUESTO MÁXIMO', style: AppText.label(10)),
+        Text(
+          'PRESUPUESTO MÁXIMO',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 6),
         // Editable: escribir un monto aquí mueve la barra de abajo sin
         // necesidad de arrastrarla — y arrastrarla sigue actualizando
@@ -1342,7 +1405,13 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: AppText.label(9)),
+          Text(
+            label,
+            style: AppText.label(
+              9,
+              weight: FontWeight.w600,
+            ),
+          ),
           Text(value, style: AppText.ui(13, weight: FontWeight.w700), overflow: TextOverflow.ellipsis),
         ],
       ),

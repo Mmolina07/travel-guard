@@ -125,7 +125,7 @@ abstract final class AppText {
   );
 
   /// Etiquetas mono en versalitas con tracking abierto (+0.14em).
-  static TextStyle label(double size, {Color color = AppColors.textLabel}) =>
+  static TextStyle label(double size, {Color color = AppColors.textLabel, required FontWeight weight}) =>
       GoogleFonts.jetBrainsMono(
         fontSize: size,
         letterSpacing: size * 0.14,

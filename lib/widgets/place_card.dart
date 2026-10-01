@@ -159,7 +159,7 @@ class PlaceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (labelParts.isNotEmpty)
-                  Text(labelParts.join(' · '), style: AppText.label(10)),
+                  Text(labelParts.join(' · '), style: AppText.label(10, weight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
                   name,
@@ -190,7 +190,7 @@ class PlaceCard extends StatelessWidget {
       height: height,
       color: AppColors.wash,
       alignment: Alignment.center,
-      child: Text('FOTO', style: AppText.label(10)),
+      child: Text('FOTO', style: AppText.label(10, weight: FontWeight.w600)),
     );
     if (imageUrl == null || imageUrl!.isEmpty) return placeholder;
     return Image.network(
@@ -247,7 +247,7 @@ class _Badge extends StatelessWidget {
         color: background,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(text, style: AppText.label(10, color: foreground)),
+      child: Text(text, style: AppText.label(10, color: foreground, weight: FontWeight.w600)),
     );
   }
 }

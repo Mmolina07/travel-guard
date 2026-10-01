@@ -56,7 +56,7 @@ class TripCard extends StatelessWidget {
             ),
             alignment: Alignment.bottomLeft,
             padding: const EdgeInsets.all(6),
-            child: Text('FOTO', style: AppText.label(7)),
+            child: Text('FOTO', style: AppText.label(7, weight: FontWeight.w600)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -72,7 +72,7 @@ class TripCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${trip.startDate} – ${trip.endDate}',
-                  style: AppText.label(11, color: AppColors.textMuted),
+                  style: AppText.label(11, color: AppColors.textMuted, weight: FontWeight.w600),
                 ),
                 const SizedBox(height: 10),
                 BudgetBar(progress: progress),

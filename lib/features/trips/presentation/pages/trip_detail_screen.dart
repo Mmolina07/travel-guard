@@ -357,7 +357,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                           children: [
                             const Icon(Icons.arrow_back, size: 14, color: AppColors.textOnInk),
                             const SizedBox(width: 6),
-                            Text('INICIO / MIS VIAJES', style: AppText.label(11, color: AppColors.textOnInk)),
+                            Text(
+                              'INICIO / MIS VIAJES',
+                              style: AppText.label(
+                                11,
+                                weight: FontWeight.w600,
+                                color: AppColors.textOnInk,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -407,7 +414,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 Text(
                   '${trip.startDate} – ${trip.endDate} · ${trip.persons} '
                   '${trip.persons == 1 ? 'PERSONA' : 'PERSONAS'} · ${trip.tripType.toUpperCase()}',
-                  style: AppText.label(11, color: AppColors.textOnInk),
+                  style: AppText.label(
+                    11,
+                    weight: FontWeight.w600,
+                    color: AppColors.textOnInk,
+                  ),
                 ),
                 const SizedBox(height: 30),
                 Row(
@@ -417,7 +428,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('GASTADO', style: AppText.label(10, color: AppColors.textOnInk)),
+                          Text(
+                            'GASTADO',
+                            style: AppText.label(
+                              10,
+                              weight: FontWeight.w600,
+                              color: AppColors.textOnInk,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(formatCOP(totalSpent), style: AppText.display(44, color: AppColors.paper)),
                         ],
@@ -426,7 +444,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('TOPE', style: AppText.label(10, color: AppColors.textOnInk)),
+                        Text(
+                          'TOPE',
+                          style: AppText.label(
+                            10,
+                            weight: FontWeight.w600,
+                            color: AppColors.textOnInk,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Text(formatCOP(trip.maxBudget), style: AppText.ui(18, color: AppColors.textOnInk)),
                       ],
@@ -625,7 +650,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
                 Text(
                   '${gasto.categoriaNombre} · ${DateFormat('dd/MM/yyyy').format(gasto.fecha)}',
-                  style: AppText.label(10),
+                  style: AppText.label(
+                    10,
+                    weight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -677,7 +705,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         Icon(icon, size: 18, color: AppColors.inkSoft),
         const SizedBox(height: 4),
         Text(value, style: AppText.ui(15, weight: FontWeight.w700)),
-        Text(label, style: AppText.label(10), textAlign: TextAlign.center),
+        Text(label, style: AppText.label(10, weight: FontWeight.w600), textAlign: TextAlign.center),
       ],
     );
   }
@@ -851,7 +879,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     ),
                     Text(
                       '${gasto.categoriaNombre} · ${DateFormat('dd/MM/yyyy').format(gasto.fecha)}',
-                      style: AppText.label(10),
+                      style: AppText.label(
+                        10,
+                        weight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -1090,8 +1121,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   const SizedBox(height: 10),
                   BudgetBar(progress: (percentage / 100).clamp(0, 1)),
                   const SizedBox(height: 6),
-                  Text('${percentage.toStringAsFixed(1)}% del presupuesto utilizado', style: AppText.label(10)),
-                ],
+                  Text(
+                    '${percentage.toStringAsFixed(1)}% del presupuesto utilizado',
+                    style: AppText.label(
+                      10,
+                      weight: FontWeight.w600,
+                    ),
+                  ),
+                                  ],
               ),
             ),
             const SizedBox(height: 16),
@@ -1187,7 +1224,7 @@ class _SectionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(title, style: AppText.display(22)),
-              if (trailing != null) Text(trailing!, style: AppText.label(12, color: AppColors.inkSoft)),
+              if (trailing != null) Text(trailing!, style: AppText.label(12, color: AppColors.inkSoft, weight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 14),
@@ -1226,7 +1263,7 @@ class _MiniCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppText.label(10, color: labelColor)),
+          Text(label, style: AppText.label(10, color: labelColor, weight: FontWeight.w600)),
           const SizedBox(height: 8),
           Text(title, style: AppText.display(24, color: titleColor)),
           if (detail.isNotEmpty) ...[

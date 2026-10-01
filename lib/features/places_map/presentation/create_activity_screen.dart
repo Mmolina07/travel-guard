@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/step_progress.dart';
 
 class CreateActivityScreen extends StatefulWidget {
   const CreateActivityScreen({Key? key}) : super(key: key);
@@ -11,23 +11,29 @@ class CreateActivityScreen extends StatefulWidget {
 }
 
 class _CreateActivityScreenState extends State<CreateActivityScreen> {
-  final _formKey = GlobalKey<FormState>();
+  static const _stepCount = 3;
+  static const _stepTitles = [
+    ('¿Cuál es', 'tu actividad?'),
+    ('¿Cuándo y', 'cuánto?'),
+    ('Resumen y', 'publicar'),
+  ];
+  static const _stepNames = ['Información', 'Fecha y precio', 'Detalles'];
+
+  int _step = 0;
+  bool _isLoading = false;
 
   // Controladores
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _startDateController = TextEditingController();
-  final TextEditingController _endDateController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _priceController;
+  late TextEditingController _startDateController;
+  late TextEditingController _endDateController;
 
-  // Valores seleccionados
+  // Valores
   String? _selectedCategory;
-  String _selectedStatus = 'Borrador';
-
-  // Banderas
+  String _selectedStatus = 'Activa';
   bool _isFree = false;
   bool _hasNoEndDate = false;
-  bool _isLoading = false;
 
   final List<String> _categories = [
     'Fiesta',
@@ -38,11 +44,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     'Otro',
   ];
 
-  final List<String> _statuses = [
-    'Activa',
-    'Pausada',
-    'Borrador',
-  ];
+  final List<String> _statuses = ['Activa', 'Pausada', 'Borrador'];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _priceController = TextEditingController();
+    _startDateController = TextEditingController();
+    _endDateController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -54,453 +66,584 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     super.dispose();
   }
 
-  // ─── Selector de fecha ───
-  Future<void> _selectDate(TextEditingController controller) async {
-    final DateTime today = DateTime.now();
+  String? _validateStep0() {
+    if (_nameController.text.trim().isEmpty) {
+      return 'Ingresa el nombre de la actividad';
+    }
+    if (_descriptionController.text.trim().isEmpty) {
+      return 'Ingresa una descripción';
+    }
+    if (_descriptionController.text.trim().length < 10) {
+      return 'La descripción debe ser más detallada';
+    }
+    if (_selectedCategory == null) {
+      return 'Selecciona una categoría';
+    }
+    return null;
+  }
 
-    final DateTime? pickedDate = await showDatePicker(
+  String? _validateStep1() {
+    if (_startDateController.text.isEmpty) {
+      return 'Selecciona la fecha de inicio';
+    }
+    if (!_hasNoEndDate && _endDateController.text.isEmpty) {
+      return 'Selecciona fecha de fin o marca "Sin fecha de fin"';
+    }
+    if (!_isFree) {
+      final price = double.tryParse(_priceController.text.trim());
+      if (price == null || price < 0) {
+        return 'Ingresa un precio válido o marca "Gratis"';
+      }
+    }
+    return null;
+  }
+
+  void _goNext() {
+    if (_isLoading) return;
+
+    if (_step == 0) {
+      final error = _validateStep0();
+      if (error != null) {
+        _showSnack(error);
+        return;
+      }
+    } else if (_step == 1) {
+      final error = _validateStep1();
+      if (error != null) {
+        _showSnack(error);
+        return;
+      }
+    }
+
+    if (_step < _stepCount - 1) {
+      setState(() => _step++);
+    } else {
+      _handleCreateActivity();
+    }
+  }
+
+  void _goBack() {
+    if (_step > 0) setState(() => _step--);
+  }
+
+  void _goToStep(int index) {
+    if (index <= _step) setState(() => _step = index);
+  }
+
+  Future<void> _selectDate(TextEditingController controller) async {
+    final picked = await showDatePicker(
       context: context,
-      initialDate: today,
-      firstDate: today,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
-      helpText: 'Selecciona una fecha',
-      cancelText: 'Cancelar',
-      confirmText: 'Aceptar',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.ink),
+          ),
+          child: child!,
+        );
+      },
     );
 
-    if (pickedDate != null) {
-      setState(() {
-        controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
-      });
+    if (picked != null) {
+      setState(() => controller.text = DateFormat('dd/MM/yyyy').format(picked));
     }
   }
 
-  // ─── Validación extra (además del Form) ───
-  bool _validateActivity() {
-    if (!_formKey.currentState!.validate()) {
-      return false;
-    }
+  void _handleCreateActivity() async {
+    setState(() => _isLoading = true);
 
-    if (_startDateController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona la fecha de inicio de la actividad.'),
-        ),
-      );
-      return false;
-    }
+    await Future.delayed(const Duration(seconds: 1));
 
-    if (!_hasNoEndDate && _endDateController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Selecciona la fecha de finalización o marca "Sin fecha de fin".',
-          ),
-        ),
-      );
-      return false;
-    }
+    if (!mounted) return;
 
-    return true;
+    final activity = {
+      'name': _nameController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'category': _selectedCategory ?? 'Otro',
+      'price': _isFree ? 0 : double.tryParse(_priceController.text.trim()) ?? 0,
+      'isFree': _isFree,
+      'startDate': _startDateController.text,
+      'endDate': _hasNoEndDate ? null : _endDateController.text,
+      'hasNoEndDate': _hasNoEndDate,
+      'status': _selectedStatus,
+    };
+
+    setState(() => _isLoading = false);
+    Navigator.pop(context, activity);
   }
 
-  // ─── Crear actividad ───
-  void _handleCreateActivity() {
-    if (!_validateActivity()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simula el envío al backend
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-
-      final Map<String, dynamic> activity = {
-        'name': _nameController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'category': _selectedCategory ?? 'Otro',
-        'price': _isFree
-            ? 0
-            : double.tryParse(_priceController.text.trim()) ?? 0,
-        'isFree': _isFree,
-        'startDate': _startDateController.text,
-        'endDate': _hasNoEndDate ? null : _endDateController.text,
-        'hasNoEndDate': _hasNoEndDate,
-        'status': _selectedStatus,
-      };
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      Navigator.pop(context, activity);
-    });
-  }
-
-  // ─── Campo de texto reutilizable ───
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-    bool enabled = true,
-  }) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.ink),
-        filled: true,
-        fillColor: AppColors.paperDeep,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.hair),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AppColors.ink,
-            width: 1.5,
-          ),
-        ),
-      ),
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.error),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return _buildMobileScaffold();
+        }
+        return _buildDialogDesktop();
+      },
+    );
+  }
+
+  // ═══ DESKTOP ═══
+  Widget _buildDialogDesktop() {
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: const Text(
-          'Crear actividad',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Nueva actividad',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 880, maxHeight: 680),
+            child: Material(
+              color: Colors.transparent,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(34),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.paper,
+                    boxShadow: AppShadow.raised,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(width: 260, child: _buildLeftColumn()),
+                      Expanded(child: _buildRightColumn()),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Completa la información para publicar una actividad para los turistas.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-
-                // Nombre
-                _buildTextField(
-                  controller: _nameController,
-                  label: 'Nombre de la actividad',
-                  hint: 'Ej. Happy Hour',
-                  icon: Icons.local_activity_outlined,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa el nombre de la actividad';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Descripción
-                _buildTextField(
-                  controller: _descriptionController,
-                  label: 'Descripción',
-                  hint: 'Explica de qué trata la actividad',
-                  icon: Icons.description_outlined,
-                  maxLines: 5,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa una descripción';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'La descripción debe ser más detallada';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Categoría
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Tipo o categoría',
-                    prefixIcon: const Icon(
-                      Icons.category_outlined,
-                      color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
-                    ),
-                  ),
-                  hint: const Text('Selecciona una categoría'),
-                  items: _categories.map((category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Selecciona una categoría';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Precio
-                _buildTextField(
-                  controller: _priceController,
-                  label: 'Precio',
-                  hint: 'Ej. 25000',
-                  icon: Icons.attach_money,
-                  keyboardType: TextInputType.number,
-                  enabled: !_isFree,
-                  validator: (value) {
-                    if (_isFree) return null;
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa el precio o marca "Gratis"';
-                    }
-                    final double? price = double.tryParse(value.trim());
-                    if (price == null || price < 0) {
-                      return 'Ingresa un precio válido';
-                    }
-                    return null;
-                  },
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Actividad gratuita'),
-                  value: _isFree,
-                  activeColor: AppColors.ink,
-                  onChanged: (value) {
-                    setState(() {
-                      _isFree = value ?? false;
-                      if (_isFree) _priceController.clear();
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Fecha inicio
-                TextFormField(
-                  controller: _startDateController,
-                  readOnly: true,
-                  onTap: () => _selectDate(_startDateController),
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de inicio',
-                    hintText: 'Selecciona la fecha de inicio',
-                    prefixIcon: const Icon(
-                      Icons.calendar_today_outlined,
-                      color: AppColors.ink,
-                    ),
-                    suffixIcon: const Icon(
-                      Icons.arrow_drop_down,
-                      color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Selecciona la fecha de inicio';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Fecha fin
-                TextFormField(
-                  controller: _endDateController,
-                  readOnly: true,
-                  enabled: !_hasNoEndDate,
-                  onTap: () {
-                    if (!_hasNoEndDate) {
-                      _selectDate(_endDateController);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de finalización',
-                    hintText: 'Selecciona la fecha de finalización',
-                    prefixIcon: const Icon(
-                      Icons.event_outlined,
-                      color: AppColors.ink,
-                    ),
-                    suffixIcon: const Icon(
-                      Icons.arrow_drop_down,
-                      color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
-                    ),
-                  ),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Sin fecha de fin'),
-                  value: _hasNoEndDate,
-                  activeColor: AppColors.ink,
-                  onChanged: (value) {
-                    setState(() {
-                      _hasNoEndDate = value ?? false;
-                      if (_hasNoEndDate) _endDateController.clear();
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Estado
-                DropdownButtonFormField<String>(
-                  value: _selectedStatus,
-                  decoration: InputDecoration(
-                    labelText: 'Estado de la actividad',
-                    prefixIcon: const Icon(
-                      Icons.toggle_on_outlined,
-                      color: AppColors.ink,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.paperDeep,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.hair),
-                    ),
-                  ),
-                  items: _statuses.map((status) {
-                    return DropdownMenuItem<String>(
-                      value: status,
-                      child: Text(status),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedStatus = value ?? 'Borrador';
-                    });
-                  },
-                ),
-                const SizedBox(height: 30),
-
-                // Botones
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.ink,
-                          side: const BorderSide(color: AppColors.ink),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleCreateActivity,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.ink,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Crear',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLeftColumn() {
+    final title = _stepTitles[_step];
+    return Container(
+      color: AppColors.ink,
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PASO ${_step + 1} DE $_stepCount',
+            style: AppText.label(
+              10,
+              weight: FontWeight.w600,
+              color: AppColors.textOnInk,
+            ),
+          ),
+          const SizedBox(height: 20),
+          TweenAnimationBuilder<double>(
+            key: ValueKey(_step),
+            tween: Tween(begin: 0, end: 1),
+            duration: AppMotion.step,
+            curve: AppMotion.enter,
+            builder: (context, t, child) => Opacity(
+              opacity: t.clamp(0.0, 1.0),
+              child: Transform.translate(
+                offset: Offset(0, 12 * (1 - t)),
+                child: child,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title.$1, style: AppText.display(34, color: Colors.white)),
+                Text(title.$2, style: AppText.displayItalic(34)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          StepProgress(step: _step, total: _stepCount),
+          const Spacer(),
+          for (var i = 0; i < _stepNames.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GestureDetector(
+                onTap: () => _goToStep(i),
+                child: Text(
+                  _stepNames[i],
+                  style: AppText.ui(
+                    14,
+                    weight: i == _step ? FontWeight.w700 : FontWeight.w400,
+                    color: i == _step ? AppColors.paper : AppColors.textOnInk,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightColumn() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 24, 24, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: _isLoading ? null : () => Navigator.pop(context),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.paperDeep,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.close, size: 18, color: AppColors.textMuted),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 8, 28, 24),
+            child: _buildStepContent(),
+          ),
+        ),
+        _buildFooter(),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (_step > 0)
+            GestureDetector(
+              onTap: _isLoading ? null : _goBack,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back, size: 14, color: AppColors.textMuted),
+                  const SizedBox(width: 6),
+                  Text('Atrás', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+                ],
+              ),
+            )
+          else
+            const SizedBox(),
+          Row(
+            children: [
+              if (_step < _stepCount - 1) ...[
+                Text(
+                  'SIGUIENTE · ${_stepNames[_step + 1]}',
+                  style: AppText.label(
+                    10,
+                    weight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+              SizedBox(
+                height: 44,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _goNext,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear actividad'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══ MÓVIL ═══
+  Widget _buildMobileScaffold() {
+    return Scaffold(
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.ink,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _isLoading ? null : (_step > 0 ? _goBack : () => Navigator.pop(context)),
+        ),
+        title: Text(
+          'PASO ${_step + 1} DE $_stepCount',
+          style: AppText.label(
+            11,
+            weight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_stepTitles[_step].$1, style: AppText.display(30)),
+                  Text(_stepTitles[_step].$2, style: AppText.displayItalic(30)),
+                  const SizedBox(height: 16),
+                  StepProgress(step: _step, total: _stepCount),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildStepContent(),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.nav),
+                boxShadow: AppShadow.raised,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _step < _stepCount - 1 ? 'SIGUIENTE' : 'LISTO',
+                          style: AppText.label(
+                            10,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _step < _stepCount - 1 ? _stepNames[_step + 1] : 'Crear actividad',
+                          style: AppText.ui(15, weight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _goNext,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(_step < _stepCount - 1 ? 'Continuar →' : 'Crear'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══ CONTENIDO POR PASO ═══
+  Widget _buildStepContent() {
+    return switch (_step) {
+      0 => _buildStep0(),
+      1 => _buildStep1(),
+      _ => _buildStep2(),
+    };
+  }
+
+  Widget _buildStep0() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Nombre', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _nameController,
+          decoration: InputDecoration(hintText: 'Ej. Happy Hour'),
+        ),
+        const SizedBox(height: 24),
+        Text('Descripción', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _descriptionController,
+          maxLines: 5,
+          decoration: InputDecoration(hintText: 'Explica de qué trata la actividad'),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'CATEGORÍA',
+          style: AppText.label(
+            10,
+            weight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          hint: const Text('Selecciona una categoría'),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.paperDeep,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+          onChanged: (val) => setState(() => _selectedCategory = val),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Fecha de inicio', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _startDateController,
+          readOnly: true,
+          onTap: () => _selectDate(_startDateController),
+          decoration: InputDecoration(
+            hintText: 'Selecciona fecha',
+            suffixIcon: const Icon(Icons.calendar_today),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text('Fecha de fin', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _endDateController,
+          readOnly: true,
+          enabled: !_hasNoEndDate,
+          onTap: !_hasNoEndDate ? () => _selectDate(_endDateController) : null,
+          decoration: InputDecoration(
+            hintText: 'Selecciona fecha',
+            suffixIcon: const Icon(Icons.calendar_today),
+          ),
+        ),
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Sin fecha de fin'),
+          value: _hasNoEndDate,
+          activeColor: AppColors.ink,
+          onChanged: (v) => setState(() {
+            _hasNoEndDate = v ?? false;
+            if (_hasNoEndDate) _endDateController.clear();
+          }),
+        ),
+        const SizedBox(height: 20),
+        Text('Precio', style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.textMuted)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _priceController,
+          enabled: !_isFree,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(hintText: 'Ej. 25000'),
+        ),
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Actividad gratuita'),
+          value: _isFree,
+          activeColor: AppColors.ink,
+          onChanged: (v) => setState(() {
+            _isFree = v ?? false;
+            if (_isFree) _priceController.clear();
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    final price = _isFree ? 0.0 : double.tryParse(_priceController.text.trim()) ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Resumen de la actividad', style: AppText.display(22)),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card + 2),
+            boxShadow: AppShadow.card,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _summaryRow('Nombre', _nameController.text),
+              const SizedBox(height: 12),
+              _summaryRow('Categoría', _selectedCategory ?? '—'),
+              const SizedBox(height: 12),
+              _summaryRow('Inicio', _startDateController.text),
+              const SizedBox(height: 12),
+              _summaryRow('Fin', _hasNoEndDate ? 'Sin fecha' : _endDateController.text),
+              const SizedBox(height: 12),
+              _summaryRow(
+                'Precio',
+                _isFree ? 'Gratis' : '\$${price.toStringAsFixed(0)}',
+                color: AppColors.inkSoft,
+              ),
+              const Divider(height: 24, color: AppColors.line),
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: InputDecoration(
+                  labelText: 'Estado',
+                  filled: true,
+                  fillColor: AppColors.paperDeep,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (v) => setState(() => _selectedStatus = v ?? 'Activa'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryRow(String label, String value, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppText.ui(12, color: AppColors.textMuted)),
+        Text(value, style: AppText.ui(13, weight: FontWeight.w700, color: color ?? AppColors.ink)),
+      ],
     );
   }
 }

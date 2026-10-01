@@ -191,7 +191,11 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                 Center(
                   child: Text(
                     'Cambiar de plan en cualquier momento sin penalización',
-                    style: AppText.label(10, color: AppColors.textMuted),
+                    style: AppText.label(
+                      10,
+                      weight: FontWeight.w600,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -804,7 +804,13 @@ class _CrearActividadCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('ACTIVIDAD', style: AppText.label(10)),
+                Text(
+                  'ACTIVIDADES',
+                  style: AppText.label(
+                    10,
+                    weight: FontWeight.bold,
+                  ),
+                ),
                 Container(
                   width: 26,
                   height: 26,
@@ -855,7 +861,13 @@ class _EstadisticasCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('ESTADÍSTICAS', style: AppText.label(10)),
+          Text(
+            'ESTADÍSTICAS',
+            style: AppText.label(
+              10,
+              weight: FontWeight.bold,
+            ),
+          ),
           Row(
             children: [
               Expanded(

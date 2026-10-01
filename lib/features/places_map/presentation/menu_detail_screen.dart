@@ -1,346 +1,942 @@
 import 'package:flutter/material.dart';
+
 import '../presentation/menu_model.dart';
 import '../../../core/theme/app_theme.dart';
 
 class MenuDetailScreen extends StatefulWidget {
   final Menu menu;
 
-  const MenuDetailScreen({  
+  const MenuDetailScreen({
     Key? key,
     required this.menu,
   }) : super(key: key);
 
   @override
-  State<MenuDetailScreen> createState() => _MenuDetailScreenState();
+  State<MenuDetailScreen> createState() =>
+      _MenuDetailScreenState();
 }
 
-class _MenuDetailScreenState extends State<MenuDetailScreen> {
+class _MenuDetailScreenState
+    extends State<MenuDetailScreen> {
   late Menu menu;
 
   @override
   void initState() {
     super.initState();
+
     menu = widget.menu;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Detalle del Menú',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+  // ============================================================
+  // PRODUCTOS
+  // ============================================================
+
+  Future<MenuItem?> _showProductDialog({
+    MenuItem? product,
+  }) async {
+    final nameController =
+        TextEditingController(
+      text: product?.name ?? '',
+    );
+
+    final descriptionController =
+        TextEditingController(
+      text: product?.description ?? '',
+    );
+
+    final priceController =
+        TextEditingController(
+      text: product != null
+          ? product.price.toStringAsFixed(0)
+          : '',
+    );
+
+    final result =
+        await showDialog<MenuItem>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor:
+              AppColors.surface,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(22),
           ),
-        ),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header con información del menú
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: AppColors.ink,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Estado del menú
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: menu.isAvailable
-                          ? const Color(0xFF4CAF50)
-                          : AppColors.error,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      menu.isAvailable ? 'Disponible' : 'No disponible',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Nombre del menú
-                  Text(
-                    menu.name,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Categoría
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.category_outlined,
-                        color: Colors.white70,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        menu.category,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Descripción
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Descripción',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.paperDeep,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.hair,
-                      ),
-                    ),
-                    child: Text(
-                      menu.description,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textMuted,
-                        height: 1.6,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Estadísticas
-            Row(
+          title: Text(
+            product == null
+                ? 'Agregar producto'
+                : 'Editar producto',
+            style:
+                AppText.display(20),
+          ),
+          content:
+              SingleChildScrollView(
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.restaurant_menu_outlined,
-                    label: 'Productos',
-                    value: menu.getProductCount().toString(),
+                TextField(
+                  controller:
+                      nameController,
+                  autofocus: true,
+                  textInputAction:
+                      TextInputAction.next,
+                  decoration:
+                      const InputDecoration(
+                    labelText: 'Nombre',
+                    hintText:
+                        'Ej. Hamburguesa clásica',
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.attach_money_outlined,
-                    label: 'Promedio',
-                    value: '\$${menu.getAveragePrice().toStringAsFixed(0)}',
+
+                const SizedBox(
+                  height: 14,
+                ),
+
+                TextField(
+                  controller:
+                      descriptionController,
+                  maxLines: 3,
+                  decoration:
+                      const InputDecoration(
+                    labelText:
+                        'Descripción',
+                    hintText:
+                        'Describe el plato o bebida',
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.receipt_long_outlined,  // ← CAMBIO AQUÍ
-                    label: 'Total',
-                    value: '\$${menu.getTotalPrice().toStringAsFixed(0)}',
+
+                const SizedBox(
+                  height: 14,
+                ),
+
+                TextField(
+                  controller:
+                      priceController,
+                  keyboardType:
+                      const TextInputType
+                          .numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration:
+                      const InputDecoration(
+                    labelText: 'Precio',
+                    prefixText: '\$ ',
+                    hintText: '18000',
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Productos
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                );
+              },
               child: Text(
-                'Productos (${menu.getProductCount()})',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                'Cancelar',
+                style: AppText.ui(
+                  14,
                   color: AppColors.ink,
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                final name =
+                    nameController.text
+                        .trim();
 
-            // Lista de productos
-            if (menu.products.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.paperDeep,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.hair,
+                final description =
+                    descriptionController
+                        .text
+                        .trim();
+
+                final price =
+                    double.tryParse(
+                  priceController.text
+                      .trim()
+                      .replaceAll('.', '')
+                      .replaceAll(
+                        ',',
+                        '.',
+                      ),
+                );
+
+                if (name.isEmpty ||
+                    description.isEmpty ||
+                    price == null ||
+                    price < 0) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Completa correctamente todos los campos',
+                      ),
                     ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(
+                  dialogContext,
+                  MenuItem(
+                    name: name,
+                    description:
+                        description,
+                    price: price,
                   ),
-                  child: const Column(
-                    children: [
-                      Icon(
-                        Icons.fastfood_outlined,
-                        size: 48,
-                        color: AppColors.hair,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'No hay productos',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: menu.products.length,
-                itemBuilder: (context, index) {
-                  final product = menu.products[index];
-                  return _buildProductCard(product, index);
-                },
+                );
+              },
+              child: Text(
+                product == null
+                    ? 'Agregar'
+                    : 'Guardar',
               ),
+            ),
+          ],
+        );
+      },
+    );
 
-            const SizedBox(height: 24),
+    nameController.dispose();
+    descriptionController.dispose();
+    priceController.dispose();
 
-            // Botones de acción
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
+    return result;
+  }
+
+  // ============================================================
+  // AGREGAR PRODUCTO
+  // ============================================================
+
+  Future<void> _addProduct() async {
+    final product =
+        await _showProductDialog();
+
+    if (!mounted ||
+        product == null) {
+      return;
+    }
+
+    setState(() {
+      menu = Menu(
+        name: menu.name,
+        description: menu.description,
+        category: menu.category,
+        isAvailable:
+            menu.isAvailable,
+        products: [
+          ...menu.products,
+          product,
+        ],
+      );
+    });
+  }
+
+  // ============================================================
+  // EDITAR PRODUCTO
+  // ============================================================
+
+  Future<void> _editProduct(
+    int index,
+  ) async {
+    if (index < 0 ||
+        index >= menu.products.length) {
+      return;
+    }
+
+    final updatedProduct =
+        await _showProductDialog(
+      product: menu.products[index],
+    );
+
+    if (!mounted ||
+        updatedProduct == null) {
+      return;
+    }
+
+    final products =
+        List<MenuItem>.from(
+      menu.products,
+    );
+
+    products[index] = updatedProduct;
+
+    setState(() {
+      menu = Menu(
+        name: menu.name,
+        description: menu.description,
+        category: menu.category,
+        isAvailable:
+            menu.isAvailable,
+        products: products,
+      );
+    });
+  }
+
+  // ============================================================
+  // ELIMINAR PRODUCTO
+  // ============================================================
+
+  Future<void> _deleteProduct(
+    int index,
+  ) async {
+    if (index < 0 ||
+        index >= menu.products.length) {
+      return;
+    }
+
+    final product =
+        menu.products[index];
+
+    final confirmed =
+        await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor:
+              AppColors.surface,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(22),
+          ),
+          title: Text(
+            'Eliminar producto',
+            style:
+                AppText.display(20),
+          ),
+          content: Text(
+            '¿Quieres eliminar "${product.name}" del menú?',
+            style: AppText.ui(
+              14,
+              color:
+                  AppColors.textMuted,
+            ).copyWith(
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
+              },
+              child: Text(
+                'Cancelar',
+                style: AppText.ui(
+                  14,
+                  color:
+                      AppColors.ink,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
+              },
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor:
+                    const Color(
+                  0xFFB54D4D,
+                ),
+                foregroundColor:
+                    Colors.white,
+              ),
+              child:
+                  const Text(
+                'Eliminar',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted ||
+        confirmed != true) {
+      return;
+    }
+
+    final products =
+        List<MenuItem>.from(
+      menu.products,
+    );
+
+    products.removeAt(index);
+
+    setState(() {
+      menu = Menu(
+        name: menu.name,
+        description: menu.description,
+        category: menu.category,
+        isAvailable:
+            menu.isAvailable,
+        products: products,
+      );
+    });
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder:
+          (context, constraints) {
+        if (constraints.maxWidth <
+            700) {
+          return _buildMobile();
+        }
+
+        return _buildDesktop();
+      },
+    );
+  }
+
+  // ============================================================
+  // DESKTOP
+  // ============================================================
+
+  Widget _buildDesktop() {
+    return Scaffold(
+      backgroundColor:
+          AppColors.paper,
+      body: Center(
+        child: SingleChildScrollView(
+          padding:
+              const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(
+              maxWidth: 1050,
+            ),
+            child: Container(
+              decoration:
+                  BoxDecoration(
+                color:
+                    AppColors.surface,
+                borderRadius:
+                    BorderRadius.circular(
+                  34,
+                ),
+                boxShadow:
+                    AppShadow.raised,
+              ),
+              clipBehavior:
+                  Clip.antiAlias,
+              child: Column(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Editar menú
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Función en desarrollo'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Editar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.ink,
-                        side: const BorderSide(
-                          color: AppColors.ink,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Eliminar menú
-                        _showDeleteDialog();
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Eliminar'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildDesktopHeader(),
+                  _buildContent(),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 20),
+  Widget _buildDesktopHeader() {
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.fromLTRB(
+        36,
+        28,
+        36,
+        34,
+      ),
+      color: AppColors.ink,
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child:
+                _buildHeaderInformation(),
+          ),
+
+          const SizedBox(width: 30),
+
+          _buildHeaderActions(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderInformation() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () =>
+              Navigator.pop(context),
+          child: Row(
+            mainAxisSize:
+                MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.arrow_back,
+                size: 16,
+                color:
+                    AppColors.textOnInk,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'VOLVER',
+                style: AppText.label(
+                  10,
+                  weight:
+                      FontWeight.w600,
+                  color:
+                      AppColors.textOnInk,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 28),
+
+        _buildAvailabilityBadge(),
+
+        const SizedBox(height: 18),
+
+        Text(
+          menu.name,
+          style: AppText.display(
+            38,
+            color: Colors.white,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Row(
+          children: [
+            const Icon(
+              Icons.category_outlined,
+              size: 17,
+              color:
+                  AppColors.textOnInk,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              menu.category,
+              style: AppText.ui(
+                14,
+                color:
+                    AppColors.textOnInk,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderActions() {
+    return Row(
+      children: [
+        _buildIconButton(
+          icon:
+              Icons.add_circle_outline,
+          tooltip: 'Agregar producto',
+          onTap: _addProduct,
+        ),
+
+        const SizedBox(width: 10),
+
+        _buildIconButton(
+          icon:
+              Icons.delete_outline,
+          tooltip: 'Eliminar menú',
+          onTap:
+              _showDeleteDialog,
+          danger: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool danger = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+            BorderRadius.circular(13),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration:
+              BoxDecoration(
+            color: danger
+                ? Colors.white
+                    .withOpacity(.08)
+                : Colors.white
+                    .withOpacity(.10),
+            borderRadius:
+                BorderRadius.circular(
+              13,
+            ),
+            border: Border.all(
+              color: Colors.white
+                  .withOpacity(.12),
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 19,
+            color: danger
+                ? const Color(
+                    0xFFFF8B8B,
+                  )
+                : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // MOBILE
+  // ============================================================
+
+  Widget _buildMobile() {
+    return Scaffold(
+      backgroundColor:
+          AppColors.paper,
+      appBar: AppBar(
+        backgroundColor:
+            AppColors.ink,
+        foregroundColor:
+            Colors.white,
+        elevation: 0,
+        leading:
+            IconButton(
+          icon:
+              const Icon(
+            Icons.arrow_back,
+          ),
+          onPressed: () =>
+              Navigator.pop(context),
+        ),
+        title: Text(
+          'DETALLE DEL MENÚ',
+          style: AppText.label(
+            11,
+            weight:
+                FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip:
+                'Agregar producto',
+            onPressed: _addProduct,
+            icon: const Icon(
+              Icons.add,
+            ),
+          ),
+        ],
+      ),
+      body:
+          SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildMobileHeader(),
+            _buildContent(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildMobileHeader() {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.paperDeep,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.hair,
-        ),
+      width: double.infinity,
+      color: AppColors.ink,
+      padding:
+          const EdgeInsets.fromLTRB(
+        24,
+        4,
+        24,
+        30,
       ),
       child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: AppColors.ink,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
+          _buildAvailabilityBadge(),
+
+          const SizedBox(height: 18),
+
           Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
+            menu.name,
+            style: AppText.display(
+              32,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textMuted,
+
+          const SizedBox(height: 8),
+
+          Row(
+            children: [
+              const Icon(
+                Icons.category_outlined,
+                size: 17,
+                color:
+                    AppColors.textOnInk,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                menu.category,
+                style: AppText.ui(
+                  14,
+                  color:
+                      AppColors.textOnInk,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // CONTENIDO
+  // ============================================================
+
+  Widget _buildContent() {
+    return Padding(
+      padding:
+          const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          _buildStatistics(),
+
+          const SizedBox(height: 30),
+
+          _buildDescription(),
+
+          const SizedBox(height: 34),
+
+          _buildProductsSection(),
+
+          const SizedBox(height: 30),
+
+          _buildAvailabilitySection(),
+
+          const SizedBox(height: 28),
+
+          _buildBottomActions(),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ESTADÍSTICAS
+  // ============================================================
+
+  Widget _buildStatistics() {
+    return LayoutBuilder(
+      builder:
+          (context, constraints) {
+        final isSmall =
+            constraints.maxWidth < 520;
+
+        if (isSmall) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child:
+                        _buildStatCard(
+                      icon: Icons
+                          .restaurant_menu_outlined,
+                      value: menu
+                          .getProductCount()
+                          .toString(),
+                      label: 'Productos',
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 12,
+                  ),
+                  Expanded(
+                    child:
+                        _buildStatCard(
+                      icon: Icons
+                          .attach_money_outlined,
+                      value:
+                          '\$${menu.getAveragePrice().toStringAsFixed(0)}',
+                      label:
+                          'Precio promedio',
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              _buildStatCard(
+                icon: Icons
+                    .receipt_long_outlined,
+                value:
+                    '\$${menu.getTotalPrice().toStringAsFixed(0)}',
+                label: 'Valor total',
+                fullWidth: true,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons
+                    .restaurant_menu_outlined,
+                value: menu
+                    .getProductCount()
+                    .toString(),
+                label: 'Productos',
+              ),
+            ),
+            const SizedBox(
+              width: 12,
+            ),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons
+                    .attach_money_outlined,
+                value:
+                    '\$${menu.getAveragePrice().toStringAsFixed(0)}',
+                label:
+                    'Precio promedio',
+              ),
+            ),
+            const SizedBox(
+              width: 12,
+            ),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons
+                    .receipt_long_outlined,
+                value:
+                    '\$${menu.getTotalPrice().toStringAsFixed(0)}',
+                label: 'Valor total',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    bool fullWidth = false,
+  }) {
+    return Container(
+      width:
+          fullWidth ? double.infinity : null,
+      padding:
+          const EdgeInsets.all(18),
+      decoration:
+          BoxDecoration(
+        color: AppColors.paperDeep,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.line,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration:
+                BoxDecoration(
+              color: AppColors.wash,
+              borderRadius:
+                  BorderRadius.circular(
+                13,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.ink,
+              size: 21,
+            ),
+          ),
+
+          const SizedBox(width: 13),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+              children: [
+                Text(
+                  value,
+                  style: AppText.ui(
+                    17,
+                    weight:
+                        FontWeight.w700,
+                    color:
+                        AppColors.ink,
+                  ),
+                ),
+                const SizedBox(
+                  height: 3,
+                ),
+                Text(
+                  label,
+                  style: AppText.ui(
+                    11,
+                    color: AppColors
+                        .textMuted,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -348,91 +944,326 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
     );
   }
 
-  Widget _buildProductCard(MenuItem product, int index) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.hair,
+  // ============================================================
+  // DESCRIPCIÓN
+  // ============================================================
+
+  Widget _buildDescription() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(
+          eyebrow: 'SOBRE ESTE MENÚ',
+          title: 'Descripción',
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+
+        const SizedBox(height: 12),
+
+        Container(
+          width: double.infinity,
+          padding:
+              const EdgeInsets.all(20),
+          decoration:
+              BoxDecoration(
+            color: AppColors.surface,
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
+            border: Border.all(
+              color: AppColors.line,
+            ),
+            boxShadow:
+                AppShadow.card,
+          ),
+          child: Text(
+            menu.description,
+            style: AppText.ui(
+              14,
+              color:
+                  AppColors.textMuted,
+            ).copyWith(
+              height: 1.6,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // PRODUCTOS
+  // ============================================================
+
+  Widget _buildProductsSection() {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment:
+              CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child:
+                  _buildSectionTitle(
+                eyebrow: 'CONTENIDO',
+                title:
+                    'Platos y bebidas',
+              ),
+            ),
+
+            Text(
+              '${menu.products.length} items',
+              style: AppText.ui(
+                12,
+                color:
+                    AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        if (menu.products.isEmpty)
+          _buildEmptyProducts()
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics:
+                const NeverScrollableScrollPhysics(),
+            itemCount:
+                menu.products.length,
+            separatorBuilder:
+                (_, __) =>
+                    const SizedBox(
+              height: 12,
+            ),
+            itemBuilder:
+                (context, index) {
+              return _buildProductCard(
+                menu.products[index],
+                index,
+              );
+            },
+          ),
+
+        const SizedBox(height: 16),
+
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _addProduct,
+            icon: const Icon(
+              Icons.add,
+            ),
+            label: const Text(
+              'Agregar plato o bebida',
+            ),
+            style:
+                OutlinedButton.styleFrom(
+              foregroundColor:
+                  AppColors.ink,
+              side:
+                  const BorderSide(
+                color: AppColors.ink,
+              ),
+              padding:
+                  const EdgeInsets
+                      .symmetric(
+                vertical: 15,
+              ),
+              shape:
+                  RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                  14,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyProducts() {
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.all(30),
+      decoration:
+          BoxDecoration(
+        color: AppColors.paperDeep,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.line,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration:
+                BoxDecoration(
+              color: AppColors.wash,
+              borderRadius:
+                  BorderRadius.circular(
+                16,
+              ),
+            ),
+            child: const Icon(
+              Icons
+                  .restaurant_menu_outlined,
+              size: 27,
+              color:
+                  AppColors.textMuted,
+            ),
+          ),
+
+          const SizedBox(
+            height: 14,
+          ),
+
+          Text(
+            'Sin productos',
+            style:
+                AppText.display(18),
+          ),
+
+          const SizedBox(height: 5),
+
+          Text(
+            'Este menú todavía no tiene platos o bebidas.',
+            textAlign:
+                TextAlign.center,
+            style: AppText.ui(
+              12,
+              color:
+                  AppColors.textMuted,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProductCard(
+    MenuItem product,
+    int index,
+  ) {
+    return Container(
+      padding:
+          const EdgeInsets.all(16),
+      decoration:
+          BoxDecoration(
+        color: AppColors.surface,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.line,
+        ),
+        boxShadow:
+            AppShadow.card,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
-          // Icono del producto
           Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.hair,
-              borderRadius: BorderRadius.circular(12),
+            width: 48,
+            height: 48,
+            decoration:
+                BoxDecoration(
+              color: AppColors.wash,
+              borderRadius:
+                  BorderRadius.circular(
+                14,
+              ),
             ),
-            child: const Icon(
-              Icons.fastfood_outlined,
-              color: AppColors.ink,
-              size: 32,
+            child: Center(
+              child: Text(
+                '${index + 1}'
+                    .padLeft(2, '0'),
+                style: AppText.ui(
+                  13,
+                  weight:
+                      FontWeight.w700,
+                  color:
+                      AppColors.ink,
+                ),
+              ),
             ),
           ),
 
           const SizedBox(width: 14),
 
-          // Información del producto
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
               children: [
-                // Nombre
                 Text(
                   product.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
+                  style: AppText.ui(
+                    15,
+                    weight:
+                        FontWeight.w700,
                   ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(
+                  height: 5,
+                ),
 
-                // Descripción
                 Text(
                   product.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 13,
-                    height: 1.4,
+                  maxLines: 3,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style: AppText.ui(
+                    12,
+                    color:
+                        AppColors
+                            .textMuted,
+                  ).copyWith(
+                    height: 1.45,
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(
+                  height: 10,
+                ),
 
-                // Precio
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                  padding:
+                      const EdgeInsets
+                          .symmetric(
+                    horizontal: 10,
                     vertical: 6,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.paperDeep,
-                    borderRadius: BorderRadius.circular(8),
+                  decoration:
+                      BoxDecoration(
+                    color: AppColors
+                        .paperDeep,
+                    borderRadius:
+                        BorderRadius
+                            .circular(9),
                   ),
                   child: Text(
                     '\$${product.price.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                      fontSize: 14,
+                    style:
+                        AppText.ui(
+                      13,
+                      weight:
+                          FontWeight.w700,
+                      color: AppColors
+                          .inkSoft,
                     ),
                   ),
                 ),
@@ -440,23 +1271,133 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             ),
           ),
 
-          // Número del producto
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.ink,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+          Column(
+            children: [
+              IconButton(
+                tooltip: 'Editar',
+                onPressed: () =>
+                    _editProduct(index),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 19,
                 ),
               ),
+
+              IconButton(
+                tooltip: 'Eliminar',
+                onPressed: () =>
+                    _deleteProduct(index),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  size: 19,
+                  color:
+                      Color(0xFFB54D4D),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // DISPONIBILIDAD
+  // ============================================================
+
+  Widget _buildAvailabilitySection() {
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.all(20),
+      decoration:
+          BoxDecoration(
+        color: menu.isAvailable
+            ? const Color(0xFFF0F8F1)
+            : const Color(0xFFFFF1F1),
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: menu.isAvailable
+              ? const Color(
+                  0xFFC9E5CD,
+                )
+              : const Color(
+                  0xFFF0CACA,
+                ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration:
+                BoxDecoration(
+              color: menu.isAvailable
+                  ? const Color(
+                      0xFFDCEFE0,
+                    )
+                  : const Color(
+                      0xFFF9DADA,
+                    ),
+              borderRadius:
+                  BorderRadius.circular(
+                13,
+              ),
+            ),
+            child: Icon(
+              menu.isAvailable
+                  ? Icons
+                      .check_circle_outline
+                  : Icons
+                      .pause_circle_outline,
+              color:
+                  menu.isAvailable
+                      ? const Color(
+                          0xFF3E7D47,
+                        )
+                      : const Color(
+                          0xFFB54D4D,
+                        ),
+              size: 22,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+              children: [
+                Text(
+                  menu.isAvailable
+                      ? 'Menú disponible'
+                      : 'Menú no disponible',
+                  style: AppText.ui(
+                    14,
+                    weight:
+                        FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 4,
+                ),
+
+                Text(
+                  menu.isAvailable
+                      ? 'Este menú está disponible para tus clientes.'
+                      : 'Este menú está temporalmente deshabilitado.',
+                  style: AppText.ui(
+                    12,
+                    color: AppColors
+                        .textMuted,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -464,50 +1405,224 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
     );
   }
 
+  Widget _buildAvailabilityBadge() {
+    final available =
+        menu.isAvailable;
+
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 11,
+        vertical: 7,
+      ),
+      decoration:
+          BoxDecoration(
+        color: available
+            ? const Color(
+                0xFF3E7D47,
+              ).withOpacity(.22)
+            : const Color(
+                0xFFB54D4D,
+              ).withOpacity(.20),
+        borderRadius:
+            BorderRadius.circular(30),
+        border: Border.all(
+          color: available
+              ? const Color(
+                  0xFF78B982,
+                ).withOpacity(.35)
+              : const Color(
+                  0xFFE58C8C,
+                ).withOpacity(.35),
+        ),
+      ),
+      child: Row(
+        mainAxisSize:
+            MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration:
+                BoxDecoration(
+              shape: BoxShape.circle,
+              color: available
+                  ? const Color(
+                      0xFF8FD497,
+                    )
+                  : const Color(
+                      0xFFFF9999,
+                    ),
+            ),
+          ),
+
+          const SizedBox(width: 7),
+
+          Text(
+            available
+                ? 'DISPONIBLE'
+                : 'NO DISPONIBLE',
+            style: AppText.label(
+              9,
+              weight:
+                  FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // TÍTULOS
+  // ============================================================
+
+  Widget _buildSectionTitle({
+    required String eyebrow,
+    required String title,
+  }) {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: [
+        Text(
+          eyebrow,
+          style: AppText.label(
+            9,
+            weight:
+                FontWeight.w700,
+            color:
+                AppColors.textMuted,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          title,
+          style:
+              AppText.display(23),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // ACCIONES INFERIORES
+  // ============================================================
+
+  Widget _buildBottomActions() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: _addProduct,
+        icon: const Icon(
+          Icons.add,
+          size: 18,
+        ),
+        label: const Text(
+          'Agregar plato o bebida',
+        ),
+        style:
+            ElevatedButton.styleFrom(
+          backgroundColor:
+              AppColors.ink,
+          foregroundColor:
+              Colors.white,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(
+              14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // ELIMINAR MENÚ
+  // ============================================================
+
   void _showDeleteDialog() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
+          backgroundColor:
+              AppColors.surface,
+          shape:
+              RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(22),
+          ),
+          title: Text(
             'Eliminar menú',
-            style: TextStyle(
-              color: AppColors.ink,
-              fontWeight: FontWeight.bold,
-            ),
+            style:
+                AppText.display(20),
           ),
           content: Text(
-            '¿Estás seguro de que deseas eliminar el menú "${menu.name}"? Esta acción no se puede deshacer.',
+            '¿Estás seguro de que deseas eliminar "${menu.name}"? Esta acción no se puede deshacer.',
+            style: AppText.ui(
+              14,
+              color:
+                  AppColors.textMuted,
+            ).copyWith(
+              height: 1.5,
+            ),
+          ),
+          actionsPadding:
+              const EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            20,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                );
+              },
+              child: Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: AppColors.ink,
+                style: AppText.ui(
+                  13,
+                  weight:
+                      FontWeight.w600,
+                  color:
+                      AppColors.ink,
                 ),
               ),
             ),
+
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // Cerrar diálogo
-                Navigator.pop(context); // Volver a pantalla anterior
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Menú eliminado'),
-                    backgroundColor: AppColors.error,
-                  ),
+                Navigator.pop(
+                  dialogContext,
+                );
+
+                Navigator.pop(
+                  context,
+                  null,
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(
-                  color: Colors.white,
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor:
+                    const Color(
+                  0xFFB54D4D,
                 ),
+                foregroundColor:
+                    Colors.white,
+              ),
+              child:
+                  const Text(
+                'Eliminar',
               ),
             ),
           ],

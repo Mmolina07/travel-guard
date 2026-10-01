@@ -218,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Text('TRAVELGUARD', style: AppText.label(11, color: AppColors.mint)),
+                    Text('TRAVELGUARD', style: AppText.label(11, color: AppColors.mint, weight: FontWeight.w600)),
                   ],
                 ),
                 Padding(
@@ -265,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 4),
         SizedBox(
           width: 130,
-          child: Text(label, style: AppText.label(10, color: AppColors.textOnInk)),
+          child: Text(label, style: AppText.label(10, color: AppColors.textOnInk, weight: FontWeight.w600)),
         ),
       ],
     );
@@ -304,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         icon: Icons.arrow_back,
                         onTap: () => Navigator.maybePop(context),
                       ),
-                      Text('TRAVELGUARD', style: AppText.label(11, color: AppColors.mint)),
+                      Text('TRAVELGUARD', style: AppText.label(11, color: AppColors.mint, weight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -372,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
               child: Text(
                 _isPasswordVisible ? 'OCULTAR' : 'VER',
-                style: AppText.label(11, color: AppColors.ink),
+                style: AppText.label(11, color: AppColors.ink, weight: FontWeight.w600),
               ),
             ),
           ),
@@ -506,7 +506,7 @@ class _UnderlineField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppText.label(10)),
+        Text(label, style: AppText.label(10, weight: FontWeight.w600)),
         const SizedBox(height: 8),
         Row(
           children: [

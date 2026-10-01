@@ -237,7 +237,11 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
             children: [
               Text(
                 count == 1 ? '1 LUGAR' : '$count LUGARES',
-                style: AppText.label(11, color: AppColors.inkSoft),
+                style: AppText.label(
+                  11,
+                  weight: FontWeight.w600,
+                  color: AppColors.inkSoft,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(

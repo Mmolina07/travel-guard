@@ -164,7 +164,13 @@ class _SideNav extends StatelessWidget {
           if (!collapsed)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('NAVEGACIÓN', style: AppText.label(10)),
+              child: Text(
+                'NAVEGACIÓN',
+                style: AppText.label(
+                  10,
+                  weight: FontWeight.w600,
+                ),
+              ),
             ),
           const SizedBox(height: 8),
           for (final item in _items)
@@ -226,7 +232,7 @@ class _Brand extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             'TRAVELGUARD',
-            style: AppText.label(11, color: AppColors.ink).copyWith(
+            style: AppText.label(11, color: AppColors.ink, weight: FontWeight.w600).copyWith(
               letterSpacing: 11 * 0.18,
             ),
           ),
@@ -378,7 +384,7 @@ class _BudgetSummary extends StatelessWidget {
         children: [
           Text(
             'PRESUPUESTO $month',
-            style: AppText.label(10, color: AppColors.inkSoft),
+            style: AppText.label(10, color: AppColors.inkSoft, weight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           Text(
@@ -474,7 +480,7 @@ class _ProfileRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppText.ui(14, weight: FontWeight.w600),
               ),
-              Text(role, style: AppText.label(11)),
+              Text(role, style: AppText.label(11, weight: FontWeight.w600, color: AppColors.textMuted)),
             ],
           ),
         ),
@@ -606,7 +612,7 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Text(dateLabel.toUpperCase(), style: AppText.label(11)),
+              Text(dateLabel.toUpperCase(), style: AppText.label(11, weight: FontWeight.w600)),
               const SizedBox(width: 16),
               MouseRegion(
                 cursor: SystemMouseCursors.click,

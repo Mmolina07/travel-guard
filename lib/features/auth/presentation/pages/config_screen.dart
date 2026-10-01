@@ -147,7 +147,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 Center(
                   child: Text(
                     'Versión 1.0.0',
-                    style: AppText.label(10, color: AppColors.textMuted),
+                    style: AppText.label(
+                      10,
+                      weight: FontWeight.w600,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -771,7 +775,7 @@ class _LanguageOption extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     code.toUpperCase(),
-                    style: AppText.label(11, color: AppColors.textMuted),
+                    style: AppText.label(11, color: AppColors.textMuted, weight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -831,7 +835,7 @@ class _CurrencyOption extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     code.toUpperCase(),
-                    style: AppText.label(11, color: AppColors.textMuted),
+                    style: AppText.label(11, color: AppColors.textMuted, weight: FontWeight.w600),
                   ),
                 ],
               ),

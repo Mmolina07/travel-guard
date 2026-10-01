@@ -500,7 +500,14 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {},
-                child: Text('VER TODOS', style: AppText.label(11, color: AppColors.inkSoft)),
+                child: Text(
+                  'VER TODOS',
+                  style: AppText.label(
+                    11,
+                    weight: FontWeight.w600,
+                    color: AppColors.inkSoft,
+                  ),
+                ),
               ),
             ),
           ],
@@ -1107,7 +1114,13 @@ class _ProximoGastoCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('PRÓXIMO GASTO', style: AppText.label(10)),
+                Text(
+                  'PRÓXIMO GASTO',
+                  style: AppText.label(
+                    10,
+                    weight: FontWeight.w600,
+                  ),
+                ),
                 Container(
                   width: 26,
                   height: 26,
