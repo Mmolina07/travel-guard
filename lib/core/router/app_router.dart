@@ -17,6 +17,7 @@ import '../../features/trips/presentation/pages/trip_model.dart';
 import '../theme/app_theme.dart';
 import '../utils/page_title.dart';
 import '../../features/auth/presentation/pages/config_screen.dart';
+import '../../../features/subscriptions/presentation/pages/subscriptions_screen.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
 /// atrás del navegador funcional y `/crear` como ruta de diálogo. Antes
@@ -76,6 +77,14 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Comercios');
             return const ComerciosCercanosScreen();
+          },
+        ),
+        GoRoute(
+          path: '/suscripciones',
+          name: 'subscriptions',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Suscripciones');
+            return const SubscriptionsScreen();
           },
         ),
         GoRoute(

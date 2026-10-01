@@ -2088,4 +2088,169 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetPasswordGoToLogin => 'Go to sign in';
+
+  @override
+  String get businessSettingsAppBarTitle => 'My business';
+
+  @override
+  String get businessSettingsNameRequiredSnackbar => 'Enter the business name';
+
+  @override
+  String get businessSettingsSectionTitle => 'General information';
+
+  @override
+  String get businessSettingsSectionSubtitle =>
+      'Update the information your customers will see.';
+
+  @override
+  String get businessSettingsNameLabel => 'Business name';
+
+  @override
+  String get businessSettingsNameHint => 'E.g. El Sabor Restaurant';
+
+  @override
+  String get businessSettingsScheduleLabel => 'Hours';
+
+  @override
+  String get businessSettingsScheduleHint =>
+      'E.g. Monday to Saturday 8:00 AM - 8:00 PM';
+
+  @override
+  String get businessSettingsContactLabel => 'Contact';
+
+  @override
+  String get businessSettingsContactHint => 'E.g. 300 123 4567';
+
+  @override
+  String get businessSettingsSaveButton => 'Save changes';
+
+  @override
+  String get subscriptionsAppBarTitle => 'Premium plans and subscriptions';
+
+  @override
+  String get subscriptionsHeaderTitle =>
+      'Choose the perfect plan to improve your experience in the app';
+
+  @override
+  String get subscriptionsHeaderSubtitle =>
+      'Access to all trip and experience features';
+
+  @override
+  String get subscriptionsBillingMonthly => 'Monthly';
+
+  @override
+  String get subscriptionsBillingAnnual => 'Annual (-20%)';
+
+  @override
+  String get subscriptionsPlanTouristName => 'Tourist';
+
+  @override
+  String get subscriptionsPlanTouristSubtitle => 'Perfect for explorers';
+
+  @override
+  String get subscriptionsPeriodMonth => '/month';
+
+  @override
+  String get subscriptionsPeriodYear => '/year';
+
+  @override
+  String get subscriptionsFeatureMobile1 => 'Search trips and experiences';
+
+  @override
+  String get subscriptionsFeatureMobile2 => 'Rate and comment';
+
+  @override
+  String get subscriptionsFeatureMobile3 => 'Save favorites';
+
+  @override
+  String get subscriptionsFeatureMobile4 => 'Full mobile access';
+
+  @override
+  String get subscriptionsFeatureMobile5 => 'Email support';
+
+  @override
+  String get subscriptionsFeatureDesktop1 => 'Save your favorite places';
+
+  @override
+  String get subscriptionsFeatureDesktop2 => 'Know where you spend the most';
+
+  @override
+  String get subscriptionsFeatureDesktop3 =>
+      'Compare your budget and your expenses';
+
+  @override
+  String get subscriptionsFeatureDesktop4 => 'Scan your receipts automatically';
+
+  @override
+  String get subscriptionsPlanSelectedButton => 'Plan selected';
+
+  @override
+  String get subscriptionsPlanSelectButton => 'Select';
+
+  @override
+  String get subscriptionsFaqTitle => 'Frequently asked questions';
+
+  @override
+  String get subscriptionsFaqChangePlanQuestion =>
+      'Can I change plans at any time?';
+
+  @override
+  String get subscriptionsFaqChangePlanAnswer =>
+      'Yes, you can change or cancel your subscription at any time from your settings.';
+
+  @override
+  String get subscriptionsFaqFreeTrialQuestion =>
+      'Is there a free trial period?';
+
+  @override
+  String get subscriptionsFaqFreeTrialAnswer =>
+      'No, we don\'t currently offer a free trial period. However, you can cancel your subscription at any time.';
+
+  @override
+  String get subscriptionsFaqPaymentMethodsQuestion =>
+      'What payment methods do you accept?';
+
+  @override
+  String get subscriptionsFaqPaymentMethodsAnswer =>
+      'We accept credit cards, debit cards, bank transfers, and digital wallets.';
+
+  @override
+  String get subscriptionsFooterNote =>
+      'Change plans at any time with no penalty';
+
+  @override
+  String subscriptionsDialogPlanTitle(String planName) {
+    return '$planName Plan';
+  }
+
+  @override
+  String subscriptionsDialogPriceLabel(String price) {
+    return 'Price: $price';
+  }
+
+  @override
+  String get subscriptionsDialogBody =>
+      'By clicking \"Continue\", you\'ll be redirected to the payment gateway to complete your subscription.';
+
+  @override
+  String get subscriptionsDialogCancelButton => 'Cancel';
+
+  @override
+  String get subscriptionsDialogContinueButton => 'Continue';
+
+  @override
+  String get subscriptionsDialogRedirectingSnackbar =>
+      'Redirecting to payment gateway...';
+
+  @override
+  String get stepProgressLabel => 'Step';
+
+  @override
+  String get stepProgressStep1 => 'Information';
+
+  @override
+  String get stepProgressStep2 => 'Date and price';
+
+  @override
+  String get stepProgressStep3 => 'Details';
 }

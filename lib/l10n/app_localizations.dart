@@ -3757,6 +3757,300 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ir a iniciar sesión'**
   String get resetPasswordGoToLogin;
+
+  /// No description provided for @businessSettingsAppBarTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi negocio'**
+  String get businessSettingsAppBarTitle;
+
+  /// No description provided for @businessSettingsNameRequiredSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa el nombre del negocio'**
+  String get businessSettingsNameRequiredSnackbar;
+
+  /// No description provided for @businessSettingsSectionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos generales'**
+  String get businessSettingsSectionTitle;
+
+  /// No description provided for @businessSettingsSectionSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualiza la información que verán tus clientes.'**
+  String get businessSettingsSectionSubtitle;
+
+  /// No description provided for @businessSettingsNameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del negocio'**
+  String get businessSettingsNameLabel;
+
+  /// No description provided for @businessSettingsNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Restaurante El Sabor'**
+  String get businessSettingsNameHint;
+
+  /// No description provided for @businessSettingsScheduleLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Horario'**
+  String get businessSettingsScheduleLabel;
+
+  /// No description provided for @businessSettingsScheduleHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Lunes a sábado 8:00 AM - 8:00 PM'**
+  String get businessSettingsScheduleHint;
+
+  /// No description provided for @businessSettingsContactLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Contacto'**
+  String get businessSettingsContactLabel;
+
+  /// No description provided for @businessSettingsContactHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. 300 123 4567'**
+  String get businessSettingsContactHint;
+
+  /// No description provided for @businessSettingsSaveButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar cambios'**
+  String get businessSettingsSaveButton;
+
+  /// No description provided for @subscriptionsAppBarTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Planes y suscripciones premium'**
+  String get subscriptionsAppBarTitle;
+
+  /// No description provided for @subscriptionsHeaderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige tu plan perfecto para mejorar tu experiencia en la aplicación'**
+  String get subscriptionsHeaderTitle;
+
+  /// No description provided for @subscriptionsHeaderSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso a todas las características de viajes y experiencias'**
+  String get subscriptionsHeaderSubtitle;
+
+  /// No description provided for @subscriptionsBillingMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Mensual'**
+  String get subscriptionsBillingMonthly;
+
+  /// No description provided for @subscriptionsBillingAnnual.
+  ///
+  /// In es, this message translates to:
+  /// **'Anual (-20%)'**
+  String get subscriptionsBillingAnnual;
+
+  /// No description provided for @subscriptionsPlanTouristName.
+  ///
+  /// In es, this message translates to:
+  /// **'Turista'**
+  String get subscriptionsPlanTouristName;
+
+  /// No description provided for @subscriptionsPlanTouristSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfecto para exploradores'**
+  String get subscriptionsPlanTouristSubtitle;
+
+  /// No description provided for @subscriptionsPeriodMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'/mes'**
+  String get subscriptionsPeriodMonth;
+
+  /// No description provided for @subscriptionsPeriodYear.
+  ///
+  /// In es, this message translates to:
+  /// **'/año'**
+  String get subscriptionsPeriodYear;
+
+  /// No description provided for @subscriptionsFeatureMobile1.
+  ///
+  /// In es, this message translates to:
+  /// **'Busca viajes y experiencias'**
+  String get subscriptionsFeatureMobile1;
+
+  /// No description provided for @subscriptionsFeatureMobile2.
+  ///
+  /// In es, this message translates to:
+  /// **'Califica y comenta'**
+  String get subscriptionsFeatureMobile2;
+
+  /// No description provided for @subscriptionsFeatureMobile3.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda favoritos'**
+  String get subscriptionsFeatureMobile3;
+
+  /// No description provided for @subscriptionsFeatureMobile4.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso móvil completo'**
+  String get subscriptionsFeatureMobile4;
+
+  /// No description provided for @subscriptionsFeatureMobile5.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte por email'**
+  String get subscriptionsFeatureMobile5;
+
+  /// No description provided for @subscriptionsFeatureDesktop1.
+  ///
+  /// In es, this message translates to:
+  /// **'Guarda tus lugares favoritos'**
+  String get subscriptionsFeatureDesktop1;
+
+  /// No description provided for @subscriptionsFeatureDesktop2.
+  ///
+  /// In es, this message translates to:
+  /// **'Conoce en qué gastas más'**
+  String get subscriptionsFeatureDesktop2;
+
+  /// No description provided for @subscriptionsFeatureDesktop3.
+  ///
+  /// In es, this message translates to:
+  /// **'Compara tu presupuesto y tus gastos'**
+  String get subscriptionsFeatureDesktop3;
+
+  /// No description provided for @subscriptionsFeatureDesktop4.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanea tus recibos automáticamente'**
+  String get subscriptionsFeatureDesktop4;
+
+  /// No description provided for @subscriptionsPlanSelectedButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan seleccionado'**
+  String get subscriptionsPlanSelectedButton;
+
+  /// No description provided for @subscriptionsPlanSelectButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar'**
+  String get subscriptionsPlanSelectButton;
+
+  /// No description provided for @subscriptionsFaqTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas frecuentes'**
+  String get subscriptionsFaqTitle;
+
+  /// No description provided for @subscriptionsFaqChangePlanQuestion.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Puedo cambiar de plan en cualquier momento?'**
+  String get subscriptionsFaqChangePlanQuestion;
+
+  /// No description provided for @subscriptionsFaqChangePlanAnswer.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, puedes cambiar o cancelar tu suscripción en cualquier momento desde tu configuración.'**
+  String get subscriptionsFaqChangePlanAnswer;
+
+  /// No description provided for @subscriptionsFaqFreeTrialQuestion.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Hay período de prueba gratuita?'**
+  String get subscriptionsFaqFreeTrialQuestion;
+
+  /// No description provided for @subscriptionsFaqFreeTrialAnswer.
+  ///
+  /// In es, this message translates to:
+  /// **'No, actualmente no ofrecemos un período de prueba gratuita. Sin embargo, puedes cancelar tu suscripción en cualquier momento.'**
+  String get subscriptionsFaqFreeTrialAnswer;
+
+  /// No description provided for @subscriptionsFaqPaymentMethodsQuestion.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué métodos de pago aceptan?'**
+  String get subscriptionsFaqPaymentMethodsQuestion;
+
+  /// No description provided for @subscriptionsFaqPaymentMethodsAnswer.
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptamos tarjetas de crédito, débito, transferencia bancaria y billeteras digitales.'**
+  String get subscriptionsFaqPaymentMethodsAnswer;
+
+  /// No description provided for @subscriptionsFooterNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar de plan en cualquier momento sin penalización'**
+  String get subscriptionsFooterNote;
+
+  /// No description provided for @subscriptionsDialogPlanTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan {planName}'**
+  String subscriptionsDialogPlanTitle(String planName);
+
+  /// No description provided for @subscriptionsDialogPriceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio: {price}'**
+  String subscriptionsDialogPriceLabel(String price);
+
+  /// No description provided for @subscriptionsDialogBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Al hacer clic en \"Continuar\", serás redirigido a la pasarela de pago para completar tu suscripción.'**
+  String get subscriptionsDialogBody;
+
+  /// No description provided for @subscriptionsDialogCancelButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get subscriptionsDialogCancelButton;
+
+  /// No description provided for @subscriptionsDialogContinueButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get subscriptionsDialogContinueButton;
+
+  /// No description provided for @subscriptionsDialogRedirectingSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Redirigiendo a pasarela de pago...'**
+  String get subscriptionsDialogRedirectingSnackbar;
+
+  /// No description provided for @stepProgressLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso'**
+  String get stepProgressLabel;
+
+  /// No description provided for @stepProgressStep1.
+  ///
+  /// In es, this message translates to:
+  /// **'Información'**
+  String get stepProgressStep1;
+
+  /// No description provided for @stepProgressStep2.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha y precio'**
+  String get stepProgressStep2;
+
+  /// No description provided for @stepProgressStep3.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles'**
+  String get stepProgressStep3;
 }
 
 class _AppLocalizationsDelegate

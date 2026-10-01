@@ -96,7 +96,11 @@ class _MapPanelState extends State<MapPanel> {
                   children: [
                     Text(
                       widget.title,
-                      style: AppText.label(11, color: AppColors.mint),
+                      style: AppText.label(
+                        11,
+                        weight: FontWeight.w600,
+                        color: AppColors.mint,
+                      ),
                     ),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
@@ -179,7 +183,7 @@ class _SelectedPlaceCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppText.ui(14, weight: FontWeight.w600),
                 ),
-                Text(place.categoria, style: AppText.label(10)),
+                Text(place.categoria, style: AppText.label(10, weight: FontWeight.w600)),
               ],
             ),
           ),

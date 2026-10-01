@@ -450,7 +450,11 @@ class _MapScreenState extends State<MapScreen> {
               onTap: () => _handleLocationBannerAction(reason),
               child: Text(
                 _locationActionLabel(reason).toUpperCase(),
-                style: AppText.label(11, color: AppColors.error),
+                style: AppText.label(
+                  11,
+                  weight: FontWeight.w600,
+                  color: AppColors.error,
+                ),
               ),
             ),
           ),
