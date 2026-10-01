@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../trips/presentation/pages/home_screen_client.dart';
+import 'package:go_router/go_router.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -100,6 +101,20 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 ),
                 const SizedBox(height: 32),
 
+                Text(
+                  'Plan y suscripción',
+                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                ),
+                const SizedBox(height: 12),
+
+                // Botón Ver planes
+                _ActionButton(
+                  icon: Icons.card_membership,
+                  label: 'Mejora tu plan',
+                  onTap: _openSubscriptions,
+                ),
+                const SizedBox(height: 32),
+
                 // ========== SECCIÓN: SEGURIDAD ==========
                 Text(
                   'Seguridad',
@@ -143,6 +158,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
       ),
     );
   }
+
+  void _openSubscriptions() => context.go('/suscripciones');
 
   // ========== MODAL: CAMBIAR CONTRASEÑA ==========
   void _showChangePasswordModal(BuildContext context, AppAuthProvider auth) {

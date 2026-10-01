@@ -21,88 +21,390 @@ class HomeScreenComercio extends StatefulWidget {
 }
 
 class _HomeScreenComercioState extends State<HomeScreenComercio> {
-  int _selectedIndex = 0;
-
-  String get businessName => context.watch<AppAuthProvider>().displayName;
+  // ========== VARIABLES DE ESTADO ==========
   final List<Map<String, dynamic>> _actividades = [];
-  final List<Menu> _menus = []; // ← AGREGAR LISTA DE MENÚS
+  final List<Menu> _menus = [];
+  bool _isLoadingActividades = false;
+  bool _isLoadingMenus = false;
+
+  // ========== GETTERS ==========
+  String get businessName => context.watch<AppAuthProvider>().displayName;
+
+  int get _totalActividades => _actividades.length;
+  int get _totalMenus => _menus.length;
+
+  /// Actividad más próxima
+  Map<String, dynamic>? get _nextActividad {
+    if (_actividades.isEmpty) return null;
+    return _actividades.first;
+  }
+
+  // ========== CICLO DE VIDA ==========
+  @override
+  void initState() {
+    super.initState();
+    _loadActividades();
+    _loadMenus();
+  }
+
+  Future<void> _loadActividades() async {
+    setState(() => _isLoadingActividades = true);
+    try {
+      // TODO: Cargar desde repositorio real
+      if (!mounted) return;
+      setState(() => _isLoadingActividades = false);
+    } catch (e, st) {
+      debugPrint('HomeScreenComercio._loadActividades error: $e\n$st');
+      if (!mounted) return;
+      setState(() => _isLoadingActividades = false);
+    }
+  }
+
+  Future<void> _loadMenus() async {
+    setState(() => _isLoadingMenus = true);
+    try {
+      // TODO: Cargar desde repositorio real
+      if (!mounted) return;
+      setState(() => _isLoadingMenus = false);
+    } catch (e, st) {
+      debugPrint('HomeScreenComercio._loadMenus error: $e\n$st');
+      if (!mounted) return;
+      setState(() => _isLoadingMenus = false);
+    }
+  }
+
+  // ========== MÉTODOS DE NAVEGACIÓN ==========
+  void _openMenuDetail(Menu menu) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => MenuDetailScreen(menu: menu)),
+    );
+  }
+
+  // ========== MÉTODOS DE INTERACCIÓN ==========
+  Future<void> _createMenu() async {
+    final newMenu = await Navigator.push<Menu>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateMenuScreen()),
+    );
+
+    if (!mounted) return;
+
+    if (newMenu != null) {
+      setState(() => _menus.add(newMenu));
+      _showSnack('Menú "${newMenu.name}" creado');
+      
+      if (!mounted) return;
+      _openMenuDetail(newMenu);
+    }
+  }
+
+  Future<void> _createActivity() async {
+    final activity = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
+    );
+
+    if (!mounted) return;
+
+    if (activity != null) {
+      setState(() => _actividades.add(activity));
+      _showSnack('Actividad "${activity['name']}" creada');
+    }
+  }
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text('Cerrar sesión', style: AppText.display(18)),
+        content: Text('¿Seguro que quieres cerrar tu sesión?', style: AppText.ui(14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text('Cancelar', style: AppText.ui(14, color: AppColors.ink)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar sesión'),
+            child: Text('Cerrar sesión', style: AppText.ui(14, color: Colors.red)),
           ),
         ],
       ),
     );
+
     if (confirmed == true && context.mounted) {
       await context.read<AppAuthProvider>().signOut();
-      // El redirect de `AppRouter` ya manda a `/login` en cuanto
-      // `AppAuthProvider` notifica el cambio; este `go` solo evita el
-      // parpadeo de un frame con esta pantalla de fondo.
       if (context.mounted) context.go('/login');
     }
   }
 
-  Future<void> _handleBottomNavTap(int index) async {
-    setState(() => _selectedIndex = index);
-
-    if (index == 0) {
-      // Inicio - ya estamos aquí
-    } else if (index == 1) {
-      final activity = await Navigator.push<Map<String, dynamic>>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const CreateActivityScreen(),
-        ),
-      );
-      if (!mounted) return;
-
-      if (activity != null) {
-        setState(() {
-          _actividades.add(activity);
-          _selectedIndex = 0;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Actividad "${activity['name']}" creada'),
-            backgroundColor: AppColors.ink,
-          ),
-        );
-      }
-    } else if (index == 2) {
-      if (_menus.isNotEmpty) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MenuDetailScreen(menu: _menus[0]),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Crea tu primer menú'),
-            backgroundColor: AppColors.ink,
-          ),
-        );
-      }
-    }
+  void _showSnack(String message, {Color color = AppColors.ink}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
   }
 
+  // ========== BUILD ==========
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return _buildMobile();
+        }
+        return _buildDesktop();
+      },
+    );
+  }
+
+  // ========== DESKTOP ==========
+  Widget _buildDesktop() {
+    return Scaffold(
+      backgroundColor: AppColors.paper,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildGreetingRow(),
+                const SizedBox(height: 40),
+                _buildActionGrid(),
+                const SizedBox(height: 48),
+                _buildMenusAndActivitiesRow(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGreetingRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Hola, ${_firstName(businessName)}.', style: AppText.display(42)),
+              Text('Gestiona tu negocio fácilmente', style: AppText.displayItalic(42)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: Text(
+            _nextActividad != null
+                ? 'Próxima: ${_nextActividad!['name']}'
+                : 'Crea tu primera actividad para tus clientes.',
+            style: AppText.ui(14, color: AppColors.textMuted),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionGrid() {
+    return Column(
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 8,
+                child: _CrearMenuCard(onTap: _createMenu),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                flex: 5,
+                child: _EstadisticasCard(
+                  menus: _totalMenus,
+                  actividades: _totalActividades,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 8,
+                child: _CrearActividadCard(onTap: _createActivity),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(flex: 5, child: SizedBox()),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenusAndActivitiesRow() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final left = _buildMenusColumn();
+        final right = _buildActivitiesColumn();
+        if (constraints.maxWidth >= 820) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 16, child: left),
+              const SizedBox(width: 22),
+              Expanded(flex: 10, child: right),
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [left, const SizedBox(height: 32), right],
+        );
+      },
+    );
+  }
+
+  Widget _buildMenusColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Mis menús', style: AppText.display(26)),
+        const SizedBox(height: 16),
+        if (_isLoadingMenus)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+          )
+        else if (_menus.isEmpty)
+          _buildEmptyMenus()
+        else
+          Column(
+            children: [
+              for (var i = 0; i < _menus.length; i++) ...[
+                _MenuCard(
+                  menu: _menus[i],
+                  onTap: () => _openMenuDetail(_menus[i]),
+                ),
+                if (i != _menus.length - 1) const SizedBox(height: 12),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActivitiesColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Actividades recientes', style: AppText.display(26)),
+        const SizedBox(height: 16),
+        if (_isLoadingActividades)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+          )
+        else if (_actividades.isEmpty)
+          _buildEmptyActivities()
+        else
+          _buildActivityCard(
+            title: _actividades.first['name'] ?? 'Sin nombre',
+            description: _actividades.first['description'] ?? '',
+            date: _actividades.first['hasNoEndDate'] == true
+                ? (_actividades.first['startDate'] ?? '')
+                : '${_actividades.first['startDate']} - ${_actividades.first['endDate']}',
+            category: _actividades.first['category'],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyMenus() {
+    return GestureDetector(
+      onTap: _createMenu,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.wash,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aún no tienes menús', style: AppText.display(22)),
+            const SizedBox(height: 6),
+            Text(
+              'Crea tu primer menú para mostrar tus servicios.',
+              style: AppText.ui(13, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Crear menú',
+                  style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward, size: 16, color: AppColors.inkSoft),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyActivities() {
+    return GestureDetector(
+      onTap: _createActivity,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.wash,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aún no tienes actividades', style: AppText.display(22)),
+            const SizedBox(height: 6),
+            Text(
+              'Crea tu primera actividad para tus clientes.',
+              style: AppText.ui(13, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Crear actividad',
+                  style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward, size: 16, color: AppColors.inkSoft),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ========== MOBILE ==========
+  Widget _buildMobile() {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -116,130 +418,63 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                 children: [
                   _buildStatsStrip(),
                   const SizedBox(height: 24),
-
                   FadeSlideIn(
                     child: _buildFeatureCard(
                       icon: Icons.restaurant_menu,
                       title: 'Agregar menú',
-                      description:
-                          'Crea y gestiona los platos, bebidas y servicios que ofrece tu negocio.',
+                      description: 'Crea y gestiona los platos y servicios de tu negocio.',
                       buttonText: '+ Menú',
-                      onButtonPressed: () async {
-                        final Menu? newMenu = await Navigator.push<Menu>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CreateMenuScreen(),
-                          ),
-                        );
-
-                        if (newMenu != null) {
-                          setState(() {
-                            _menus.add(newMenu);
-                          });
-
-                          if (!mounted) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MenuDetailScreen(menu: newMenu),
-                            ),
-                          );
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Menú "${newMenu.name}" creado'),
-                              backgroundColor: AppColors.ink,
-                            ),
-                          );
-                        }
-                      },
+                      onButtonPressed: _createMenu,
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 80),
                     child: _buildFeatureCard(
                       icon: Icons.event_note,
                       title: 'Crear actividad',
-                      description:
-                          'Organiza eventos, promociones y actividades especiales para tus clientes.',
+                      description: 'Organiza eventos y promociones para tus clientes.',
                       buttonText: '+ Actividad',
-                      onButtonPressed: () async {
-                        final activity =
-                            await Navigator.push<Map<String, dynamic>>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CreateActivityScreen(),
-                              ),
-                            );
-
-                        if (activity != null) {
-                          setState(() {
-                            _actividades.add(activity);
-                          });
-
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Actividad "${activity['name']}" creada',
-                              ),
-                              backgroundColor: AppColors.ink,
-                            ),
-                          );
-                        }
-                      },
+                      onButtonPressed: _createActivity,
                     ),
                   ),
                   const SizedBox(height: 36),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Mis actividades',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Ver todas'),
-                      ),
+                      Text('Mis actividades', style: AppText.display(22)),
+                      TextButton(onPressed: () {}, child: const Text('Ver todas')),
                     ],
                   ),
                   const SizedBox(height: 16),
-
                   SizedBox(
                     height: 150,
-                    child: _actividades.isEmpty
-                        ? _buildEmptyActivities()
-                        : ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _actividades.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(width: 14),
-                            itemBuilder: (context, index) {
-                              final activity = _actividades[index];
-                              return FadeSlideIn(
-                                delay: Duration(milliseconds: 70 * index),
-                                offset: const Offset(0.12, 0),
-                                child: _buildActivityCard(
-                                  title: activity['name'] ?? 'Sin nombre',
-                                  description: activity['description'] ?? '',
-                                  date: activity['hasNoEndDate'] == true
-                                      ? (activity['startDate'] ?? '')
-                                      : '${activity['startDate']} - ${activity['endDate']}',
-                                  category: activity['category'],
-                                ),
-                              );
-                            },
-                          ),
+                    child: _isLoadingActividades
+                        ? const Center(
+                            child: CircularProgressIndicator(color: AppColors.ink),
+                          )
+                        : _actividades.isEmpty
+                            ? _buildMobileEmptyActivities()
+                            : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _actividades.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                                itemBuilder: (context, index) {
+                                  final activity = _actividades[index];
+                                  return FadeSlideIn(
+                                    delay: Duration(milliseconds: 70 * index),
+                                    offset: const Offset(0.12, 0),
+                                    child: _buildActivityCard(
+                                      title: activity['name'] ?? 'Sin nombre',
+                                      description: activity['description'] ?? '',
+                                      date: activity['hasNoEndDate'] == true
+                                          ? (activity['startDate'] ?? '')
+                                          : '${activity['startDate']} - ${activity['endDate']}',
+                                      category: activity['category'],
+                                    ),
+                                  );
+                                },
+                              ),
                   ),
                 ],
               ),
@@ -248,8 +483,13 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
         ],
       ),
       bottomNavigationBar: _ComercioBottomNav(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _handleBottomNavTap,
+        onItemSelected: (index) {
+          if (index == 1) {
+            _createActivity();
+          } else if (index == 2) {
+            _createMenu();
+          }
+        },
       ),
     );
   }
@@ -283,18 +523,11 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                           onTap: () => _confirmSignOut(context),
                           borderRadius: BorderRadius.circular(20),
                           child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.logout,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
+                                Icon(Icons.logout, size: 16, color: Colors.white),
                                 SizedBox(width: 6),
                                 Text(
                                   'Cerrar sesión',
@@ -348,41 +581,33 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       children: [
         Expanded(
           child: _StatChip(
-            icon: Icons.event_note,
-            label: 'Actividades',
-            value: '${_actividades.length}',
+            icon: Icons.restaurant_menu,
+            label: 'Menús',
+            value: '$_totalMenus',
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _StatChip(
-            icon: Icons.restaurant_menu,
-            label: 'Menús creados',
-            value: '${_menus.length}',
+            icon: Icons.event_note,
+            label: 'Actividades',
+            value: '$_totalActividades',
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyActivities() {
+  Widget _buildMobileEmptyActivities() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.event_busy_outlined,
-            size: 44,
-            color: AppColors.hair,
-          ),
+          const Icon(Icons.event_busy_outlined, size: 44, color: AppColors.hair),
           const SizedBox(height: 10),
           const Text(
             'Aún no tienes actividades',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
           ),
           const SizedBox(height: 4),
           Text(
@@ -411,31 +636,17 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
+                Text(title, style: AppText.ui(17, weight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textMuted,
-                    height: 1.4,
-                  ),
+                  style: AppText.ui(12, color: AppColors.textMuted),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: onButtonPressed,
-            child: Text(buttonText),
-          ),
+          ElevatedButton(onPressed: onButtonPressed, child: Text(buttonText)),
         ],
       ),
     );
@@ -468,43 +679,27 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.ui(15, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    height: 1.4,
-                  ),
+                  style: AppText.ui(12, color: AppColors.textMuted),
                 ),
               ],
             ),
             Row(
               children: [
-                const Icon(
-                  Icons.access_time_outlined,
-                  size: 13,
-                  color: AppColors.textMuted,
-                ),
+                const Icon(Icons.access_time_outlined, size: 13, color: AppColors.textMuted),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     date,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
-                    ),
+                    style: AppText.ui(11, weight: FontWeight.w600, color: AppColors.textMuted),
                   ),
                 ),
               ],
@@ -514,6 +709,8 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
       ),
     );
   }
+
+  String _firstName(String name) => name.trim().split(' ').first;
 
   IconData _iconForCategory(String? category) {
     switch (category) {
@@ -533,12 +730,247 @@ class _HomeScreenComercioState extends State<HomeScreenComercio> {
   }
 }
 
+// ========== WIDGETS PRIVADOS ==========
+
+class _CrearMenuCard extends StatelessWidget {
+  const _CrearMenuCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: AppShadow.raised,
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.add, color: AppColors.ink, size: 20),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Crear menú', style: AppText.display(26, color: AppColors.paper)),
+                const SizedBox(height: 4),
+                Text(
+                  'Agrega platos y servicios en segundos',
+                  style: AppText.ui(12, color: AppColors.textOnInk),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CrearActividadCard extends StatelessWidget {
+  const _CrearActividadCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: AppColors.line),
+          boxShadow: AppShadow.card,
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('ACTIVIDAD', style: AppText.label(10)),
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.mint,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(Icons.add, color: AppColors.ink, size: 16),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Crear actividad', style: AppText.display(24)),
+                const SizedBox(height: 4),
+                Text(
+                  'Eventos y promociones para tus clientes',
+                  style: AppText.ui(12, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EstadisticasCard extends StatelessWidget {
+  const _EstadisticasCard({required this.menus, required this.actividades});
+
+  final int menus;
+  final int actividades;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.wash,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.line),
+        boxShadow: AppShadow.card,
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('ESTADÍSTICAS', style: AppText.label(10)),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$menus', style: AppText.display(22)),
+                    Text('Menús', style: AppText.ui(12, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$actividades', style: AppText.display(22)),
+                    Text('Actividades', style: AppText.ui(12, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuCard extends StatelessWidget {
+  const _MenuCard({required this.menu, required this.onTap});
+
+  final Menu menu;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.line),
+          boxShadow: AppShadow.card,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.restaurant_menu, color: AppColors.inkSoft, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    menu.name,
+                    style: AppText.ui(15, weight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '${menu.getProductCount()} productos',
+                        style: AppText.ui(12, color: AppColors.textMuted),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.textMuted,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (menu.isAvailable)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.mint,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Disponible',
+                            style: AppText.ui(10, color: AppColors.ink, weight: FontWeight.w600),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.hair,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'No disponible',
+                            style: AppText.ui(10, color: AppColors.textMuted, weight: FontWeight.w600),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _StatChip({required this.icon, required this.label, required this.value});
 
   final IconData icon;
   final String label;
@@ -558,50 +990,24 @@ class _StatChip extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.ink),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
-          ),
+          Text(value, style: AppText.ui(18, weight: FontWeight.w700)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-          ),
+          Text(label, style: AppText.ui(11, color: AppColors.textMuted)),
         ],
       ),
     );
   }
 }
 
-/// Barra de navegación flotante tipo píldora — mismos 3 ítems y misma
-/// lógica que la `BottomNavigationBar` original de esta pantalla.
 class _ComercioBottomNav extends StatelessWidget {
-  const _ComercioBottomNav({
-    required this.selectedIndex,
-    required this.onItemSelected,
-  });
+  const _ComercioBottomNav({required this.onItemSelected});
 
-  final int selectedIndex;
   final ValueChanged<int> onItemSelected;
 
   static const _items = [
     (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Inicio'),
-    (
-      icon: Icons.add_circle_outline,
-      activeIcon: Icons.add_circle,
-      label: 'Actividades',
-    ),
-    (
-      icon: Icons.storefront_outlined,
-      activeIcon: Icons.storefront,
-      label: 'Menú',
-    ),
+    (icon: Icons.add_circle_outline, activeIcon: Icons.add_circle, label: 'Actividades'),
+    (icon: Icons.storefront_outlined, activeIcon: Icons.storefront, label: 'Menú'),
   ];
 
   @override
@@ -624,9 +1030,6 @@ class _ComercioBottomNav extends StatelessWidget {
         child: Row(
           children: List.generate(_items.length, (index) {
             final item = _items[index];
-            final selected = index == selectedIndex;
-            final color =
-                selected ? AppColors.ink : AppColors.textMuted;
             return Expanded(
               child: InkWell(
                 borderRadius: BorderRadius.circular(28),
@@ -634,19 +1037,11 @@ class _ComercioBottomNav extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      selected ? item.activeIcon : item.icon,
-                      color: color,
-                      size: 22,
-                    ),
+                    Icon(item.icon, color: AppColors.textMuted, size: 22),
                     const SizedBox(height: 2),
                     Text(
                       item.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
+                      style: AppText.ui(11, weight: FontWeight.w600, color: AppColors.textMuted),
                     ),
                   ],
                 ),
