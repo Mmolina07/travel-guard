@@ -1,5 +1,46 @@
 # Notas de configuración — Auth y persistencia (TG-92, TG-97, TG-102, TG-123, TG-124)
 
+## HU-22 / TG-291: pagos con Mercado Pago (Checkout API)
+
+1. Corre en el SQL Editor, en este orden:
+   - `docs/db/hu22_suscripciones_pagos.sql`: tablas `pagos` y `suscripciones`
+     (la app solo las puede **leer**; escriben las Edge Functions y el trigger).
+   - `docs/db/hu22_trigger_activar_premium.sql` (TG-293): trigger que crea la
+     suscripción cuando un pago pasa a `aprobado` (y la cancela si se
+     reembolsa). Las funciones solo actualizan `pagos.estado`.
+2. Secretos en Supabase → Edge Functions → Secrets (nunca en el código):
+   - `MP_ACCESS_TOKEN`: Access Token del **vendedor de prueba** de Mercado Pago.
+   - `MP_SIMULAR_COBRO=true`: ver "Modo simulado" abajo.
+   - `MP_TEST_PAYER_EMAIL`: correo del comprador de prueba
+     (`test_user_<número del TESTUSER>@testuser.com`), solo para cobros reales.
+3. Despliega las funciones (`brew install supabase/tap/supabase`, `supabase login`):
+
+   ```
+   supabase functions deploy mp-pagar-tarjeta  --no-verify-jwt --use-api --project-ref wtyofjlzjkzjlpdynvay
+   supabase functions deploy mp-confirmar-pago --no-verify-jwt --use-api --project-ref wtyofjlzjkzjlpdynvay
+   supabase functions deploy mp-webhook        --no-verify-jwt --use-api --project-ref wtyofjlzjkzjlpdynvay
+   ```
+
+   `--no-verify-jwt`: la app usa la llave publicable nueva (`sb_publishable_…`),
+   que no es un JWT, y Mercado Pago tampoco manda uno al webhook. Los precios
+   los define el servidor, así que nada de lo que mande el cliente cambia el monto.
+
+Flujo: Planes → "Continuar" → formulario de tarjeta → la app tokeniza la
+tarjeta **directo con Mercado Pago** (Public Key, `POST /v1/card_tokens`; el
+número nunca pasa por Supabase) → `mp-pagar-tarjeta` cobra con el token,
+guarda el pago → si quedó `aprobado`, el trigger crea la suscripción →
+`/#/suscripcion/resultado`.
+
+**Modo simulado (`MP_SIMULAR_COBRO=true`)**: el sandbox de Mercado Pago
+rechaza todo cobro de prueba de cuentas de Colombia con *"Unauthorized use of
+live credentials"* (probado con Checkout Pro y con la API, con varios
+compradores de prueba). Con el secreto puesto, la tokenización sigue siendo
+real pero el cobro lo decide la función con la regla del sandbox: titular
+`APRO` → aprobado, `CONT` → en proceso, otro → rechazado. Quitar el secreto
+vuelve a cobrar de verdad sin cambiar la app.
+
+Tarjeta de prueba: `4013 5406 8274 6260`, `11/30`, `123`, CC `123456789`.
+
 ## HU-13: Gasto Manual — implementación completa
 
 Nueva feature `lib/features/expenses/` (antes vacía):

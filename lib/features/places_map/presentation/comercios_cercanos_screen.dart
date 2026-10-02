@@ -165,6 +165,12 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
       case AppSection.mapa:
         context.go('/mapa');
         break;
+      case AppSection.promociones:
+        context.go('/promociones');
+        break;
+      case AppSection.suscripciones:
+        context.go('/suscripciones');
+        break;
     }
   }
 

@@ -10,6 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/providers/app_auth_provider.dart';
 import 'features/expenses/presentation/widgets/expense_reminder_listener.dart';
 import 'features/expenses/providers/budget_alerts_provider.dart';
+import 'features/subscriptions/providers/subscription_provider.dart';
 import 'features/trips/providers/trip_provider.dart';
 import 'l10n/app_localizations.dart';
 import 'shell/app_shortcuts.dart';
@@ -42,6 +43,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AppAuthProvider, BudgetAlertsProvider>(
           create: (_) => BudgetAlertsProvider(),
           update: (_, auth, alerts) => alerts!..updateAuth(auth),
+        ),
+        // HU-22/HU-24: si el usuario es Premium (suscripción vigente).
+        ChangeNotifierProxyProvider<AppAuthProvider, SubscriptionProvider>(
+          create: (_) => SubscriptionProvider(),
+          update: (_, auth, subs) => subs!..updateAuth(auth),
         ),
       ],
       child: _RoutedApp(),

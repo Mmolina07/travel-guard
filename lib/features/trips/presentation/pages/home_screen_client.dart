@@ -11,6 +11,7 @@ import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../../expenses/presentation/widgets/budget_alert_card.dart';
 import '../../../expenses/providers/budget_alerts_provider.dart';
 import '../../../expenses/utils/daily_budget_calculator.dart';
+import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../../places_map/data/models/map_place.dart';
 import '../../../places_map/data/places_map_repository.dart';
 import '../../data/trip_repository.dart';
@@ -308,14 +309,16 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     if (!mounted) return;
 
     // HU-11 (TG-278): con los gastos del viaje el formulario puede
-    // advertir si este gasto pasa el presupuesto del día. Si falla, se
-    // registra igual, solo que sin la advertencia.
+    // advertir si este gasto pasa el presupuesto del día (solo Premium,
+    // HU-24). Si falla, se registra igual, solo que sin la advertencia.
     DailyBudgetCalculator? dailyBudget;
-    try {
-      final gastos = await _expenseRepository.fetchGastosDelViaje(trip.id!);
-      dailyBudget = DailyBudgetCalculator(trip: trip, gastos: gastos);
-    } catch (e, st) {
-      debugPrint('HomeScreenClient._addExpenseToTrip fetchGastosDelViaje error: $e\n$st');
+    if (context.read<SubscriptionProvider>().isPremium) {
+      try {
+        final gastos = await _expenseRepository.fetchGastosDelViaje(trip.id!);
+        dailyBudget = DailyBudgetCalculator(trip: trip, gastos: gastos);
+      } catch (e, st) {
+        debugPrint('HomeScreenClient._addExpenseToTrip fetchGastosDelViaje error: $e\n$st');
+      }
     }
     if (!mounted) return;
 
@@ -376,6 +379,12 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       case AppSection.mapa:
         _openMap();
         break;
+      case AppSection.promociones:
+        context.go('/promociones');
+        break;
+      case AppSection.suscripciones:
+        context.go('/suscripciones');
+        break;
     }
   }
 
@@ -414,6 +423,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   /// (las calcula `BudgetAlertsProvider` en segundo plano). Solo
   /// aparecen desde el 75% — si todo va bien, no ocupan espacio.
   Widget _buildDailyBudgetAlerts() {
+    // Premium (HU-24): a los demás no se les insiste aquí en Inicio; la
+    // invitación sale en el detalle del viaje.
+    if (!context.watch<SubscriptionProvider>().isPremium) return const SizedBox.shrink();
     final alerts = context
         .watch<BudgetAlertsProvider>()
         .activeTrips

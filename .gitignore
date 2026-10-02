@@ -50,3 +50,6 @@ design_handoff_travelguard_papel_petroleo 2
 
 # Credenciales de Firebase/Supabase (TG-92, TG-97, TG-102)
 env.json
+
+# Caché local de la CLI de Supabase
+supabase/.temp/

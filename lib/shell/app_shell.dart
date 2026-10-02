@@ -17,7 +17,14 @@ import '../features/trips/presentation/pages/trip_model.dart';
 /// y "Mis viajes" apuntan a la misma vista (no hay una ruta de listado
 /// de viajes separada en la especificación); se mantienen como dos
 /// entradas porque así las lista el diseño.
-enum AppSection { inicio, misViajes, comercios, mapa }
+enum AppSection {
+  inicio,
+  misViajes,
+  comercios,
+  mapa,
+  promociones,
+  suscripciones,
+}
 
 /// Shell de escritorio/tablet: `Row` de sidebar fijo + columna de
 /// contenido con topbar sticky. Úsalo únicamente cuando
@@ -154,6 +161,16 @@ class _SideNav extends StatelessWidget {
       icon: Icons.map_outlined,
       label: context.l10n.appShellNavMap,
     ),
+    (
+      section: AppSection.promociones,
+      icon: Icons.local_offer_outlined,
+      label: context.l10n.appShellNavPromos,
+    ),
+    (
+      section: AppSection.suscripciones,
+      icon: Icons.workspace_premium_outlined,
+      label: context.l10n.appShellNavPlans,
+    ),
   ];
 
   @override
@@ -164,37 +181,58 @@ class _SideNav extends StatelessWidget {
         color: AppColors.paperDeep,
         border: Border(right: BorderSide(color: AppColors.line)),
       ),
-      padding: EdgeInsets.symmetric(vertical: 26, horizontal: collapsed ? 12 : 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Brand(collapsed: collapsed),
-          const SizedBox(height: 26),
-          _CreateTripCta(collapsed: collapsed, onTap: onCreateTrip),
-          const SizedBox(height: 26),
-          if (!collapsed)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                context.l10n.appShellNavSectionLabel,
-                style: AppText.label(10),
+      // Con ventanas bajas los ítems + resumen + perfil no caben: se
+      // vuelve desplazable. `minHeight` + `IntrinsicHeight` mantienen el
+      // `Spacer` (perfil pegado abajo) cuando sí hay espacio.
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            vertical: 26,
+            horizontal: collapsed ? 12 : 18,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - 52).clamp(0, double.infinity),
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Brand(collapsed: collapsed),
+                  const SizedBox(height: 26),
+                  _CreateTripCta(collapsed: collapsed, onTap: onCreateTrip),
+                  const SizedBox(height: 26),
+                  if (!collapsed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        context.l10n.appShellNavSectionLabel,
+                        style: AppText.label(10),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  for (final item in _items(context))
+                    _NavItem(
+                      collapsed: collapsed,
+                      icon: item.icon,
+                      label: item.label,
+                      active: item.section == section,
+                      onTap: () => onNavigate(item.section),
+                    ),
+                  const Spacer(),
+                  const SizedBox(height: 26),
+                  _BudgetSummary(
+                    collapsed: collapsed,
+                    trip: activeTrip,
+                    spent: activeTripSpent,
+                  ),
+                  const SizedBox(height: 14),
+                  _ProfileRow(collapsed: collapsed),
+                ],
               ),
             ),
-          const SizedBox(height: 8),
-          for (final item in _items(context))
-            _NavItem(
-              collapsed: collapsed,
-              icon: item.icon,
-              label: item.label,
-              active: item.section == section,
-              onTap: () => onNavigate(item.section),
-            ),
-          const Spacer(),
-          const SizedBox(height: 26),
-          _BudgetSummary(collapsed: collapsed, trip: activeTrip, spent: activeTripSpent),
-          const SizedBox(height: 14),
-          _ProfileRow(collapsed: collapsed),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -240,9 +278,10 @@ class _Brand extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             'TRAVELGUARD',
-            style: AppText.label(11, color: AppColors.ink).copyWith(
-              letterSpacing: 11 * 0.18,
-            ),
+            style: AppText.label(
+              11,
+              color: AppColors.ink,
+            ).copyWith(letterSpacing: 11 * 0.18),
           ),
         ],
       ),
@@ -358,7 +397,11 @@ class _NavItem extends StatelessWidget {
 }
 
 class _BudgetSummary extends StatelessWidget {
-  const _BudgetSummary({required this.collapsed, required this.trip, required this.spent});
+  const _BudgetSummary({
+    required this.collapsed,
+    required this.trip,
+    required this.spent,
+  });
 
   final bool collapsed;
   final Trip? trip;
@@ -526,7 +569,11 @@ class _ProfileRow extends StatelessWidget {
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: IconButton(
-            icon: const Icon(Icons.logout, size: 18, color: AppColors.textMuted),
+            icon: const Icon(
+              Icons.logout,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
             tooltip: context.l10n.appShellSignOutTooltip,
             onPressed: () => _confirmSignOut(context),
           ),
@@ -605,9 +652,7 @@ class _TopBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 22),
           decoration: BoxDecoration(
             color: AppColors.paper.withValues(alpha: 0.92),
-            border: const Border(
-              bottom: BorderSide(color: AppColors.line),
-            ),
+            border: const Border(bottom: BorderSide(color: AppColors.line)),
           ),
           child: Row(
             children: [

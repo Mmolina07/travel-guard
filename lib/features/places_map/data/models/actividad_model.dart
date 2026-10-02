@@ -5,6 +5,11 @@
 /// `home_screen_comercio.dart`) se usan además `categoria`, `estado` y
 /// las fechas — ver docs/db/hu_comercio_menus_actividades.sql.
 class Actividad {
+  /// Categoría con la que un comercio publica una promoción exclusiva
+  /// para turistas Premium (HU-24) — la misma etiqueta del dropdown de
+  /// `create_activity_screen.dart`.
+  static const String categoriaPromocion = 'Promoción';
+
   final int id;
   final int? comercioId;
   final String nombre;
@@ -55,4 +60,17 @@ class Actividad {
     if (value == null) return null;
     return DateTime.tryParse(value as String);
   }
+}
+
+/// Una promoción (HU-24) con el comercio que la publica.
+class Promocion {
+  final Actividad actividad;
+  final String? comercioNombre;
+  final String? comercioDireccion;
+
+  const Promocion({
+    required this.actividad,
+    this.comercioNombre,
+    this.comercioDireccion,
+  });
 }

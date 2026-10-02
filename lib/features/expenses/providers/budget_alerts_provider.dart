@@ -37,8 +37,8 @@ class BudgetAlertsProvider extends ChangeNotifier {
   BudgetAlertsProvider({
     TripRepository? tripRepository,
     ExpenseRepository? expenseRepository,
-  })  : _tripRepository = tripRepository ?? TripRepository(),
-        _expenseRepository = expenseRepository ?? ExpenseRepository();
+  }) : _tripRepository = tripRepository ?? TripRepository(),
+       _expenseRepository = expenseRepository ?? ExpenseRepository();
 
   static const int reminderHour = 23;
   static const Duration _refreshEvery = Duration(minutes: 15);
@@ -64,8 +64,9 @@ class BudgetAlertsProvider extends ChangeNotifier {
   /// Lo llama `ChangeNotifierProxyProvider` cada vez que cambia la sesión.
   void updateAuth(AppAuthProvider auth) {
     final usuario = auth.usuario;
-    final turistaId =
-        auth.isAuthenticated && usuario?.tipoUsuario == 'turista' ? usuario!.id : null;
+    final turistaId = auth.isAuthenticated && usuario?.tipoUsuario == 'turista'
+        ? usuario!.id
+        : null;
     if (turistaId == _turistaId) return;
     _turistaId = turistaId;
 
@@ -74,13 +75,17 @@ class BudgetAlertsProvider extends ChangeNotifier {
     _activeTrips = const [];
     _pendingReminder = const [];
 
+    // Esto corre dentro del `update` del ProxyProvider (en pleno build):
+    // notificar ahí mismo revienta, así que se difiere un microtask.
     if (turistaId == null) {
-      if (!_disposed) notifyListeners();
+      Future.microtask(() {
+        if (!_disposed) notifyListeners();
+      });
       return;
     }
     _refreshTimer = Timer.periodic(_refreshEvery, (_) => refresh());
     _scheduleReminder();
-    refresh();
+    Future.microtask(refresh);
   }
 
   Future<void> refresh() async {
@@ -89,7 +94,10 @@ class BudgetAlertsProvider extends ChangeNotifier {
     try {
       final trips = await _tripRepository.fetchTripsByTurista(turistaId);
       final now = DateTime.now();
-      final ids = [for (final t in trips) if (t.id != null) t.id!];
+      final ids = [
+        for (final t in trips)
+          if (t.id != null) t.id!,
+      ];
       final gastosPorViaje = await _expenseRepository.fetchGastosDeViajes(ids);
       if (_disposed || turistaId != _turistaId) return;
 
@@ -101,16 +109,20 @@ class BudgetAlertsProvider extends ChangeNotifier {
           gastos: gastosPorViaje[trip.id] ?? const [],
         );
         if (!calc.isTripDay(now)) continue;
-        active.add(TripDailyBudget(
-          trip: trip,
-          today: calc.today,
-          hasExpensesToday: calc.hasExpensesOn(now),
-        ));
+        active.add(
+          TripDailyBudget(
+            trip: trip,
+            today: calc.today,
+            hasExpensesToday: calc.hasExpensesOn(now),
+          ),
+        );
       }
       _activeTrips = active;
       // Si ya registró algo después del recordatorio, se retira.
       _pendingReminder = _pendingReminder
-          .where((t) => active.any((a) => a.trip.id == t.id && !a.hasExpensesToday))
+          .where(
+            (t) => active.any((a) => a.trip.id == t.id && !a.hasExpensesToday),
+          )
           .toList();
       notifyListeners();
 
@@ -149,7 +161,8 @@ class BudgetAlertsProvider extends ChangeNotifier {
 
   Future<void> _checkReminder() async {
     final today = DateTime.now();
-    final key = '$_prefsReminderPrefix${today.year}-${today.month}-${today.day}';
+    final key =
+        '$_prefsReminderPrefix${today.year}-${today.month}-${today.day}';
     final candidates = [
       for (final t in _activeTrips)
         if (!t.hasExpensesToday) t.trip,
@@ -159,9 +172,14 @@ class BudgetAlertsProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final shown = prefs.getStringList(key) ?? const [];
-      final fresh = candidates.where((t) => !shown.contains('${t.id}')).toList();
+      final fresh = candidates
+          .where((t) => !shown.contains('${t.id}'))
+          .toList();
       if (fresh.isEmpty || _disposed) return;
-      await prefs.setStringList(key, [...shown, for (final t in fresh) '${t.id}']);
+      await prefs.setStringList(key, [
+        ...shown,
+        for (final t in fresh) '${t.id}',
+      ]);
       _pendingReminder = fresh;
       notifyListeners();
     } catch (e, st) {

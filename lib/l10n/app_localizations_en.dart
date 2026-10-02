@@ -2133,7 +2133,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionsHeaderSubtitle =>
-      'Access to all trip and experience features';
+      'Exclusive deals and alerts so your daily budget stays under control';
 
   @override
   String get subscriptionsBillingMonthly => 'Monthly';
@@ -2142,44 +2142,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionsBillingAnnual => 'Annual (-20%)';
 
   @override
-  String get subscriptionsPlanTouristName => 'Tourist';
+  String get subscriptionsPlanTouristName => 'Premium';
 
   @override
-  String get subscriptionsPlanTouristSubtitle => 'Perfect for explorers';
+  String get subscriptionsPlanTouristSubtitle =>
+      'For travelers who watch their budget';
 
   @override
   String get subscriptionsPeriodMonth => '/month';
 
   @override
   String get subscriptionsPeriodYear => '/year';
-
-  @override
-  String get subscriptionsFeatureMobile1 => 'Search trips and experiences';
-
-  @override
-  String get subscriptionsFeatureMobile2 => 'Rate and comment';
-
-  @override
-  String get subscriptionsFeatureMobile3 => 'Save favorites';
-
-  @override
-  String get subscriptionsFeatureMobile4 => 'Full mobile access';
-
-  @override
-  String get subscriptionsFeatureMobile5 => 'Email support';
-
-  @override
-  String get subscriptionsFeatureDesktop1 => 'Save your favorite places';
-
-  @override
-  String get subscriptionsFeatureDesktop2 => 'Know where you spend the most';
-
-  @override
-  String get subscriptionsFeatureDesktop3 =>
-      'Compare your budget and your expenses';
-
-  @override
-  String get subscriptionsFeatureDesktop4 => 'Scan your receipts automatically';
 
   @override
   String get subscriptionsPlanSelectedButton => 'Plan selected';
@@ -2212,7 +2185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionsFaqPaymentMethodsAnswer =>
-      'We accept credit cards, debit cards, bank transfers, and digital wallets.';
+      'We accept Visa, Mastercard, American Express and Diners credit and debit cards, processed by Mercado Pago.';
 
   @override
   String get subscriptionsFooterNote =>
@@ -2230,7 +2203,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionsDialogBody =>
-      'By clicking \"Continue\", you\'ll be redirected to the payment gateway to complete your subscription.';
+      'By clicking \"Continue\" you\'ll enter your card details. The payment is processed by Mercado Pago.';
 
   @override
   String get subscriptionsDialogCancelButton => 'Cancel';
@@ -2352,4 +2325,223 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addExpenseOverBudgetConfirm => 'Log anyway';
+
+  @override
+  String subscriptionsActivePlanBanner(String date) {
+    return 'You\'re Premium until $date. Buying another plan extends it from that date.';
+  }
+
+  @override
+  String get subscriptionsCheckoutErrorSnackbar =>
+      'Couldn\'t open the payment gateway. Please try again.';
+
+  @override
+  String get paymentResultChecking =>
+      'Confirming your payment with Mercado Pago…';
+
+  @override
+  String get paymentResultApprovedTitle => 'Payment approved!';
+
+  @override
+  String paymentResultApprovedBody(String date) {
+    return 'You\'re now Premium. Your subscription is active until $date.';
+  }
+
+  @override
+  String get paymentResultApprovedBodyNoDate =>
+      'You\'re now Premium. Your subscription is active.';
+
+  @override
+  String get paymentResultPendingTitle => 'Payment in progress';
+
+  @override
+  String get paymentResultPendingBody =>
+      'Mercado Pago is still processing your payment. We\'ll activate Premium as soon as it\'s approved.';
+
+  @override
+  String get paymentResultRejectedTitle => 'Payment declined';
+
+  @override
+  String get paymentResultRejectedBody =>
+      'Your payment method was declined and nothing was charged. You can try another one.';
+
+  @override
+  String get paymentResultCancelledTitle => 'Payment not completed';
+
+  @override
+  String get paymentResultCancelledBody =>
+      'You left the checkout before paying. Nothing was charged.';
+
+  @override
+  String get paymentResultErrorTitle => 'We couldn\'t confirm the payment';
+
+  @override
+  String get paymentResultErrorBody =>
+      'Check your connection and try again. If you already paid, it isn\'t lost: Premium activates once Mercado Pago confirms it.';
+
+  @override
+  String get paymentResultPlanMonthly => 'Monthly Premium plan';
+
+  @override
+  String get paymentResultPlanAnnual => 'Annual Premium plan';
+
+  @override
+  String paymentResultReference(int id) {
+    return 'PAYMENT REFERENCE #$id';
+  }
+
+  @override
+  String get paymentResultGoHome => 'Go home';
+
+  @override
+  String get paymentResultBackToPlans => 'Back to plans';
+
+  @override
+  String get paymentResultRetry => 'Check again';
+
+  @override
+  String get cardPaymentTitle => 'Pay by card';
+
+  @override
+  String cardPaymentSummary(String plan, String price) {
+    return '$plan · $price';
+  }
+
+  @override
+  String get cardPaymentTestModeHint =>
+      'Mercado Pago test mode: no real money is charged. Use card 4013 5406 8274 6260, expiry 11/30, code 123. Holder APRO = approved, CONT = in progress, any other name = declined.';
+
+  @override
+  String get cardPaymentNumberLabel => 'Card number';
+
+  @override
+  String get cardPaymentNumberInvalid => 'Invalid card number';
+
+  @override
+  String get cardPaymentBrandUnsupported =>
+      'We accept Visa, Mastercard, American Express and Diners';
+
+  @override
+  String get cardPaymentHolderLabel => 'Cardholder name';
+
+  @override
+  String get cardPaymentHolderHint => 'As shown on the card';
+
+  @override
+  String get cardPaymentHolderInvalid => 'Enter the cardholder name';
+
+  @override
+  String get cardPaymentExpiryLabel => 'Expiry';
+
+  @override
+  String get cardPaymentExpiryInvalid => 'Invalid or expired date';
+
+  @override
+  String get cardPaymentCvvLabel => 'Security code';
+
+  @override
+  String cardPaymentCvvInvalid(int digits) {
+    return 'Must be $digits digits';
+  }
+
+  @override
+  String get cardPaymentDocTypeLabel => 'Type';
+
+  @override
+  String get cardPaymentDocNumberLabel => 'Holder\'s ID number';
+
+  @override
+  String get cardPaymentDocInvalid => 'Invalid ID number';
+
+  @override
+  String cardPaymentPayButton(String price) {
+    return 'Pay $price';
+  }
+
+  @override
+  String get cardPaymentProcessing => 'Processing payment…';
+
+  @override
+  String get cardPaymentSecureNote =>
+      'PAYMENT PROCESSED BY MERCADO PAGO · TRAVELGUARD DOESN\'T STORE YOUR CARD DETAILS';
+
+  @override
+  String get cardPaymentError =>
+      'We couldn\'t process the payment. Check the card details and try again; nothing was charged.';
+
+  @override
+  String get appShellNavPromos => 'Deals';
+
+  @override
+  String get appShellNavPlans => 'Plans';
+
+  @override
+  String get subscriptionsBenefitPromos =>
+      'Exclusive deals from nearby businesses';
+
+  @override
+  String get subscriptionsBenefitDailyAlerts =>
+      'How much of today\'s budget you\'ve used, with alerts at 75% and 100%';
+
+  @override
+  String get subscriptionsBenefitOverspendWarning =>
+      'A warning before logging an expense that exceeds the day\'s budget';
+
+  @override
+  String get subscriptionsBenefitReminder =>
+      'A reminder at 11 PM if you haven\'t logged any expenses';
+
+  @override
+  String get premiumGateBadge => 'PREMIUM ONLY';
+
+  @override
+  String get premiumGateButton => 'See Premium plans';
+
+  @override
+  String get premiumGateCompactButton => 'Go Premium';
+
+  @override
+  String get dailyBudgetLockedTitle => 'Daily budget alerts';
+
+  @override
+  String get dailyBudgetLockedDescription =>
+      'With Premium you see how much you\'ve spent today and get alerts at 75% and 100%.';
+
+  @override
+  String placeDetailsPromosLockedTitle(int count) {
+    return 'Exclusive deals ($count)';
+  }
+
+  @override
+  String get placeDetailsPromosLockedDescription =>
+      'This business has deals for Premium members only.';
+
+  @override
+  String get promosEyebrow => 'PREMIUM ONLY';
+
+  @override
+  String get promosTitle => 'Deals';
+
+  @override
+  String get promosSubtitle =>
+      'Deals businesses publish only for Premium travelers.';
+
+  @override
+  String get promosLockedTitle => 'Exclusive deals for Premium members';
+
+  @override
+  String get promosLockedDescription =>
+      'Subscribe to see the deals nearby businesses publish only for Premium members.';
+
+  @override
+  String get promosLoadError =>
+      'We couldn\'t load the deals. Please try again.';
+
+  @override
+  String get promosEmpty => 'There are no active deals yet. Check back soon.';
+
+  @override
+  String promosValidUntil(String date) {
+    return 'UNTIL $date';
+  }
 }

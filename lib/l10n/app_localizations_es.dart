@@ -2142,7 +2142,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionsHeaderSubtitle =>
-      'Acceso a todas las características de viajes y experiencias';
+      'Promociones exclusivas y alertas para que tu presupuesto diario no se salga de control';
 
   @override
   String get subscriptionsBillingMonthly => 'Mensual';
@@ -2151,45 +2151,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get subscriptionsBillingAnnual => 'Anual (-20%)';
 
   @override
-  String get subscriptionsPlanTouristName => 'Turista';
+  String get subscriptionsPlanTouristName => 'Premium';
 
   @override
-  String get subscriptionsPlanTouristSubtitle => 'Perfecto para exploradores';
+  String get subscriptionsPlanTouristSubtitle =>
+      'Para viajeros que cuidan su presupuesto';
 
   @override
   String get subscriptionsPeriodMonth => '/mes';
 
   @override
   String get subscriptionsPeriodYear => '/año';
-
-  @override
-  String get subscriptionsFeatureMobile1 => 'Busca viajes y experiencias';
-
-  @override
-  String get subscriptionsFeatureMobile2 => 'Califica y comenta';
-
-  @override
-  String get subscriptionsFeatureMobile3 => 'Guarda favoritos';
-
-  @override
-  String get subscriptionsFeatureMobile4 => 'Acceso móvil completo';
-
-  @override
-  String get subscriptionsFeatureMobile5 => 'Soporte por email';
-
-  @override
-  String get subscriptionsFeatureDesktop1 => 'Guarda tus lugares favoritos';
-
-  @override
-  String get subscriptionsFeatureDesktop2 => 'Conoce en qué gastas más';
-
-  @override
-  String get subscriptionsFeatureDesktop3 =>
-      'Compara tu presupuesto y tus gastos';
-
-  @override
-  String get subscriptionsFeatureDesktop4 =>
-      'Escanea tus recibos automáticamente';
 
   @override
   String get subscriptionsPlanSelectedButton => 'Plan seleccionado';
@@ -2222,7 +2194,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionsFaqPaymentMethodsAnswer =>
-      'Aceptamos tarjetas de crédito, débito, transferencia bancaria y billeteras digitales.';
+      'Aceptamos tarjetas de crédito y débito Visa, Mastercard, American Express y Diners, procesadas por Mercado Pago.';
 
   @override
   String get subscriptionsFooterNote =>
@@ -2240,7 +2212,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionsDialogBody =>
-      'Al hacer clic en \"Continuar\", serás redirigido a la pasarela de pago para completar tu suscripción.';
+      'Al hacer clic en \"Continuar\" ingresarás los datos de tu tarjeta. El pago lo procesa Mercado Pago.';
 
   @override
   String get subscriptionsDialogCancelButton => 'Cancelar';
@@ -2362,4 +2334,223 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get addExpenseOverBudgetConfirm => 'Registrar igual';
+
+  @override
+  String subscriptionsActivePlanBanner(String date) {
+    return 'Eres Premium hasta el $date. Si pagas otro plan, se suma a partir de esa fecha.';
+  }
+
+  @override
+  String get subscriptionsCheckoutErrorSnackbar =>
+      'No se pudo abrir la pasarela de pago. Intenta de nuevo.';
+
+  @override
+  String get paymentResultChecking => 'Confirmando tu pago con Mercado Pago…';
+
+  @override
+  String get paymentResultApprovedTitle => '¡Pago aprobado!';
+
+  @override
+  String paymentResultApprovedBody(String date) {
+    return 'Ya eres Premium. Tu suscripción está activa hasta el $date.';
+  }
+
+  @override
+  String get paymentResultApprovedBodyNoDate =>
+      'Ya eres Premium. Tu suscripción quedó activa.';
+
+  @override
+  String get paymentResultPendingTitle => 'Pago en proceso';
+
+  @override
+  String get paymentResultPendingBody =>
+      'Mercado Pago todavía está procesando tu pago. Te activamos Premium apenas se apruebe.';
+
+  @override
+  String get paymentResultRejectedTitle => 'Pago rechazado';
+
+  @override
+  String get paymentResultRejectedBody =>
+      'Tu medio de pago fue rechazado y no se hizo ningún cobro. Puedes intentarlo con otro.';
+
+  @override
+  String get paymentResultCancelledTitle => 'No se completó el pago';
+
+  @override
+  String get paymentResultCancelledBody =>
+      'Saliste del checkout antes de pagar. No se hizo ningún cobro.';
+
+  @override
+  String get paymentResultErrorTitle => 'No pudimos confirmar el pago';
+
+  @override
+  String get paymentResultErrorBody =>
+      'Revisa tu conexión e intenta de nuevo. Si ya pagaste, el cobro no se pierde: Premium se activa en cuanto Mercado Pago nos confirme.';
+
+  @override
+  String get paymentResultPlanMonthly => 'Plan Premium mensual';
+
+  @override
+  String get paymentResultPlanAnnual => 'Plan Premium anual';
+
+  @override
+  String paymentResultReference(int id) {
+    return 'REFERENCIA DE PAGO #$id';
+  }
+
+  @override
+  String get paymentResultGoHome => 'Ir al inicio';
+
+  @override
+  String get paymentResultBackToPlans => 'Volver a los planes';
+
+  @override
+  String get paymentResultRetry => 'Volver a consultar';
+
+  @override
+  String get cardPaymentTitle => 'Pago con tarjeta';
+
+  @override
+  String cardPaymentSummary(String plan, String price) {
+    return '$plan · $price';
+  }
+
+  @override
+  String get cardPaymentTestModeHint =>
+      'Modo de prueba de Mercado Pago: no se cobra dinero real. Usa la tarjeta 4013 5406 8274 6260, vencimiento 11/30, código 123. Titular APRO = aprobado, CONT = en proceso, cualquier otro nombre = rechazado.';
+
+  @override
+  String get cardPaymentNumberLabel => 'Número de tarjeta';
+
+  @override
+  String get cardPaymentNumberInvalid => 'Número de tarjeta inválido';
+
+  @override
+  String get cardPaymentBrandUnsupported =>
+      'Aceptamos Visa, Mastercard, American Express y Diners';
+
+  @override
+  String get cardPaymentHolderLabel => 'Nombre del titular';
+
+  @override
+  String get cardPaymentHolderHint => 'Como aparece en la tarjeta';
+
+  @override
+  String get cardPaymentHolderInvalid => 'Escribe el nombre del titular';
+
+  @override
+  String get cardPaymentExpiryLabel => 'Vencimiento';
+
+  @override
+  String get cardPaymentExpiryInvalid => 'Fecha inválida o vencida';
+
+  @override
+  String get cardPaymentCvvLabel => 'Código de seguridad';
+
+  @override
+  String cardPaymentCvvInvalid(int digits) {
+    return 'Debe tener $digits dígitos';
+  }
+
+  @override
+  String get cardPaymentDocTypeLabel => 'Tipo';
+
+  @override
+  String get cardPaymentDocNumberLabel => 'Documento del titular';
+
+  @override
+  String get cardPaymentDocInvalid => 'Documento inválido';
+
+  @override
+  String cardPaymentPayButton(String price) {
+    return 'Pagar $price';
+  }
+
+  @override
+  String get cardPaymentProcessing => 'Procesando pago…';
+
+  @override
+  String get cardPaymentSecureNote =>
+      'PAGO PROCESADO POR MERCADO PAGO · TRAVELGUARD NO GUARDA LOS DATOS DE TU TARJETA';
+
+  @override
+  String get cardPaymentError =>
+      'No pudimos procesar el pago. Revisa los datos de la tarjeta e intenta de nuevo; no se hizo ningún cobro.';
+
+  @override
+  String get appShellNavPromos => 'Promociones';
+
+  @override
+  String get appShellNavPlans => 'Planes';
+
+  @override
+  String get subscriptionsBenefitPromos =>
+      'Promociones exclusivas de comercios cercanos';
+
+  @override
+  String get subscriptionsBenefitDailyAlerts =>
+      'Cuánto llevas del presupuesto de hoy, con alertas al 75% y al 100%';
+
+  @override
+  String get subscriptionsBenefitOverspendWarning =>
+      'Aviso antes de registrar un gasto que supera el presupuesto del día';
+
+  @override
+  String get subscriptionsBenefitReminder =>
+      'Recordatorio a las 11 PM si no registraste gastos';
+
+  @override
+  String get premiumGateBadge => 'EXCLUSIVO PREMIUM';
+
+  @override
+  String get premiumGateButton => 'Ver planes Premium';
+
+  @override
+  String get premiumGateCompactButton => 'Hazte Premium';
+
+  @override
+  String get dailyBudgetLockedTitle => 'Alertas del presupuesto diario';
+
+  @override
+  String get dailyBudgetLockedDescription =>
+      'Con Premium ves cuánto llevas hoy y te avisamos al 75% y al 100%.';
+
+  @override
+  String placeDetailsPromosLockedTitle(int count) {
+    return 'Promociones exclusivas ($count)';
+  }
+
+  @override
+  String get placeDetailsPromosLockedDescription =>
+      'Este comercio tiene ofertas solo para usuarios Premium.';
+
+  @override
+  String get promosEyebrow => 'EXCLUSIVO PREMIUM';
+
+  @override
+  String get promosTitle => 'Promociones';
+
+  @override
+  String get promosSubtitle =>
+      'Ofertas que los comercios publican solo para viajeros Premium.';
+
+  @override
+  String get promosLockedTitle => 'Promociones exclusivas para Premium';
+
+  @override
+  String get promosLockedDescription =>
+      'Suscríbete para ver las ofertas que los comercios cercanos publican solo para miembros Premium.';
+
+  @override
+  String get promosLoadError =>
+      'No pudimos cargar las promociones. Intenta de nuevo.';
+
+  @override
+  String get promosEmpty =>
+      'Todavía no hay promociones vigentes. Vuelve pronto.';
+
+  @override
+  String promosValidUntil(String date) {
+    return 'HASTA $date';
+  }
 }

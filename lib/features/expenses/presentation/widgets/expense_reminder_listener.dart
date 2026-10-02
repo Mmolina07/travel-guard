@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../../trips/presentation/pages/trip_model.dart';
 import '../../providers/budget_alerts_provider.dart';
 
@@ -12,13 +13,18 @@ import '../../providers/budget_alerts_provider.dart';
 /// `builder` de `MaterialApp.router`, por encima del `Navigator`, así
 /// que abre el diálogo con el contexto del navegador de [router].
 class ExpenseReminderListener extends StatefulWidget {
-  const ExpenseReminderListener({super.key, required this.router, required this.child});
+  const ExpenseReminderListener({
+    super.key,
+    required this.router,
+    required this.child,
+  });
 
   final GoRouter router;
   final Widget child;
 
   @override
-  State<ExpenseReminderListener> createState() => _ExpenseReminderListenerState();
+  State<ExpenseReminderListener> createState() =>
+      _ExpenseReminderListenerState();
 }
 
 class _ExpenseReminderListenerState extends State<ExpenseReminderListener> {
@@ -53,28 +59,56 @@ class _ExpenseReminderListenerState extends State<ExpenseReminderListener> {
     if (provider == null || navContext == null || _showing) return;
     final trips = provider.pendingReminder;
     if (trips.isEmpty) return;
+    // El recordatorio de las 11 PM es Premium (HU-24).
+    if (!context.read<SubscriptionProvider>().isPremium) {
+      provider.dismissReminder();
+      return;
+    }
 
     _showing = true;
     final l10n = navContext.l10n;
     final target = await showDialog<Trip>(
       context: navContext,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.notifications_active_outlined, color: AppColors.inkSoft, size: 32),
+        icon: const Icon(
+          Icons.notifications_active_outlined,
+          color: AppColors.inkSoft,
+          size: 32,
+        ),
         title: Text(l10n.expenseReminderTitle, style: AppText.display(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.expenseReminderMessage, style: AppText.ui(14, color: AppColors.textMuted)),
+            Text(
+              l10n.expenseReminderMessage,
+              style: AppText.ui(14, color: AppColors.textMuted),
+            ),
             const SizedBox(height: 12),
             for (final trip in trips)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.luggage_outlined, color: AppColors.ink),
-                title: Text(trip.name, style: AppText.ui(14, weight: FontWeight.w600)),
-                subtitle: Text(trip.destination, style: AppText.ui(12, color: AppColors.textMuted)),
-                trailing: const Icon(Icons.chevron_right, color: AppColors.inkSoft),
-                onTap: () => Navigator.pop(ctx, trip),
+              // Material propio: el fondo del diálogo tapa el ink del ListTile.
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.luggage_outlined,
+                    color: AppColors.ink,
+                  ),
+                  title: Text(
+                    trip.name,
+                    style: AppText.ui(14, weight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    trip.destination,
+                    style: AppText.ui(12, color: AppColors.textMuted),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.inkSoft,
+                  ),
+                  onTap: () => Navigator.pop(ctx, trip),
+                ),
               ),
           ],
         ),

@@ -384,6 +384,12 @@ class _MapScreenState extends State<MapScreen> {
         break;
       case AppSection.mapa:
         break; // ya estamos aquí.
+      case AppSection.promociones:
+        context.go('/promociones');
+        break;
+      case AppSection.suscripciones:
+        context.go('/suscripciones');
+        break;
     }
   }
 

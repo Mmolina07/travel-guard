@@ -9,6 +9,7 @@ import '../../data/models/map_place.dart';
 import '../../data/places_map_repository.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../subscriptions/presentation/widgets/premium_gate.dart';
 import 'category_label.dart';
 
 /// Vista de detalles de un comercio/lugar de interés (TG-152), usada
@@ -227,33 +228,63 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                     style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                   );
                 }
+                // HU-24: las promociones de este comercio solo las ven
+                // los Premium (TG-298); al resto se les invita a
+                // suscribirse en su lugar.
+                final promos = actividades
+                    .where((a) => a.categoria == Actividad.categoriaPromocion)
+                    .toList();
+                final regulares = actividades
+                    .where((a) => a.categoria != Actividad.categoriaPromocion)
+                    .toList();
                 return Column(
-                  children: actividades
-                      .map((a) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle_outline,
-                                    size: 16, color: AppColors.ink),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(a.nombre)),
-                                if (a.precio != null)
-                                  Text(
-                                    context.formatMoney(a.precio!),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.ink,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ))
-                      .toList(),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...regulares.map(_buildActividadRow),
+                    if (promos.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      PremiumGate(
+                        compact: true,
+                        icon: Icons.local_offer_outlined,
+                        title: context.l10n.placeDetailsPromosLockedTitle(promos.length),
+                        description: context.l10n.placeDetailsPromosLockedDescription,
+                        child: Column(
+                          children: promos.map(_buildActividadRow).toList(),
+                        ),
+                      ),
+                    ],
+                  ],
                 );
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActividadRow(Actividad a) {
+    final esPromo = a.categoria == Actividad.categoriaPromocion;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            esPromo ? Icons.local_offer_outlined : Icons.check_circle_outline,
+            size: 16,
+            color: esPromo ? AppColors.inkSoft : AppColors.ink,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(a.nombre)),
+          if (a.precio != null)
+            Text(
+              context.formatMoney(a.precio!),
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
+            ),
+        ],
       ),
     );
   }

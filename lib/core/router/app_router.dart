@@ -9,6 +9,7 @@ import '../../features/auth/providers/app_auth_provider.dart';
 import '../../features/places_map/presentation/comercios_cercanos_screen.dart';
 import '../../features/places_map/presentation/home_screen_comercio.dart';
 import '../../features/places_map/presentation/map_screen.dart';
+import '../../features/places_map/presentation/promociones_screen.dart';
 import '../../features/trips/data/trip_repository.dart';
 import '../../features/trips/presentation/pages/create_trip_screen.dart';
 import '../../features/trips/presentation/pages/home_screen_client.dart';
@@ -18,6 +19,8 @@ import '../theme/app_theme.dart';
 import '../utils/page_title.dart';
 import '../../features/auth/presentation/pages/config_screen.dart';
 import '../../../features/subscriptions/presentation/pages/subscriptions_screen.dart';
+import '../../features/subscriptions/data/models/suscripcion_model.dart';
+import '../../features/subscriptions/presentation/pages/payment_result_screen.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
 /// atrás del navegador funcional y `/crear` como ruta de diálogo. Antes
@@ -85,6 +88,28 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Suscripciones');
             return const SubscriptionsScreen();
+          },
+        ),
+        // TG-291: resultado del pago con tarjeta.
+        GoRoute(
+          path: '/suscripcion/resultado',
+          name: 'paymentResult',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Resultado del pago');
+            final extra = state.extra;
+            return PaymentResultScreen(
+              pagoId: int.tryParse(state.uri.queryParameters['pago_id'] ?? ''),
+              initial: extra is ResultadoPago ? extra : null,
+            );
+          },
+        ),
+        // HU-24: restringida a Premium por `PremiumGate` (TG-298).
+        GoRoute(
+          path: '/promociones',
+          name: 'promociones',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Promociones');
+            return const PromocionesScreen();
           },
         ),
         GoRoute(

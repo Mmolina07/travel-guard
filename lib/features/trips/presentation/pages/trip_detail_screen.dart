@@ -17,6 +17,8 @@ import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../../expenses/presentation/widgets/budget_alert_card.dart';
 import '../../../expenses/providers/budget_alerts_provider.dart';
 import '../../../expenses/utils/daily_budget_calculator.dart';
+import '../../../subscriptions/presentation/widgets/premium_gate.dart';
+import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../data/models/trip_collaborator.dart';
 import '../../data/models/trip_history_entry.dart';
 import '../../data/trip_repository.dart';
@@ -131,9 +133,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     if (_isLoadingGastos || trip.id == null || !calc.isTripDay(DateTime.now())) {
       return const SizedBox.shrink();
     }
+    // HU-24 / TG-298: las alertas del presupuesto diario son Premium; a
+    // los demás se les muestra la invitación en el mismo lugar.
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: BudgetAlertCard(status: calc.today),
+      child: PremiumGate(
+        compact: true,
+        icon: Icons.notifications_active_outlined,
+        title: context.l10n.dailyBudgetLockedTitle,
+        description: context.l10n.dailyBudgetLockedDescription,
+        child: BudgetAlertCard(status: calc.today),
+      ),
     );
   }
 
@@ -283,7 +293,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       categorias: _categorias,
       tripStartDate: startDate,
       tripEndDate: endDate.isBefore(startDate) ? startDate : endDate,
-      dailyBudget: _dailyBudget,
+      // TG-278 (advertencia al registrar) es parte de Premium.
+      dailyBudget: context.read<SubscriptionProvider>().isPremium ? _dailyBudget : null,
     );
     if (result == null || !mounted) return;
 
@@ -424,6 +435,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         break;
       case AppSection.mapa:
         context.go('/mapa');
+        break;
+      case AppSection.promociones:
+        context.go('/promociones');
+        break;
+      case AppSection.suscripciones:
+        context.go('/suscripciones');
         break;
     }
   }

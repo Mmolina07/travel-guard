@@ -3839,7 +3839,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsHeaderSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Acceso a todas las características de viajes y experiencias'**
+  /// **'Promociones exclusivas y alertas para que tu presupuesto diario no se salga de control'**
   String get subscriptionsHeaderSubtitle;
 
   /// No description provided for @subscriptionsBillingMonthly.
@@ -3857,13 +3857,13 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsPlanTouristName.
   ///
   /// In es, this message translates to:
-  /// **'Turista'**
+  /// **'Premium'**
   String get subscriptionsPlanTouristName;
 
   /// No description provided for @subscriptionsPlanTouristSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Perfecto para exploradores'**
+  /// **'Para viajeros que cuidan su presupuesto'**
   String get subscriptionsPlanTouristSubtitle;
 
   /// No description provided for @subscriptionsPeriodMonth.
@@ -3877,60 +3877,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'/año'**
   String get subscriptionsPeriodYear;
-
-  /// No description provided for @subscriptionsFeatureMobile1.
-  ///
-  /// In es, this message translates to:
-  /// **'Busca viajes y experiencias'**
-  String get subscriptionsFeatureMobile1;
-
-  /// No description provided for @subscriptionsFeatureMobile2.
-  ///
-  /// In es, this message translates to:
-  /// **'Califica y comenta'**
-  String get subscriptionsFeatureMobile2;
-
-  /// No description provided for @subscriptionsFeatureMobile3.
-  ///
-  /// In es, this message translates to:
-  /// **'Guarda favoritos'**
-  String get subscriptionsFeatureMobile3;
-
-  /// No description provided for @subscriptionsFeatureMobile4.
-  ///
-  /// In es, this message translates to:
-  /// **'Acceso móvil completo'**
-  String get subscriptionsFeatureMobile4;
-
-  /// No description provided for @subscriptionsFeatureMobile5.
-  ///
-  /// In es, this message translates to:
-  /// **'Soporte por email'**
-  String get subscriptionsFeatureMobile5;
-
-  /// No description provided for @subscriptionsFeatureDesktop1.
-  ///
-  /// In es, this message translates to:
-  /// **'Guarda tus lugares favoritos'**
-  String get subscriptionsFeatureDesktop1;
-
-  /// No description provided for @subscriptionsFeatureDesktop2.
-  ///
-  /// In es, this message translates to:
-  /// **'Conoce en qué gastas más'**
-  String get subscriptionsFeatureDesktop2;
-
-  /// No description provided for @subscriptionsFeatureDesktop3.
-  ///
-  /// In es, this message translates to:
-  /// **'Compara tu presupuesto y tus gastos'**
-  String get subscriptionsFeatureDesktop3;
-
-  /// No description provided for @subscriptionsFeatureDesktop4.
-  ///
-  /// In es, this message translates to:
-  /// **'Escanea tus recibos automáticamente'**
-  String get subscriptionsFeatureDesktop4;
 
   /// No description provided for @subscriptionsPlanSelectedButton.
   ///
@@ -3983,7 +3929,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsFaqPaymentMethodsAnswer.
   ///
   /// In es, this message translates to:
-  /// **'Aceptamos tarjetas de crédito, débito, transferencia bancaria y billeteras digitales.'**
+  /// **'Aceptamos tarjetas de crédito y débito Visa, Mastercard, American Express y Diners, procesadas por Mercado Pago.'**
   String get subscriptionsFaqPaymentMethodsAnswer;
 
   /// No description provided for @subscriptionsFooterNote.
@@ -4007,7 +3953,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsDialogBody.
   ///
   /// In es, this message translates to:
-  /// **'Al hacer clic en \"Continuar\", serás redirigido a la pasarela de pago para completar tu suscripción.'**
+  /// **'Al hacer clic en \"Continuar\" ingresarás los datos de tu tarjeta. El pago lo procesa Mercado Pago.'**
   String get subscriptionsDialogBody;
 
   /// No description provided for @subscriptionsDialogCancelButton.
@@ -4207,6 +4153,372 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Registrar igual'**
   String get addExpenseOverBudgetConfirm;
+
+  /// No description provided for @subscriptionsActivePlanBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'Eres Premium hasta el {date}. Si pagas otro plan, se suma a partir de esa fecha.'**
+  String subscriptionsActivePlanBanner(String date);
+
+  /// No description provided for @subscriptionsCheckoutErrorSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la pasarela de pago. Intenta de nuevo.'**
+  String get subscriptionsCheckoutErrorSnackbar;
+
+  /// No description provided for @paymentResultChecking.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmando tu pago con Mercado Pago…'**
+  String get paymentResultChecking;
+
+  /// No description provided for @paymentResultApprovedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Pago aprobado!'**
+  String get paymentResultApprovedTitle;
+
+  /// No description provided for @paymentResultApprovedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya eres Premium. Tu suscripción está activa hasta el {date}.'**
+  String paymentResultApprovedBody(String date);
+
+  /// No description provided for @paymentResultApprovedBodyNoDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya eres Premium. Tu suscripción quedó activa.'**
+  String get paymentResultApprovedBodyNoDate;
+
+  /// No description provided for @paymentResultPendingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago en proceso'**
+  String get paymentResultPendingTitle;
+
+  /// No description provided for @paymentResultPendingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Mercado Pago todavía está procesando tu pago. Te activamos Premium apenas se apruebe.'**
+  String get paymentResultPendingBody;
+
+  /// No description provided for @paymentResultRejectedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago rechazado'**
+  String get paymentResultRejectedTitle;
+
+  /// No description provided for @paymentResultRejectedBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu medio de pago fue rechazado y no se hizo ningún cobro. Puedes intentarlo con otro.'**
+  String get paymentResultRejectedBody;
+
+  /// No description provided for @paymentResultCancelledTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No se completó el pago'**
+  String get paymentResultCancelledTitle;
+
+  /// No description provided for @paymentResultCancelledBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Saliste del checkout antes de pagar. No se hizo ningún cobro.'**
+  String get paymentResultCancelledBody;
+
+  /// No description provided for @paymentResultErrorTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos confirmar el pago'**
+  String get paymentResultErrorTitle;
+
+  /// No description provided for @paymentResultErrorBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa tu conexión e intenta de nuevo. Si ya pagaste, el cobro no se pierde: Premium se activa en cuanto Mercado Pago nos confirme.'**
+  String get paymentResultErrorBody;
+
+  /// No description provided for @paymentResultPlanMonthly.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan Premium mensual'**
+  String get paymentResultPlanMonthly;
+
+  /// No description provided for @paymentResultPlanAnnual.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan Premium anual'**
+  String get paymentResultPlanAnnual;
+
+  /// No description provided for @paymentResultReference.
+  ///
+  /// In es, this message translates to:
+  /// **'REFERENCIA DE PAGO #{id}'**
+  String paymentResultReference(int id);
+
+  /// No description provided for @paymentResultGoHome.
+  ///
+  /// In es, this message translates to:
+  /// **'Ir al inicio'**
+  String get paymentResultGoHome;
+
+  /// No description provided for @paymentResultBackToPlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a los planes'**
+  String get paymentResultBackToPlans;
+
+  /// No description provided for @paymentResultRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a consultar'**
+  String get paymentResultRetry;
+
+  /// No description provided for @cardPaymentTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago con tarjeta'**
+  String get cardPaymentTitle;
+
+  /// No description provided for @cardPaymentSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'{plan} · {price}'**
+  String cardPaymentSummary(String plan, String price);
+
+  /// No description provided for @cardPaymentTestModeHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo de prueba de Mercado Pago: no se cobra dinero real. Usa la tarjeta 4013 5406 8274 6260, vencimiento 11/30, código 123. Titular APRO = aprobado, CONT = en proceso, cualquier otro nombre = rechazado.'**
+  String get cardPaymentTestModeHint;
+
+  /// No description provided for @cardPaymentNumberLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de tarjeta'**
+  String get cardPaymentNumberLabel;
+
+  /// No description provided for @cardPaymentNumberInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Número de tarjeta inválido'**
+  String get cardPaymentNumberInvalid;
+
+  /// No description provided for @cardPaymentBrandUnsupported.
+  ///
+  /// In es, this message translates to:
+  /// **'Aceptamos Visa, Mastercard, American Express y Diners'**
+  String get cardPaymentBrandUnsupported;
+
+  /// No description provided for @cardPaymentHolderLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del titular'**
+  String get cardPaymentHolderLabel;
+
+  /// No description provided for @cardPaymentHolderHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Como aparece en la tarjeta'**
+  String get cardPaymentHolderHint;
+
+  /// No description provided for @cardPaymentHolderInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el nombre del titular'**
+  String get cardPaymentHolderInvalid;
+
+  /// No description provided for @cardPaymentExpiryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Vencimiento'**
+  String get cardPaymentExpiryLabel;
+
+  /// No description provided for @cardPaymentExpiryInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha inválida o vencida'**
+  String get cardPaymentExpiryInvalid;
+
+  /// No description provided for @cardPaymentCvvLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de seguridad'**
+  String get cardPaymentCvvLabel;
+
+  /// No description provided for @cardPaymentCvvInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Debe tener {digits} dígitos'**
+  String cardPaymentCvvInvalid(int digits);
+
+  /// No description provided for @cardPaymentDocTypeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo'**
+  String get cardPaymentDocTypeLabel;
+
+  /// No description provided for @cardPaymentDocNumberLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Documento del titular'**
+  String get cardPaymentDocNumberLabel;
+
+  /// No description provided for @cardPaymentDocInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Documento inválido'**
+  String get cardPaymentDocInvalid;
+
+  /// No description provided for @cardPaymentPayButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar {price}'**
+  String cardPaymentPayButton(String price);
+
+  /// No description provided for @cardPaymentProcessing.
+  ///
+  /// In es, this message translates to:
+  /// **'Procesando pago…'**
+  String get cardPaymentProcessing;
+
+  /// No description provided for @cardPaymentSecureNote.
+  ///
+  /// In es, this message translates to:
+  /// **'PAGO PROCESADO POR MERCADO PAGO · TRAVELGUARD NO GUARDA LOS DATOS DE TU TARJETA'**
+  String get cardPaymentSecureNote;
+
+  /// No description provided for @cardPaymentError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos procesar el pago. Revisa los datos de la tarjeta e intenta de nuevo; no se hizo ningún cobro.'**
+  String get cardPaymentError;
+
+  /// No description provided for @appShellNavPromos.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones'**
+  String get appShellNavPromos;
+
+  /// No description provided for @appShellNavPlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Planes'**
+  String get appShellNavPlans;
+
+  /// No description provided for @subscriptionsBenefitPromos.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones exclusivas de comercios cercanos'**
+  String get subscriptionsBenefitPromos;
+
+  /// No description provided for @subscriptionsBenefitDailyAlerts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuánto llevas del presupuesto de hoy, con alertas al 75% y al 100%'**
+  String get subscriptionsBenefitDailyAlerts;
+
+  /// No description provided for @subscriptionsBenefitOverspendWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Aviso antes de registrar un gasto que supera el presupuesto del día'**
+  String get subscriptionsBenefitOverspendWarning;
+
+  /// No description provided for @subscriptionsBenefitReminder.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorio a las 11 PM si no registraste gastos'**
+  String get subscriptionsBenefitReminder;
+
+  /// No description provided for @premiumGateBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'EXCLUSIVO PREMIUM'**
+  String get premiumGateBadge;
+
+  /// No description provided for @premiumGateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver planes Premium'**
+  String get premiumGateButton;
+
+  /// No description provided for @premiumGateCompactButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Hazte Premium'**
+  String get premiumGateCompactButton;
+
+  /// No description provided for @dailyBudgetLockedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alertas del presupuesto diario'**
+  String get dailyBudgetLockedTitle;
+
+  /// No description provided for @dailyBudgetLockedDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Con Premium ves cuánto llevas hoy y te avisamos al 75% y al 100%.'**
+  String get dailyBudgetLockedDescription;
+
+  /// No description provided for @placeDetailsPromosLockedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones exclusivas ({count})'**
+  String placeDetailsPromosLockedTitle(int count);
+
+  /// No description provided for @placeDetailsPromosLockedDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Este comercio tiene ofertas solo para usuarios Premium.'**
+  String get placeDetailsPromosLockedDescription;
+
+  /// No description provided for @promosEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'EXCLUSIVO PREMIUM'**
+  String get promosEyebrow;
+
+  /// No description provided for @promosTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones'**
+  String get promosTitle;
+
+  /// No description provided for @promosSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ofertas que los comercios publican solo para viajeros Premium.'**
+  String get promosSubtitle;
+
+  /// No description provided for @promosLockedTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones exclusivas para Premium'**
+  String get promosLockedTitle;
+
+  /// No description provided for @promosLockedDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscríbete para ver las ofertas que los comercios cercanos publican solo para miembros Premium.'**
+  String get promosLockedDescription;
+
+  /// No description provided for @promosLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar las promociones. Intenta de nuevo.'**
+  String get promosLoadError;
+
+  /// No description provided for @promosEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay promociones vigentes. Vuelve pronto.'**
+  String get promosEmpty;
+
+  /// No description provided for @promosValidUntil.
+  ///
+  /// In es, this message translates to:
+  /// **'HASTA {date}'**
+  String promosValidUntil(String date);
 }
 
 class _AppLocalizationsDelegate

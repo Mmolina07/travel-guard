@@ -53,6 +53,32 @@ class PlacesMapRepository {
         .toList();
   }
 
+  /// HU-24: promociones exclusivas para Premium — actividades que los
+  /// comercios publican con categoría "Promoción", activas y todavía
+  /// vigentes. Quién las puede ver lo decide `PremiumGate` (TG-298).
+  Future<List<Promocion>> fetchPromociones() async {
+    final hoy = DateTime.now();
+    final hoyIso =
+        '${hoy.year.toString().padLeft(4, '0')}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
+    final rows = await _client
+        .from('actividades')
+        .select('*, comercios(nombre_comercio, direccion)')
+        .eq('categoria', Actividad.categoriaPromocion)
+        .eq('activo', true)
+        .or('fecha_fin.is.null,fecha_fin.gte.$hoyIso')
+        .order('created_at', ascending: false);
+
+    return (rows as List).map((row) {
+      final map = row as Map<String, dynamic>;
+      final comercio = map['comercios'] as Map<String, dynamic>?;
+      return Promocion(
+        actividad: Actividad.fromRow(map),
+        comercioNombre: comercio?['nombre_comercio'] as String?,
+        comercioDireccion: comercio?['direccion'] as String?,
+      );
+    }).toList();
+  }
+
   /// "Mis actividades" del comercio (`home_screen_comercio.dart`): a
   /// diferencia de [fetchActividadesDelLugar] (solo turista, solo
   /// activas), acá el comercio ve también sus pausadas/borrador.
