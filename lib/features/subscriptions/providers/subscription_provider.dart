@@ -64,6 +64,32 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> cancelarSuscripcion() async {
+  final usuarioId = _usuarioId;
+
+  if (usuarioId == null) {
+    throw StateError('No hay un usuario autenticado');
+  }
+
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    await _repository.cancelarSuscripcion(
+      usuarioId: usuarioId,
+    );
+
+    // Volvemos a consultar para que isPremium quede actualizado.
+    await refresh();
+  } finally {
+    if (!_disposed && usuarioId == _usuarioId) {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+
+
   @override
   void dispose() {
     _disposed = true;

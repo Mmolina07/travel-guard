@@ -37,19 +37,24 @@ enum AppSection {
 /// `SingleChildScrollView` con el padding de la retícula.
 class AppShell extends StatefulWidget {
   const AppShell({
-    super.key,
-    required this.section,
-    required this.child,
-    required this.onNavigate,
-    required this.onCreateTrip,
-    this.activeTrip,
-    this.activeTripSpent,
-  });
+  super.key,
+  required this.section,
+  required this.child,
+  required this.onNavigate,
+  required this.onCreateTrip,
+  this.onCancelSubscription,
+  this.activeTrip,
+  this.activeTripSpent,
+});
+
+
 
   final AppSection section;
   final Widget child;
   final ValueChanged<AppSection> onNavigate;
   final VoidCallback onCreateTrip;
+  final VoidCallback? onCancelSubscription;
+
 
   /// Viaje que muestra el resumen de presupuesto del sidebar — cada
   /// pantalla decide cuál tiene sentido mostrar (Inicio: el más
@@ -94,9 +99,11 @@ class _AppShellState extends State<AppShell> {
             section: widget.section,
             onNavigate: widget.onNavigate,
             onCreateTrip: widget.onCreateTrip,
+            onCancelSubscription: widget.onCancelSubscription,
             activeTrip: widget.activeTrip,
             activeTripSpent: widget.activeTripSpent,
           ),
+
           Expanded(
             child: Column(
               children: [
@@ -127,9 +134,11 @@ class _SideNav extends StatelessWidget {
     required this.section,
     required this.onNavigate,
     required this.onCreateTrip,
+    this.onCancelSubscription,
     required this.activeTrip,
     required this.activeTripSpent,
   });
+
 
   final bool collapsed;
   final AppSection section;
@@ -137,6 +146,8 @@ class _SideNav extends StatelessWidget {
   final VoidCallback onCreateTrip;
   final Trip? activeTrip;
   final double? activeTripSpent;
+  final VoidCallback? onCancelSubscription;
+
 
   List<({AppSection section, IconData icon, String label})> _items(
     BuildContext context,
@@ -227,7 +238,11 @@ class _SideNav extends StatelessWidget {
                     spent: activeTripSpent,
                   ),
                   const SizedBox(height: 14),
-                  _ProfileRow(collapsed: collapsed),
+                  _ProfileRow(
+                    collapsed: collapsed,
+                    onCancelSubscription: onCancelSubscription,
+                  ),
+
                 ],
               ),
             ),
@@ -495,9 +510,14 @@ class _BudgetSummary extends StatelessWidget {
 }
 
 class _ProfileRow extends StatelessWidget {
-  const _ProfileRow({required this.collapsed});
+  const _ProfileRow({
+    required this.collapsed,
+    this.onCancelSubscription,
+  });
 
   final bool collapsed;
+  final VoidCallback? onCancelSubscription;
+
 
   @override
   Widget build(BuildContext context) {
@@ -552,7 +572,22 @@ class _ProfileRow extends StatelessWidget {
             ],
           ),
         ),
-        //botón de perfil
+       // Botón cancelar suscripción
+        if (onCancelSubscription != null)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: IconButton(
+              icon: const Icon(
+                Icons.workspace_premium_outlined,
+                size: 18,
+                color: AppColors.error,
+              ),
+              tooltip: 'Cancelar suscripción',
+              onPressed: onCancelSubscription,
+            ),
+          ),
+
+        // Botón configuración
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: IconButton(
@@ -565,7 +600,8 @@ class _ProfileRow extends StatelessWidget {
             onPressed: () => context.go('/configuracion'),
           ),
         ),
-        //botón de cerrar sesión
+
+        // Botón cerrar sesión
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: IconButton(
@@ -578,6 +614,7 @@ class _ProfileRow extends StatelessWidget {
             onPressed: () => _confirmSignOut(context),
           ),
         ),
+
       ],
     );
   }

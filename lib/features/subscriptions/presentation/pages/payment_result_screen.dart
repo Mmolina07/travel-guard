@@ -192,7 +192,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => estado == EstadoPago.aprobado ? context.go('/') : context.go('/suscripciones'),
+            onPressed: () => estado == EstadoPago.aprobado ? context.go('/home-premium') : context.go('/suscripciones'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.ink,
               foregroundColor: AppColors.paper,

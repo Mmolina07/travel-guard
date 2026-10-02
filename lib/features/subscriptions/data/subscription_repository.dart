@@ -118,4 +118,17 @@ class SubscriptionRepository {
       throw PaymentException('$function falló (${e.status}): ${e.details}');
     }
   }
+
+  /// Cancela la suscripción activa del usuario.
+///
+/// La modificación de `suscripciones` se realiza exclusivamente
+/// mediante la Edge Function.
+Future<void> cancelarSuscripcion({
+  required int usuarioId,
+}) async {
+  await _invoke('cancelar-suscripcion', {
+    'usuario_id': usuarioId,
+  });
+}
+
 }

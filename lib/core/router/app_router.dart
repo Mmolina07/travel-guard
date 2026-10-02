@@ -21,6 +21,9 @@ import '../../features/auth/presentation/pages/config_screen.dart';
 import '../../../features/subscriptions/presentation/pages/subscriptions_screen.dart';
 import '../../features/subscriptions/data/models/suscripcion_model.dart';
 import '../../features/subscriptions/presentation/pages/payment_result_screen.dart';
+import '../../features/trips/presentation/pages/home_screen_client_premium.dart';
+import '../../features/subscriptions/providers/subscription_provider.dart';
+import '../../features/trips/presentation/pages/home_screen_client.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
 /// atrás del navegador funcional y `/crear` como ruta de diálogo. Antes
@@ -72,6 +75,23 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Inicio');
             return const _RootHome();
+          },
+        ),
+        GoRoute(
+          path: '/home-premium',
+          name: 'homePremium',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Premium');
+            return const HomeScreenClientPremium();
+          },
+        ),
+
+        GoRoute(
+          path: '/home-normal',
+          name: 'homeNormal',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Normal');
+            return const HomeScreenClient();
           },
         ),
         GoRoute(
@@ -216,9 +236,19 @@ class _RootHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
+    final subscription = context.watch<SubscriptionProvider>();
+    
     if (auth.status == AuthStatus.authenticated) {
       if (auth.comercio != null) return const HomeScreenComercio();
-      if (auth.tourist != null) return const HomeScreenClient();
+      
+      if (auth.tourist != null) {
+        // Si es Premium y la suscripción ya se cargó, mostrar HomeScreenClientPremium
+        if (subscription.isPremium && !subscription.isLoading) {
+          return const HomeScreenClientPremium();
+        }
+        // Si no es Premium o aún está cargando, mostrar HomeScreenClient
+        return const HomeScreenClient();
+      }
     }
     // Sesión aún desconocida, o autenticada pero con el perfil
     // turista/comercio todavía resolviéndose desde Supabase.
