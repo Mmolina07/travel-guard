@@ -55,6 +55,23 @@ class ExpenseRepository {
         .toList();
   }
 
+  /// Gastos de varios viajes en una sola consulta, agrupados por viaje —
+  /// para el cálculo en segundo plano del presupuesto diario (HU-11).
+  Future<Map<int, List<Gasto>>> fetchGastosDeViajes(List<int> viajeIds) async {
+    if (viajeIds.isEmpty) return {};
+    final rows = await _client
+        .from('gastos')
+        .select('*, categorias_gasto(nombre)')
+        .inFilter('viaje_id', viajeIds);
+
+    final byTrip = <int, List<Gasto>>{};
+    for (final row in (rows as List).cast<Map<String, dynamic>>()) {
+      final gasto = Gasto.fromMap(row);
+      byTrip.putIfAbsent(gasto.viajeId, () => []).add(gasto);
+    }
+    return byTrip;
+  }
+
   Future<Gasto> createGasto({
     required int viajeId,
     required int categoriaId,

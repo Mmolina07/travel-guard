@@ -8,6 +8,8 @@ import 'core/router/app_router.dart';
 import 'core/settings/currency_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/app_auth_provider.dart';
+import 'features/expenses/presentation/widgets/expense_reminder_listener.dart';
+import 'features/expenses/providers/budget_alerts_provider.dart';
 import 'features/trips/providers/trip_provider.dart';
 import 'l10n/app_localizations.dart';
 import 'shell/app_shortcuts.dart';
@@ -35,6 +37,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TripProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+        // HU-11: % del presupuesto diario en segundo plano + recordatorio
+        // de las 11:00 PM; sigue la sesión de `AppAuthProvider`.
+        ChangeNotifierProxyProvider<AppAuthProvider, BudgetAlertsProvider>(
+          create: (_) => BudgetAlertsProvider(),
+          update: (_, auth, alerts) => alerts!..updateAuth(auth),
+        ),
       ],
       child: _RoutedApp(),
     );
@@ -74,7 +82,10 @@ class _RoutedAppState extends State<_RoutedApp> {
       routerConfig: _appRouter.router,
       builder: (context, child) => AppShortcuts(
         router: _appRouter.router,
-        child: child ?? const SizedBox.shrink(),
+        child: ExpenseReminderListener(
+          router: _appRouter.router,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }

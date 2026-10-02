@@ -14,6 +14,9 @@ import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/data/models/gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
+import '../../../expenses/presentation/widgets/budget_alert_card.dart';
+import '../../../expenses/providers/budget_alerts_provider.dart';
+import '../../../expenses/utils/daily_budget_calculator.dart';
 import '../../data/models/trip_collaborator.dart';
 import '../../data/models/trip_history_entry.dart';
 import '../../data/trip_repository.dart';
@@ -115,6 +118,24 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   /// solita cada vez que `_gastos` cambia (agregar/eliminar) — "se va
   /// actualizando constantemente".
   double get _gastosTotal => _gastos.fold(0.0, (sum, g) => sum + g.monto);
+
+  /// HU-11: presupuesto diario calculado con los gastos ya cargados —
+  /// se reconstruye en cada `build`, así refleja al instante cada gasto
+  /// que se agrega o borra en esta pantalla.
+  DailyBudgetCalculator get _dailyBudget => DailyBudgetCalculator(trip: trip, gastos: _gastos);
+
+  /// Tarjeta del % del presupuesto de hoy — solo mientras el viaje está
+  /// en curso y ya cargaron los gastos (si no, mostraría 0% falso).
+  Widget _buildTodayBudgetAlert() {
+    final calc = _dailyBudget;
+    if (_isLoadingGastos || trip.id == null || !calc.isTripDay(DateTime.now())) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: BudgetAlertCard(status: calc.today),
+    );
+  }
 
   /// HU-16: dueño, colaboradores e historial del viaje, para el tab
   /// "Grupo". Igual que `_loadGastos`, sin `trip.id` no hay nada que
@@ -262,6 +283,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       categorias: _categorias,
       tripStartDate: startDate,
       tripEndDate: endDate.isBefore(startDate) ? startDate : endDate,
+      dailyBudget: _dailyBudget,
     );
     if (result == null || !mounted) return;
 
@@ -275,6 +297,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       );
       if (!mounted) return;
       setState(() => _gastos = [gasto, ..._gastos]);
+      context.read<BudgetAlertsProvider>().refresh();
       _showSnack(
         context.l10n.tripDetailExpenseAddedSnackbar(context.formatMoney(result.monto), result.categoria.nombre),
         color: AppColors.ink,
@@ -313,6 +336,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       await _expenseRepository.deleteGasto(gasto.id);
       if (!mounted) return;
       setState(() => _gastos = _gastos.where((g) => g.id != gasto.id).toList());
+      context.read<BudgetAlertsProvider>().refresh();
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleDeleteGasto error: $e\n$st');
       if (!mounted) return;
@@ -633,6 +657,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildTodayBudgetAlert(),
         LayoutBuilder(
           builder: (context, constraints) {
             final hospedaje = _buildHospedajeSummaryCard();
@@ -935,6 +960,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildTodayBudgetAlert(),
         _SectionCard(
           title: context.l10n.tripDetailExpensesRegisteredTitle,
           trailing: context.formatMoney(_gastosTotal),
@@ -1438,6 +1464,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               ),
             ),
             const SizedBox(height: 16),
+            _buildTodayBudgetAlert(),
             _buildHospedajeTab(),
             const SizedBox(height: 16),
             _buildTransporteTab(),

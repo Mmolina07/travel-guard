@@ -8,6 +8,9 @@ import '../../../auth/providers/app_auth_provider.dart';
 import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
+import '../../../expenses/presentation/widgets/budget_alert_card.dart';
+import '../../../expenses/providers/budget_alerts_provider.dart';
+import '../../../expenses/utils/daily_budget_calculator.dart';
 import '../../../places_map/data/models/map_place.dart';
 import '../../../places_map/data/places_map_repository.dart';
 import '../../data/trip_repository.dart';
@@ -304,6 +307,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     }
     if (!mounted) return;
 
+    // HU-11 (TG-278): con los gastos del viaje el formulario puede
+    // advertir si este gasto pasa el presupuesto del día. Si falla, se
+    // registra igual, solo que sin la advertencia.
+    DailyBudgetCalculator? dailyBudget;
+    try {
+      final gastos = await _expenseRepository.fetchGastosDelViaje(trip.id!);
+      dailyBudget = DailyBudgetCalculator(trip: trip, gastos: gastos);
+    } catch (e, st) {
+      debugPrint('HomeScreenClient._addExpenseToTrip fetchGastosDelViaje error: $e\n$st');
+    }
+    if (!mounted) return;
+
     final startDate = parseDdMmYyyy(trip.startDate) ?? DateTime.now();
     final endDateRaw = parseDdMmYyyy(trip.endDate) ?? startDate;
 
@@ -312,6 +327,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       categorias: categorias,
       tripStartDate: startDate,
       tripEndDate: endDateRaw.isBefore(startDate) ? startDate : endDateRaw,
+      dailyBudget: dailyBudget,
     );
     if (result == null || !mounted) return;
 
@@ -327,6 +343,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       setState(() {
         _gastosPorViaje[trip.id!] = (_gastosPorViaje[trip.id!] ?? 0) + result.monto;
       });
+      context.read<BudgetAlertsProvider>().refresh();
       _showSnack(
         context.l10n.homeClientExpenseAddedSnackbar(
           context.formatMoney(result.monto),
@@ -393,12 +410,41 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   // ─── Escritorio / tablet ───
 
+  /// HU-11: advertencias del presupuesto de hoy de los viajes en curso
+  /// (las calcula `BudgetAlertsProvider` en segundo plano). Solo
+  /// aparecen desde el 75% — si todo va bien, no ocupan espacio.
+  Widget _buildDailyBudgetAlerts() {
+    final alerts = context
+        .watch<BudgetAlertsProvider>()
+        .activeTrips
+        .where((t) => t.today.level != DailyBudgetLevel.ok)
+        .toList();
+    if (alerts.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        for (final alert in alerts)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => context.go('/viajes/${alert.trip.id}', extra: alert.trip),
+                child: BudgetAlertCard(status: alert.today, tripName: alert.trip.name, compact: true),
+              ),
+            ),
+          ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
   Widget _buildDesktopContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildGreetingRow(),
         const SizedBox(height: 26),
+        _buildDailyBudgetAlerts(),
         _buildActionGrid(),
         const SizedBox(height: 40),
         _buildTripsAndPlacesRow(),
@@ -667,6 +713,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 children: [
                   _buildStatsStrip(),
                   const SizedBox(height: 24),
+                  _buildDailyBudgetAlerts(),
                   FadeSlideIn(
                     child: _buildFeatureCard(
                       icon: Icons.luggage_outlined,

@@ -692,5 +692,20 @@
   "menuDetailSaveErrorSnackbar": "Couldn't save the change, try again",
   "businessSettingsOpenTimeLabel": "Opening time",
   "businessSettingsCloseTimeLabel": "Closing time",
-  "businessSettingsTimeNotSet": "Not set"
+  "businessSettingsTimeNotSet": "Not set",
+  "dailyBudgetTodayTitle": "Today's budget",
+  "dailyBudgetOkMessage": "On track: you still have {amount} to spend today.",
+  "dailyBudgetWarningTitle": "Budget warning",
+  "dailyBudgetWarningMessage": "You've used {pct}% of today's budget. {amount} left.",
+  "dailyBudgetExceededTitle": "Daily limit exceeded!",
+  "dailyBudgetExceededMessage": "You're {amount} over today's budget; the coming days will have less available.",
+  "dailyBudgetSpentOf": "{spent} OF {budget} TODAY",
+  "expenseReminderTitle": "Did you spend anything today?",
+  "expenseReminderMessage": "You haven't logged any expenses today for these ongoing trips. Add them before you forget so your daily budget stays accurate.",
+  "expenseReminderDismiss": "I didn't spend today",
+  "addExpenseNearDailyBudget": "This expense brings that day to {pct}% of its budget ({amount} left).",
+  "addExpenseExceedsDailyBudget": "This expense goes {over} over that day's budget (daily budget: {budget}).",
+  "addExpenseOverBudgetDialogTitle": "Over your daily budget",
+  "addExpenseOverBudgetDialogContent": "That day's available budget is {budget} and this expense would put you {over} over. Log it anyway?",
+  "addExpenseOverBudgetConfirm": "Log anyway"
 }

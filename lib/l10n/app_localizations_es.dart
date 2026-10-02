@@ -2302,4 +2302,64 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get businessSettingsTimeNotSet => 'Sin definir';
+
+  @override
+  String get dailyBudgetTodayTitle => 'Presupuesto de hoy';
+
+  @override
+  String dailyBudgetOkMessage(String amount) {
+    return 'Vas bien: aún tienes $amount para gastar hoy.';
+  }
+
+  @override
+  String get dailyBudgetWarningTitle => 'Advertencia de presupuesto';
+
+  @override
+  String dailyBudgetWarningMessage(int pct, String amount) {
+    return 'Ya usaste el $pct% del presupuesto de hoy. Te quedan $amount.';
+  }
+
+  @override
+  String get dailyBudgetExceededTitle => '¡Límite diario superado!';
+
+  @override
+  String dailyBudgetExceededMessage(String amount) {
+    return 'Hoy te pasaste $amount del presupuesto diario; los próximos días tendrán menos disponible.';
+  }
+
+  @override
+  String dailyBudgetSpentOf(String spent, String budget) {
+    return '$spent DE $budget HOY';
+  }
+
+  @override
+  String get expenseReminderTitle => '¿Tuviste gastos hoy?';
+
+  @override
+  String get expenseReminderMessage =>
+      'No registraste ningún gasto hoy en estos viajes en curso. Anótalos antes de que se te olviden para que tu presupuesto diario siga siendo real.';
+
+  @override
+  String get expenseReminderDismiss => 'Hoy no gasté';
+
+  @override
+  String addExpenseNearDailyBudget(int pct, String amount) {
+    return 'Con este gasto llegas al $pct% del presupuesto de ese día (quedarían $amount).';
+  }
+
+  @override
+  String addExpenseExceedsDailyBudget(String over, String budget) {
+    return 'Este gasto supera el presupuesto de ese día por $over (presupuesto diario: $budget).';
+  }
+
+  @override
+  String get addExpenseOverBudgetDialogTitle => 'Supera tu presupuesto diario';
+
+  @override
+  String addExpenseOverBudgetDialogContent(String budget, String over) {
+    return 'El presupuesto disponible para ese día es $budget y con este gasto te pasarías $over. ¿Quieres registrarlo de todas formas?';
+  }
+
+  @override
+  String get addExpenseOverBudgetConfirm => 'Registrar igual';
 }

@@ -4117,6 +4117,96 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Sin definir'**
   String get businessSettingsTimeNotSet;
+
+  /// No description provided for @dailyBudgetTodayTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto de hoy'**
+  String get dailyBudgetTodayTitle;
+
+  /// No description provided for @dailyBudgetOkMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Vas bien: aún tienes {amount} para gastar hoy.'**
+  String dailyBudgetOkMessage(String amount);
+
+  /// No description provided for @dailyBudgetWarningTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Advertencia de presupuesto'**
+  String get dailyBudgetWarningTitle;
+
+  /// No description provided for @dailyBudgetWarningMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya usaste el {pct}% del presupuesto de hoy. Te quedan {amount}.'**
+  String dailyBudgetWarningMessage(int pct, String amount);
+
+  /// No description provided for @dailyBudgetExceededTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Límite diario superado!'**
+  String get dailyBudgetExceededTitle;
+
+  /// No description provided for @dailyBudgetExceededMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy te pasaste {amount} del presupuesto diario; los próximos días tendrán menos disponible.'**
+  String dailyBudgetExceededMessage(String amount);
+
+  /// No description provided for @dailyBudgetSpentOf.
+  ///
+  /// In es, this message translates to:
+  /// **'{spent} DE {budget} HOY'**
+  String dailyBudgetSpentOf(String spent, String budget);
+
+  /// No description provided for @expenseReminderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Tuviste gastos hoy?'**
+  String get expenseReminderTitle;
+
+  /// No description provided for @expenseReminderMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'No registraste ningún gasto hoy en estos viajes en curso. Anótalos antes de que se te olviden para que tu presupuesto diario siga siendo real.'**
+  String get expenseReminderMessage;
+
+  /// No description provided for @expenseReminderDismiss.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoy no gasté'**
+  String get expenseReminderDismiss;
+
+  /// No description provided for @addExpenseNearDailyBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Con este gasto llegas al {pct}% del presupuesto de ese día (quedarían {amount}).'**
+  String addExpenseNearDailyBudget(int pct, String amount);
+
+  /// No description provided for @addExpenseExceedsDailyBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Este gasto supera el presupuesto de ese día por {over} (presupuesto diario: {budget}).'**
+  String addExpenseExceedsDailyBudget(String over, String budget);
+
+  /// No description provided for @addExpenseOverBudgetDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Supera tu presupuesto diario'**
+  String get addExpenseOverBudgetDialogTitle;
+
+  /// No description provided for @addExpenseOverBudgetDialogContent.
+  ///
+  /// In es, this message translates to:
+  /// **'El presupuesto disponible para ese día es {budget} y con este gasto te pasarías {over}. ¿Quieres registrarlo de todas formas?'**
+  String addExpenseOverBudgetDialogContent(String budget, String over);
+
+  /// No description provided for @addExpenseOverBudgetConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar igual'**
+  String get addExpenseOverBudgetConfirm;
 }
 
 class _AppLocalizationsDelegate

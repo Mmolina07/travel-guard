@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
+import '../../../../core/settings/currency_provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/categoria_gasto_model.dart';
+import '../../utils/daily_budget_calculator.dart';
 
 /// Resultado de [AddExpenseSheet]: datos ya validados, listos para
 /// persistir en `gastos` (HU-13).
@@ -28,11 +31,17 @@ class AddExpenseSheet extends StatefulWidget {
   final DateTime tripStartDate;
   final DateTime tripEndDate;
 
+  /// HU-11 (TG-278): si viene, el formulario advierte en vivo cuando el
+  /// monto haría pasar el presupuesto diario de la fecha elegida, y
+  /// pide confirmación antes de registrarlo.
+  final DailyBudgetCalculator? dailyBudget;
+
   const AddExpenseSheet({
     super.key,
     required this.categorias,
     required this.tripStartDate,
     required this.tripEndDate,
+    this.dailyBudget,
   });
 
   static Future<NewExpenseData?> show(
@@ -40,6 +49,7 @@ class AddExpenseSheet extends StatefulWidget {
     required List<CategoriaGasto> categorias,
     required DateTime tripStartDate,
     required DateTime tripEndDate,
+    DailyBudgetCalculator? dailyBudget,
   }) {
     return showModalBottomSheet<NewExpenseData>(
       context: context,
@@ -52,6 +62,7 @@ class AddExpenseSheet extends StatefulWidget {
         categorias: categorias,
         tripStartDate: tripStartDate,
         tripEndDate: tripEndDate,
+        dailyBudget: dailyBudget,
       ),
     );
   }
@@ -104,7 +115,47 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     if (picked != null) setState(() => _fecha = picked);
   }
 
-  void _handleSubmit() {
+  /// Cómo quedaría el día elegido con el monto escrito (TG-278); `null`
+  /// si no hay calculadora o el monto todavía no es válido.
+  DailyBudgetStatus? get _projectedDay {
+    final calc = widget.dailyBudget;
+    final amount = double.tryParse(_amountController.text.trim());
+    if (calc == null || amount == null || amount <= 0) return null;
+    return calc.statusFor(_fecha).withExtra(amount);
+  }
+
+  Future<bool> _confirmOverBudget(DailyBudgetStatus projected) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 32),
+        title: Text(ctx.l10n.addExpenseOverBudgetDialogTitle),
+        content: Text(
+          ctx.l10n.addExpenseOverBudgetDialogContent(
+            ctx.formatMoney(projected.dailyBudget),
+            ctx.formatMoney(projected.remaining.abs()),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.l10n.configCancelButton),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctx.l10n.addExpenseOverBudgetConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _handleSubmit() async {
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,6 +165,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
         ),
       );
       return;
+    }
+
+    final projected = _projectedDay;
+    if (projected != null && projected.level == DailyBudgetLevel.exceeded) {
+      if (!await _confirmOverBudget(projected) || !mounted) return;
     }
 
     Navigator.pop(
@@ -153,6 +209,56 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
         borderSide: const BorderSide(color: _primary, width: 1.5),
       ),
     );
+  }
+
+  /// Advertencia visual en vivo (TG-278): ámbar desde el 75% del
+  /// presupuesto del día, roja si este gasto lo supera.
+  Widget _buildDailyBudgetWarning() {
+    final projected = _projectedDay;
+    final level = projected?.level ?? DailyBudgetLevel.ok;
+    final Widget content;
+    if (projected == null || level == DailyBudgetLevel.ok) {
+      content = const SizedBox(width: double.infinity);
+    } else {
+      final exceeded = level == DailyBudgetLevel.exceeded;
+      final accent = exceeded ? AppColors.error : AppColors.warning;
+      content = Container(
+        key: ValueKey(level),
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: exceeded ? AppColors.errorWash : AppColors.warningWash,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: Border.all(color: accent),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              exceeded ? Icons.error_outline_rounded : Icons.warning_amber_rounded,
+              color: accent,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                exceeded
+                    ? context.l10n.addExpenseExceedsDailyBudget(
+                        context.formatMoney(projected.remaining.abs()),
+                        context.formatMoney(projected.dailyBudget),
+                      )
+                    : context.l10n.addExpenseNearDailyBudget(
+                        projected.percentage.round(),
+                        context.formatMoney(projected.remaining),
+                      ),
+                style: AppText.ui(12.5, weight: FontWeight.w600, color: accent),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return AnimatedSwitcher(duration: AppMotion.toggle, child: content);
   }
 
   @override
@@ -222,12 +328,14 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           TextField(
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
             decoration: _fieldDecoration(
               label: context.l10n.addExpenseAmountLabel,
               icon: Icons.attach_money,
               hint: context.l10n.addExpenseAmountHint,
             ),
           ),
+          _buildDailyBudgetWarning(),
           const SizedBox(height: 16),
 
           InkWell(

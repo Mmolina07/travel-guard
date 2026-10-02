@@ -22,6 +22,9 @@ abstract final class AppColors {
   static const textLabel = Color(0xFF8A8272); // etiquetas mono 
   static const textOnInk = Color(0xFF9DB3B0); // texto secundario sobre ink
   static const error = Color(0xFFB4413A); // error de campo
+  static const errorWash = Color(0xFFF8E7E4); // fondo de alerta de error
+  static const warning = Color(0xFFA86A12); // advertencia (HU-11, ≥75%)
+  static const warningWash = Color(0xFFFBF0DC); // fondo de advertencia
 }
 
 abstract final class AppRadius {

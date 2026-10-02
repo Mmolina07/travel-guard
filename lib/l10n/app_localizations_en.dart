@@ -2292,4 +2292,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get businessSettingsTimeNotSet => 'Not set';
+
+  @override
+  String get dailyBudgetTodayTitle => 'Today\'s budget';
+
+  @override
+  String dailyBudgetOkMessage(String amount) {
+    return 'On track: you still have $amount to spend today.';
+  }
+
+  @override
+  String get dailyBudgetWarningTitle => 'Budget warning';
+
+  @override
+  String dailyBudgetWarningMessage(int pct, String amount) {
+    return 'You\'ve used $pct% of today\'s budget. $amount left.';
+  }
+
+  @override
+  String get dailyBudgetExceededTitle => 'Daily limit exceeded!';
+
+  @override
+  String dailyBudgetExceededMessage(String amount) {
+    return 'You\'re $amount over today\'s budget; the coming days will have less available.';
+  }
+
+  @override
+  String dailyBudgetSpentOf(String spent, String budget) {
+    return '$spent OF $budget TODAY';
+  }
+
+  @override
+  String get expenseReminderTitle => 'Did you spend anything today?';
+
+  @override
+  String get expenseReminderMessage =>
+      'You haven\'t logged any expenses today for these ongoing trips. Add them before you forget so your daily budget stays accurate.';
+
+  @override
+  String get expenseReminderDismiss => 'I didn\'t spend today';
+
+  @override
+  String addExpenseNearDailyBudget(int pct, String amount) {
+    return 'This expense brings that day to $pct% of its budget ($amount left).';
+  }
+
+  @override
+  String addExpenseExceedsDailyBudget(String over, String budget) {
+    return 'This expense goes $over over that day\'s budget (daily budget: $budget).';
+  }
+
+  @override
+  String get addExpenseOverBudgetDialogTitle => 'Over your daily budget';
+
+  @override
+  String addExpenseOverBudgetDialogContent(String budget, String over) {
+    return 'That day\'s available budget is $budget and this expense would put you $over over. Log it anyway?';
+  }
+
+  @override
+  String get addExpenseOverBudgetConfirm => 'Log anyway';
 }
