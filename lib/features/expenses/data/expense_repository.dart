@@ -78,6 +78,9 @@ class ExpenseRepository {
     required double monto,
     required DateTime fecha,
     String? descripcion,
+    String? establecimiento,
+    int? pagadoPorId,
+    bool pagadoConDineroViaje = true,
   }) async {
     final row = await _client
         .from('gastos')
@@ -85,9 +88,13 @@ class ExpenseRepository {
           'viaje_id': viajeId,
           'categoria_id': categoriaId,
           'monto': monto,
-          'fecha': _toIsoDate(fecha),
+          'fecha': fecha.toUtc().toIso8601String(),   // antes: _toIsoDate(fecha)
           if (descripcion != null && descripcion.trim().isNotEmpty)
             'descripcion': descripcion.trim(),
+          if (establecimiento != null && establecimiento.trim().isNotEmpty)
+            'establecimiento': establecimiento.trim(),
+          if (pagadoPorId != null) 'pagado_por_id': pagadoPorId,
+          'pagado_con_dinero_viaje': pagadoConDineroViaje,
         })
         .select('*, categorias_gasto(nombre)')
         .single();

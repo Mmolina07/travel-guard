@@ -12,6 +12,9 @@ class Gasto {
   final String? descripcion;
   final double monto;
   final DateTime fecha;
+  final String? establecimiento;
+  final int? pagadoPorId;
+  final bool pagadoConDineroViaje;
 
   const Gasto({
     required this.id,
@@ -21,6 +24,9 @@ class Gasto {
     this.descripcion,
     required this.monto,
     required this.fecha,
+    this.establecimiento,
+  this.pagadoPorId,
+  this.pagadoConDineroViaje = true,
   });
 
   factory Gasto.fromMap(Map<String, dynamic> map) {
@@ -33,6 +39,9 @@ class Gasto {
       descripcion: map['descripcion'] as String?,
       monto: (map['monto'] as num).toDouble(),
       fecha: DateTime.parse(map['fecha'] as String),
+      establecimiento: map['establecimiento'] as String?,
+      pagadoPorId: map['pagado_por_id'] as int?,
+      pagadoConDineroViaje: (map['pagado_con_dinero_viaje'] as bool?) ?? true,
     );
   }
 

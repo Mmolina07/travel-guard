@@ -6,20 +6,27 @@ import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/categoria_gasto_model.dart';
 import '../../utils/daily_budget_calculator.dart';
+import '../../../trips/data/models/trip_collaborator.dart';
 
 /// Resultado de [AddExpenseSheet]: datos ya validados, listos para
 /// persistir en `gastos` (HU-13).
 class NewExpenseData {
   final CategoriaGasto categoria;
   final double monto;
-  final DateTime fecha;
+  final DateTime fecha; // ahora incluye la hora
   final String? descripcion;
+  final String? establecimiento;
+  final int? pagadoPorId;
+  final bool pagadoConDineroViaje;
 
   const NewExpenseData({
     required this.categoria,
     required this.monto,
     required this.fecha,
     this.descripcion,
+    this.establecimiento,
+    this.pagadoPorId,
+    this.pagadoConDineroViaje = true,
   });
 }
 
@@ -30,6 +37,8 @@ class AddExpenseSheet extends StatefulWidget {
   final List<CategoriaGasto> categorias;
   final DateTime tripStartDate;
   final DateTime tripEndDate;
+  final List<TripCollaborator> miembros;
+  final int? currentUserId;
 
   /// HU-11 (TG-278): si viene, el formulario advierte en vivo cuando el
   /// monto haría pasar el presupuesto diario de la fecha elegida, y
@@ -42,6 +51,8 @@ class AddExpenseSheet extends StatefulWidget {
     required this.tripStartDate,
     required this.tripEndDate,
     this.dailyBudget,
+    this.miembros = const [],
+    this.currentUserId,
   });
 
   static Future<NewExpenseData?> show(
@@ -50,6 +61,8 @@ class AddExpenseSheet extends StatefulWidget {
     required DateTime tripStartDate,
     required DateTime tripEndDate,
     DailyBudgetCalculator? dailyBudget,
+    List<TripCollaborator> miembros = const [],
+    int? currentUserId,
   }) {
     return showModalBottomSheet<NewExpenseData>(
       context: context,
@@ -63,6 +76,8 @@ class AddExpenseSheet extends StatefulWidget {
         tripStartDate: tripStartDate,
         tripEndDate: tripEndDate,
         dailyBudget: dailyBudget,
+        miembros: miembros,
+        currentUserId: currentUserId,
       ),
     );
   }
@@ -78,6 +93,10 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   late DateTime _fecha;
+  final TextEditingController _placeController = TextEditingController();
+  late TimeOfDay _hora;
+  int? _pagadoPorId;
+  bool _pagadoConDineroViaje = true;
 
   @override
   void initState() {
@@ -90,6 +109,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             today.isAfter(widget.tripEndDate))
         ? widget.tripStartDate
         : today;
+    _hora = TimeOfDay.fromDateTime(DateTime.now());
+    final ids = widget.miembros.map((m) => m.usuarioId).toSet();
+    _pagadoPorId = ids.contains(widget.currentUserId)
+        ? widget.currentUserId
+        : (widget.miembros.isNotEmpty ? widget.miembros.first.usuarioId : null);
   }
 
   @override
@@ -97,6 +121,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     _amountController.dispose();
     _descriptionController.dispose();
     super.dispose();
+    _placeController.dispose();
   }
 
   Future<void> _pickDate() async {
@@ -113,6 +138,20 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       ),
     );
     if (picked != null) setState(() => _fecha = picked);
+  }
+
+    Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _hora,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: _primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _hora = picked);
   }
 
   /// Cómo quedaría el día elegido con el monto escrito (TG-278); `null`
@@ -172,15 +211,23 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       if (!await _confirmOverBudget(projected) || !mounted) return;
     }
 
+    final fechaConHora = DateTime(
+      _fecha.year, _fecha.month, _fecha.day, _hora.hour, _hora.minute,
+    );
+    final place = _placeController.text.trim();
+
     Navigator.pop(
       context,
       NewExpenseData(
         categoria: _selectedCategoria,
         monto: amount,
-        fecha: _fecha,
+        fecha: fechaConHora,
         descripcion: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
+        establecimiento: place.isEmpty ? null : place,
+        pagadoPorId: _pagadoPorId,
+        pagadoConDineroViaje: _pagadoConDineroViaje,
       ),
     );
   }
@@ -261,147 +308,223 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     return AnimatedSwitcher(duration: AppMotion.toggle, child: content);
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+    return SingleChildScrollView(                      // 4.10
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.addExpenseTitle,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: _primary,
+            const SizedBox(height: 16),
+            Text(
+              context.l10n.addExpenseTitle,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: _primary,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            context.l10n.addExpenseSubtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 20),
-
-          DropdownButtonFormField<CategoriaGasto>(
-            initialValue: _selectedCategoria,
-            decoration: _fieldDecoration(
-              label: context.l10n.addExpenseCategoryLabel,
-              icon: Icons.category_outlined,
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.addExpenseSubtitle,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
-            items: widget.categorias
-                .map((c) => DropdownMenuItem(
-                      value: c,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(c.icon, size: 18, color: c.color),
-                          const SizedBox(width: 8),
-                          Text(c.nombre),
-                        ],
-                      ),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              if (value != null) setState(() => _selectedCategoria = value);
-            },
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-          TextField(
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (_) => setState(() {}),
-            decoration: _fieldDecoration(
-              label: context.l10n.addExpenseAmountLabel,
-              icon: Icons.attach_money,
-              hint: context.l10n.addExpenseAmountHint,
-            ),
-          ),
-          _buildDailyBudgetWarning(),
-          const SizedBox(height: 16),
-
-          InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: _pickDate,
-            child: InputDecorator(
+            // ── Categoría (sin cambios) ──
+            DropdownButtonFormField<CategoriaGasto>(
+              initialValue: _selectedCategoria,
               decoration: _fieldDecoration(
-                label: context.l10n.addExpenseDateLabel,
-                icon: Icons.calendar_today_outlined,
+                label: context.l10n.addExpenseCategoryLabel,
+                icon: Icons.category_outlined,
               ),
-              child: Text(DateFormat('dd/MM/yyyy').format(_fecha)),
+              items: widget.categorias
+                  .map((c) => DropdownMenuItem(
+                        value: c,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(c.icon, size: 18, color: c.color),
+                            const SizedBox(width: 8),
+                            Text(c.nombre),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _selectedCategoria = value);
+              },
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          TextField(
-            controller: _descriptionController,
-            maxLines: 2,
-            decoration: _fieldDecoration(
-              label: context.l10n.addExpenseDescriptionLabel,
-              icon: Icons.description_outlined,
-              hint: context.l10n.addExpenseDescriptionHint,
+            // ── Monto (sin cambios) ──
+            TextField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => setState(() {}),
+              decoration: _fieldDecoration(
+                label: context.l10n.addExpenseAmountLabel,
+                icon: Icons.attach_money,
+                hint: context.l10n.addExpenseAmountHint,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            _buildDailyBudgetWarning(),
+            const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _primary,
-                    side: const BorderSide(color: _primary),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+            // ═══════════ AQUÍ EMPIEZA EL 4.9 ═══════════
+            // (reemplaza el InkWell de fecha y su SizedBox)
+
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _pickDate,
+                    child: InputDecorator(
+                      decoration: _fieldDecoration(
+                        label: context.l10n.addExpenseDateLabel,
+                        icon: Icons.calendar_today_outlined,
+                      ),
+                      child: Text(DateFormat('dd/MM/yyyy').format(_fecha)),
                     ),
                   ),
-                  child: Text(
-                    context.l10n.configCancelButton,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _handleSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _pickTime,
+                    child: InputDecorator(
+                      decoration: _fieldDecoration(
+                        label: context.l10n.addExpenseTimeLabel,
+                        icon: Icons.access_time,
+                      ),
+                      child: Text(_hora.format(context)),
                     ),
                   ),
-                  child: Text(
-                    context.l10n.addExpenseAddButton,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _placeController,
+              decoration: _fieldDecoration(
+                label: context.l10n.addExpensePlaceLabel,
+                icon: Icons.storefront_outlined,
+                hint: context.l10n.addExpensePlaceHint,
               ),
+            ),
+            const SizedBox(height: 16),
+
+            if (widget.miembros.isNotEmpty) ...[
+              DropdownButtonFormField<int>(
+                initialValue: _pagadoPorId,
+                decoration: _fieldDecoration(
+                  label: context.l10n.addExpensePaidByLabel,
+                  icon: Icons.person_outline,
+                ),
+                items: widget.miembros
+                    .map((m) => DropdownMenuItem(
+                          value: m.usuarioId,
+                          child: Text(m.nombreCompleto),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _pagadoPorId = v),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                activeThumbColor: _primary,
+                title: Text(context.l10n.addExpensePaidWithTripMoney,
+                    style: AppText.ui(14, weight: FontWeight.w600)),
+                subtitle: Text(
+                  _pagadoConDineroViaje
+                      ? context.l10n.addExpensePaidTripMoneyOn
+                      : context.l10n.addExpensePaidTripMoneyOff,
+                  style: AppText.ui(12, color: AppColors.textMuted),
+                ),
+                value: _pagadoConDineroViaje,
+                onChanged: (v) => setState(() => _pagadoConDineroViaje = v),
+              ),
+              const SizedBox(height: 8),
             ],
-          ),
-        ],
+
+            // ═══════════ AQUÍ TERMINA EL 4.9 ═══════════
+
+            // ── Descripción (sin cambios) ──
+            TextField(
+              controller: _descriptionController,
+              maxLines: 2,
+              decoration: _fieldDecoration(
+                label: context.l10n.addExpenseDescriptionLabel,
+                icon: Icons.description_outlined,
+                hint: context.l10n.addExpenseDescriptionHint,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Botones (sin cambios) ──
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _primary,
+                      side: const BorderSide(color: _primary),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      context.l10n.configCancelButton,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _handleSubmit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      context.l10n.addExpenseAddButton,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

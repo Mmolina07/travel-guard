@@ -812,6 +812,48 @@ abstract class AppLocalizations {
   /// **'Agregar'**
   String get addExpenseAddButton;
 
+  /// No description provided for @addExpenseTimeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora'**
+  String get addExpenseTimeLabel;
+
+  /// No description provided for @addExpensePlaceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Establecimiento (opcional)'**
+  String get addExpensePlaceLabel;
+
+  /// No description provided for @addExpensePlaceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Restaurante El Sabor'**
+  String get addExpensePlaceHint;
+
+  /// No description provided for @addExpensePaidByLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién pagó?'**
+  String get addExpensePaidByLabel;
+
+  /// No description provided for @addExpensePaidWithTripMoney.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagado con dinero del viaje'**
+  String get addExpensePaidWithTripMoney;
+
+  /// No description provided for @addExpensePaidTripMoneyOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió del fondo común del viaje'**
+  String get addExpensePaidTripMoneyOn;
+
+  /// No description provided for @addExpensePaidTripMoneyOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió del bolsillo personal'**
+  String get addExpensePaidTripMoneyOff;
+
   /// No description provided for @mapScreenUserHereLabel.
   ///
   /// In es, this message translates to:
@@ -3011,6 +3053,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Grupo'**
   String get tripDetailTabGrupo;
+
+  /// No description provided for @tripDetailTabAnalisis.
+  ///
+  /// In es, this message translates to:
+  /// **'Análisis'**
+  String get tripDetailTabAnalisis;
 
   /// No description provided for @tripDetailBreadcrumbHome.
   ///

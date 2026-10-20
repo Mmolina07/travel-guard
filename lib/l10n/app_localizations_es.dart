@@ -389,6 +389,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get addExpenseAddButton => 'Agregar';
 
   @override
+  String get addExpenseTimeLabel => 'Hora';
+
+  @override
+  String get addExpensePlaceLabel => 'Establecimiento (opcional)';
+
+  @override
+  String get addExpensePlaceHint => 'Ej. Restaurante El Sabor';
+
+  @override
+  String get addExpensePaidByLabel => '¿Quién pagó?';
+
+  @override
+  String get addExpensePaidWithTripMoney => 'Pagado con dinero del viaje';
+
+  @override
+  String get addExpensePaidTripMoneyOn => 'Salió del fondo común del viaje';
+
+  @override
+  String get addExpensePaidTripMoneyOff => 'Salió del bolsillo personal';
+
+  @override
   String get mapScreenUserHereLabel => 'Tú estás aquí';
 
   @override
@@ -1647,6 +1668,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripDetailTabGrupo => 'Grupo';
+
+  @override
+  String get tripDetailTabAnalisis => 'Análisis';
 
   @override
   String get tripDetailBreadcrumbHome => 'INICIO / MIS VIAJES';
