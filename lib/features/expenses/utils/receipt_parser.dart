@@ -115,16 +115,30 @@ abstract final class ReceiptParser {
     'JUL': 7, 'AGO': 8, 'SEP': 9, 'SET': 9, 'OCT': 10, 'NOV': 11, 'DIC': 12,
   };
 
-  static final _ymd = RegExp(r'\b(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})\b');
-  static final _dmy = RegExp(r'\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4}|\d{2})\b');
+  // Límites "sin dígito al lado" en vez de \b: el OCR suele pegar la
+  // fecha a la palabra siguiente ("2026/10/19Hora: 19:36"), y a veces
+  // mete un espacio junto a un separador ("2026/10/ 19").
+  static final _ymd = RegExp(r'(?<!\d)(\d{4}) ?[/\-.] ?(\d{1,2}) ?[/\-.] ?(\d{1,2})(?!\d)');
+  static final _dmy = RegExp(r'(?<!\d)(\d{1,2}) ?[/\-.] ?(\d{1,2}) ?[/\-.] ?(\d{4}|\d{2})(?!\d)');
   static final _dMonY = RegExp(r'\b(\d{1,2})[\s/\-.]?(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEPT?|SET|OCT|NOV|DIC)[A-Z]*[\s/\-.,]*(\d{4})\b');
 
+  /// Líneas que suelen traer la fecha de la compra.
+  static final _dateHint = RegExp(r'FECHA|EXPEDICION|GENERACION|EMISION|EMITID');
+
+  /// Líneas con fechas que NO son de la compra: vigencia de la
+  /// resolución de facturación ("DEL 2024-09-10 AL 2026-09-10"), etc.
+  static final _notPurchaseDate =
+      RegExp(r'RESOLUCION|VIGENCIA|AUTORIZ|RANGO|HABILITA|VENCE|HASTA|DESDE|\bDEL\b.*\bAL\b');
+
   static DateTime? _findDate(List<String> lines) {
-    // Primero las líneas que dicen "FECHA"; si no, la primera válida.
+    // Primero las líneas de "Fecha"/"Expedición".
+    // Las de vigencias/resoluciones se descartan: mejor sin fecha que con
+    // la de la resolución de facturación (2024) en vez de la de compra.
+    int rank(String l) => _dateHint.hasMatch(_normalize(l)) ? 0 : 1;
     final ordered = [
-      ...lines.where((l) => _normalize(l).contains('FECHA')),
-      ...lines.where((l) => !_normalize(l).contains('FECHA')),
-    ];
+      for (final l in lines)
+        if (!_notPurchaseDate.hasMatch(_normalize(l))) l,
+    ]..sort((a, b) => rank(a).compareTo(rank(b)));
     for (final line in ordered) {
       final date = parseDate(line);
       if (date != null) return date;
@@ -135,7 +149,17 @@ abstract final class ReceiptParser {
   /// Primera fecha válida de [line] (dd/mm/aaaa, dd-mm-aaaa, aaaa-mm-dd,
   /// dd/mm/aa o "06 OCT 2026"), o `null`.
   static DateTime? parseDate(String line) {
-    final upper = _normalize(line);
+    // El OCR suele pegar la hora al día, a veces sin los dos puntos
+    // ("2026-08-1614:54" o "2026-08-161454:33"): se separa lo que sigue.
+    final upper = _normalize(line)
+        .replaceAllMapped(
+          RegExp(r'(\d{4} ?[/\-.] ?\d{1,2} ?[/\-.] ?\d{2})(\d)'),
+          (m) => '${m[1]} ${m[2]}',
+        )
+        .replaceAllMapped(
+          RegExp(r'(\d{1,2} ?[/\-.] ?\d{1,2} ?[/\-.] ?\d{4})(\d)'),
+          (m) => '${m[1]} ${m[2]}',
+        );
     for (final m in _ymd.allMatches(upper)) {
       final d = _validDate(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
       if (d != null) return d;
@@ -169,7 +193,7 @@ abstract final class ReceiptParser {
 
   /// Lo que no puede ser el nombre del negocio aunque esté arriba.
   static final _notName = RegExp(
-    r'\b(NIT|RUT|TEL|TELEFONO|CEL|CELULAR|DIRECCION|DIR|CRA|CARRERA|CALLE|CL|KR|CR|AV|AVENIDA|DIAG|TRANSV|NO\.?|N°|FACTURA|REGIMEN|RESOLUCION|DIAN|FECHA|HORA|CAJA|CAJERO|TICKET|IVA|PREFIJO|AUTORIZA|RANGO|BIENVENIDOS?|GRACIAS|CLIENTE|MESA|MESERO|PEDIDO|ORDEN|COPIA|ORIGINAL|SUCURSAL|SEDE)\b|WWW\.|@|\.COM|#',
+    r'\b(NIT|RUT|TEL|TELEFONO|CEL|CELULAR|DIRECCION|DIR|CRA|CARRERA|CALLE|CL|KR|CR|AV|AVENIDA|DIAG|TRANSV|NO\.?|N°|FACTURA|REGIMEN|RESOLUCION|DIAN|FECHA|HORA|CAJA|CAJERO|TICKET|IVA|PREFIJO|AUTORIZA|RANGO|BIENVENIDOS?|GRACIAS|CLIENTE|MESA|MESERO|PEDIDO|ORDEN|COPIA|ORIGINAL|SUCURSAL|SEDE|PAGO|VALOR|TOTAL|SUBTOTAL|CONTADO|EFECTIVO|CAMBIO|IMPUESTOS?|DESCUENTO|PRECIO|CANT|DESCRIPCION)\b|WWW\.|@|\.COM|#',
   );
   static final _time = RegExp(r'\b\d{1,2}:\d{2}');
 
@@ -184,9 +208,57 @@ abstract final class ReceiptParser {
 
   static final _nit = RegExp(r'NIT\s*[:.]?\s*(\d[\d.]{7,12}\d)');
 
+  /// Marcas conocidas (palabra en el recibo → nombre a mostrar). Si la
+  /// marca aparece arriba pero la línea del nombre salió ilegible, se usa
+  /// este nombre limpio. Para ampliar, agrega la marca en minúscula y sin
+  /// tildes. (Sin "ara" ni "consumo": son palabras comunes en recibos.)
+  static const knownBrands = {
+    'carulla': 'Carulla',
+    'exito': 'Éxito',
+    'olimpica': 'Olímpica',
+    'd1': 'Tiendas D1',
+    'jumbo': 'Jumbo',
+    'euro': 'Euro',
+    'makro': 'Makro',
+    'pricesmart': 'PriceSmart',
+    'colsubsidio': 'Colsubsidio',
+    'surtimax': 'Surtimax',
+    'zapatoca': 'Zapatoca',
+    'isimo': 'Ísimo',
+    'falabella': 'Falabella',
+    'juan valdez': 'Juan Valdez',
+    'starbucks': 'Starbucks',
+    'frisby': 'Frisby',
+    'el corral': 'El Corral',
+    'terpel': 'Terpel',
+    'primax': 'Primax',
+  };
+
   static String? _findEstablishment(List<String> lines) {
-    return _nameFromLines(lines) ?? _nameFromNit(lines);
+    final header = _nameFromLines(lines);
+    final brand = _brandIn(lines.take(12));
+    if (brand != null) {
+      final (key, name) = brand;
+      // La línea del encabezado ya nombra la marca ("CARULLA GRAN VIA"):
+      // es más precisa que el nombre genérico.
+      if (header != null && _hasWord(removeAccents(header.toLowerCase()), key)) return header;
+      return name;
+    }
+    return header ?? _nameFromNit(lines);
   }
+
+  static (String, String)? _brandIn(Iterable<String> lines) {
+    for (final line in lines) {
+      final lower = removeAccents(line.toLowerCase());
+      for (final entry in knownBrands.entries) {
+        if (_hasWord(lower, entry.key)) return (entry.key, entry.value);
+      }
+    }
+    return null;
+  }
+
+  static bool _hasWord(String text, String word) =>
+      RegExp('(^|[^a-z0-9])${RegExp.escape(word)}(\$|[^a-z0-9])').hasMatch(text);
 
   static String? _nameFromNit(List<String> lines) {
     for (final line in lines) {
@@ -210,6 +282,9 @@ abstract final class ReceiptParser {
       final digits = RegExp(r'\d').allMatches(upper).length;
       if (letters < 3 || digits > letters / 3) continue;
       if (line.length > 45) continue;
+      // Todo en minúsculas casi siempre es ruido del OCR ("efon de ten"):
+      // los nombres de negocio van en mayúsculas o con inicial mayúscula.
+      if (line == line.toLowerCase()) continue;
       return line.replaceAll(RegExp(r'^[^\wÁÉÍÓÚÑáéíóúñ]+|[^\wÁÉÍÓÚÑáéíóúñ.]+$'), '').trim();
     }
     return null;

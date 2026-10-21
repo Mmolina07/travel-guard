@@ -20,6 +20,10 @@ abstract final class ReceiptCategoryRules {
       'mercado', 'drogueria', 'farmacia', 'boutique', 'souvenir', 'souvenirs',
       'artesanias', 'artesania', 'exito', 'carulla', 'olimpica', 'd1', 'ara', 'jumbo',
       'makro', 'metro supermercado', 'falabella', 'centro comercial', 'libreria',
+      // Cadenas colombianas de supermercados y descuento.
+      'euro', 'euromax', 'consumo', 'colsubsidio', 'surtimax', 'super inter',
+      'la 14', 'zapatoca', 'mercacentro', 'isimo', 'justo y bueno', 'pricesmart',
+      'cooratiendas', 'merkepaisa', 'autoservicio', 'superetes', 'fruver',
     ],
     'Hospedaje': [
       'hotel', 'hostal', 'hostel', 'airbnb', 'alojamiento', 'hospedaje', 'posada',
