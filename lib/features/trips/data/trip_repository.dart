@@ -4,6 +4,7 @@ import '../../../core/network/supabase_client.dart';
 import '../../../core/utils/money_formatter.dart';
 import '../presentation/pages/trip_model.dart';
 import 'models/trip_budget_category.dart';
+import '../../auth/data/usuarios_repository.dart';
 import 'models/trip_collaborator.dart';
 import 'models/trip_history_entry.dart';
 
@@ -213,7 +214,9 @@ class TripRepository {
     final usuarioRow = await _client
         .from('usuarios')
         .select('id, tipo_usuario, email, turistas(nombre, apellido)')
-        .eq('email', normalizedEmail)
+        // Sin distinguir mayúsculas: hay cuentas guardadas como se
+        // escribieron al registrarse (`Ana@Gmail.com`).
+        .ilike('email', UsuariosRepository.escapeLikePattern(normalizedEmail))
         .maybeSingle();
 
     if (usuarioRow == null) {
@@ -430,8 +433,10 @@ class TripRepository {
     }
   }
 
-  String _mapTransporte(String value) {
+  String? _mapTransporte(String value) {
     switch (value) {
+      case '':
+        return null; // Viajes creados sin la sección de transporte.
       case 'Carro':
         return 'carro';
       case 'Transporte público':
@@ -447,6 +452,8 @@ class TripRepository {
 
   String _unmapTransporte(String? value) {
     switch (value) {
+      case null:
+        return ''; // Sin transporte (ya no se pide al crear el viaje).
       case 'carro':
         return 'Carro';
       case 'transporte_publico':

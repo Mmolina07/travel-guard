@@ -13,6 +13,10 @@ class Gasto {
   final double monto;
   final DateTime fecha;
 
+  /// Cuándo se registró (`created_at`, hora local) — HU-11 CA5 mide desde
+  /// aquí las horas sin registrar gastos.
+  final DateTime? createdAt;
+
   const Gasto({
     required this.id,
     required this.viajeId,
@@ -21,6 +25,7 @@ class Gasto {
     this.descripcion,
     required this.monto,
     required this.fecha,
+    this.createdAt,
   });
 
   factory Gasto.fromMap(Map<String, dynamic> map) {
@@ -33,6 +38,9 @@ class Gasto {
       descripcion: map['descripcion'] as String?,
       monto: (map['monto'] as num).toDouble(),
       fecha: DateTime.parse(map['fecha'] as String),
+      createdAt: map['created_at'] == null
+          ? null
+          : DateTime.tryParse(map['created_at'] as String)?.toLocal(),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -61,9 +62,13 @@ class GoogleAuthService {
       // determina qué "Authorized JavaScript origins" se validan).
       // `serverClientId` es el que debe coincidir con el registrado en
       // Supabase (Authentication > Providers > Google) para que el
-      // `aud` del idToken sea el que Supabase espera. Acá son el mismo
-      // cliente, así que van los dos con el mismo valor.
-      clientId: _webClientId,
+      // `aud` del idToken sea el que Supabase espera.
+      //
+      // En móvil `clientId` va en `null`: iOS lo toma de `GIDClientID`
+      // (Info.plist ← ios/Flutter/MobileKeys.xcconfig) y Android del
+      // cliente OAuth de Android registrado con el package + SHA-1. Ver
+      // docs/movil.md.
+      clientId: kIsWeb ? _webClientId : null,
       serverClientId: _webClientId,
     );
   }

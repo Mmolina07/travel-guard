@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6,16 +8,22 @@ import '../../../../core/l10n/l10n_extension.dart';
 import '../../data/models/actividad_model.dart';
 import '../../data/models/category_visuals.dart';
 import '../../data/models/map_place.dart';
+import '../../data/menus_repository.dart';
 import '../../data/places_map_repository.dart';
+import '../../data/places_realtime.dart';
+import '../menu_model.dart';
+import 'product_form_dialog.dart' show productCategoryIcon, productCategoryLabel;
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../subscriptions/presentation/widgets/premium_gate.dart';
+import '../../../../widgets/ink_button.dart';
 import 'category_label.dart';
 
 /// Vista de detalles de un comercio/lugar de interés (TG-152), usada
 /// tanto desde el mapa como desde "Comercios cercanos": nombre,
-/// categoría, distancia, contacto, actividades asociadas (cargadas a
-/// demanda) y un botón "Cómo llegar" con direcciones reales.
+/// categoría, distancia, contacto, actividades asociadas y menú del
+/// comercio (cargados a demanda — HU-20 CA11: el turista ve siempre lo
+/// último que el comercio guardó) y un botón "Cómo llegar".
 class PlaceDetailsSheet extends StatefulWidget {
   final MapPlace place;
   final PlacesMapRepository repository;
@@ -38,9 +46,6 @@ class PlaceDetailsSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => PlaceDetailsSheet(
         place: place,
         repository: repository,
@@ -54,17 +59,68 @@ class PlaceDetailsSheet extends StatefulWidget {
 }
 
 class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
+  static const bool _directionsEnabled = true;
+
+  late MapPlace _place = widget.place;
   late Future<List<Actividad>> _actividadesFuture;
+
+  /// Solo los comercios tienen menú; `null` para lugares de interés.
+  Future<List<Menu>>? _menusFuture;
+
+  // TG-289: si el comercio cambia algo mientras la ficha está abierta,
+  // se actualiza sola.
+  StreamSubscription<PlacesChange>? _realtimeSub;
+  final _realtimeDebouncer = Debouncer();
+
+  bool get _isComercio => widget.place.type == MapPlaceType.comercio;
 
   @override
   void initState() {
     super.initState();
-    _actividadesFuture =
-        widget.repository.fetchActividadesDelLugar(widget.place);
+    _loadActividades();
+    _loadMenus();
+    _realtimeSub = PlacesRealtime.instance.changes.listen((change) {
+      if (_isComercio && !change.affects(widget.place.id)) return;
+      if (!_isComercio && change.table != 'actividades') return;
+      _realtimeDebouncer(() => _onChange(change));
+    });
+  }
+
+  @override
+  void dispose() {
+    _realtimeSub?.cancel();
+    _realtimeDebouncer.dispose();
+    super.dispose();
+  }
+
+  void _loadActividades() {
+    _actividadesFuture = widget.repository.fetchActividadesDelLugar(widget.place);
+  }
+
+  void _loadMenus() {
+    if (!_isComercio) return;
+    _menusFuture = MenusRepository()
+        .fetchMenus(widget.place.id, onlyAvailable: true)
+        .then((menus) => menus.where((m) => m.products.isNotEmpty).toList());
+  }
+
+  Future<void> _onChange(PlacesChange change) async {
+    if (!mounted) return;
+    setState(() {
+      if (change.table == 'actividades') _loadActividades();
+      if (change.table == 'menus' || change.table == 'menu_productos') _loadMenus();
+    });
+    if (change.table != 'comercios') return;
+    try {
+      final updated = await widget.repository.fetchComercioPlace(widget.place.id);
+      if (mounted && updated != null) setState(() => _place = updated);
+    } catch (e, st) {
+      debugPrint('PlaceDetailsSheet._onChange error: $e\n$st');
+    }
   }
 
   Future<void> _openDirections() async {
-    final place = widget.place;
+    final place = _place;
     final uri = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination='
       '${place.latitud},${place.longitud}',
@@ -80,10 +136,14 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
   @override
   Widget build(BuildContext context) {
     context.watch<CurrencyProvider>();
-    final place = widget.place;
+    final place = _place;
     final visual = CategoryVisual.forCategory(place.categoria);
     return SafeArea(
-      child: Padding(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -95,14 +155,14 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppColors.hair,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
                 ),
               ),
             ),
             if (place.fotoUrl != null) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.cardLg),
                 child: Image.network(
                   place.fotoUrl!,
                   width: double.infinity,
@@ -129,35 +189,25 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [visual.color, visual.color.withOpacity(0.7)],
-                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    color: AppColors.ink,
                   ),
-                  child: Icon(visual.icon, color: Colors.white, size: 26),
+                  child: Icon(visual.icon, color: AppColors.mint, size: 26),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    place.nombre,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                    ),
-                  ),
+                  child: Text(place.nombre, style: AppText.display(26)),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              widget.distanceLabel.isEmpty
-                  ? localizedCategoryLabel(context, place.categoria)
-                  : context.l10n.placeDetailsCategoryDistance(
-                      localizedCategoryLabel(context, place.categoria), widget.distanceLabel),
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              (widget.distanceLabel.isEmpty
+                      ? localizedCategoryLabel(context, place.categoria)
+                      : context.l10n.placeDetailsCategoryDistance(
+                          localizedCategoryLabel(context, place.categoria), widget.distanceLabel))
+                  .toUpperCase(),
+              style: AppText.label(10, color: AppColors.inkSoft),
             ),
             const SizedBox(height: 12),
             if (place.direccion != null) ...[
@@ -178,35 +228,25 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
               const SizedBox(height: 12),
               Text(
                 place.descripcion!,
-                style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: AppText.ui(13, color: AppColors.textMuted),
               ),
             ],
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _openDirections,
-                icon: const Icon(Icons.directions),
-                label: Text(context.l10n.placeDetailsDirectionsButton),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.ink,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+            // "Cómo llegar": abre Google Maps con la ruta al lugar (app en
+            // el celular, pestaña nueva en web). Para apagarlo de nuevo,
+            // `_directionsEnabled = false`.
+            Tooltip(
+              message: _directionsEnabled ? '' : context.l10n.placeDetailsDirectionsSoon,
+              child: InkButton(
+                label: context.l10n.placeDetailsDirectionsButton,
+                icon: Icons.directions,
+                trailingArrow: true,
+                expand: true,
+                onPressed: _directionsEnabled ? _openDirections : null,
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              context.l10n.placeDetailsActivitiesTitle,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink,
-              ),
-            ),
+            Text(context.l10n.placeDetailsActivitiesTitle, style: AppText.display(22)),
             const SizedBox(height: 8),
             FutureBuilder<List<Actividad>>(
               future: _actividadesFuture,
@@ -225,18 +265,15 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 if (actividades.isEmpty) {
                   return Text(
                     context.l10n.placeDetailsNoActivities,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                    style: AppText.ui(13, color: AppColors.textMuted),
                   );
                 }
                 // HU-24: las promociones de este comercio solo las ven
                 // los Premium (TG-298); al resto se les invita a
                 // suscribirse en su lugar.
-                final promos = actividades
-                    .where((a) => a.categoria == Actividad.categoriaPromocion)
-                    .toList();
-                final regulares = actividades
-                    .where((a) => a.categoria != Actividad.categoriaPromocion)
-                    .toList();
+                // Igual para las actividades marcadas "Solo Premium".
+                final promos = actividades.where((a) => a.soloPremium).toList();
+                final regulares = actividades.where((a) => !a.soloPremium).toList();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -257,8 +294,81 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
                 );
               },
             ),
+            if (_menusFuture != null) _buildMenusSection(),
           ],
         ),
+        ),
+      ),
+    );
+  }
+
+  /// HU-20 CA11: menú del comercio, organizado por tipo de producto.
+  Widget _buildMenusSection() {
+    return FutureBuilder<List<Menu>>(
+      future: _menusFuture,
+      builder: (context, snapshot) {
+        final menus = snapshot.data ?? const <Menu>[];
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            menus.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Text(context.l10n.placeDetailsMenuTitle, style: AppText.display(22)),
+            for (final menu in menus) ...[
+              const SizedBox(height: 10),
+              Text(menu.name, style: AppText.ui(15, weight: FontWeight.w700)),
+              for (final entry in menu.productsByCategory.entries) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(productCategoryIcon(entry.key),
+                        size: 14, color: AppColors.inkSoft),
+                    const SizedBox(width: 6),
+                    Text(
+                      productCategoryLabel(context, entry.key, plural: true).toUpperCase(),
+                      style: AppText.label(10, color: AppColors.inkSoft, weight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                for (final product in entry.value) _buildProductRow(product),
+              ],
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildProductRow(MenuItem product) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, top: 4, bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(product.name, style: AppText.ui(14)),
+                if (product.description.isNotEmpty)
+                  Text(
+                    product.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.ui(12, color: AppColors.textMuted),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            context.formatMoney(product.price),
+            style: AppText.label(12, color: AppColors.inkSoft, weight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }
@@ -275,14 +385,11 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
             color: esPromo ? AppColors.inkSoft : AppColors.ink,
           ),
           const SizedBox(width: 8),
-          Expanded(child: Text(a.nombre)),
+          Expanded(child: Text(a.nombre, style: AppText.ui(14))),
           if (a.precio != null)
             Text(
               context.formatMoney(a.precio!),
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-              ),
+              style: AppText.label(12, color: AppColors.inkSoft, weight: FontWeight.w700),
             ),
         ],
       ),
@@ -297,7 +404,7 @@ class _PlaceDetailsSheetState extends State<PlaceDetailsSheet> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: AppText.ui(13, color: AppColors.textMuted),
           ),
         ),
       ],

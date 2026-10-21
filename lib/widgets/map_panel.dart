@@ -3,7 +3,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/places_map/data/models/map_place.dart';
+import '../core/l10n/l10n_extension.dart';
 import 'map_style.dart';
+import 'user_location_marker.dart';
 
 /// Panel de mapa restilado en tono ink — el panel sticky de Comercios
 /// en `WEB_LAYOUT.md`. Es un `GoogleMap` **real**, no decorativo:
@@ -15,6 +17,7 @@ class MapPanel extends StatefulWidget {
     super.key,
     required this.places,
     this.center,
+    this.userLocation,
     this.selected,
     this.onSelectPlace,
     this.height = 520,
@@ -23,6 +26,9 @@ class MapPanel extends StatefulWidget {
 
   final List<MapPlace> places;
   final LatLng? center;
+
+  /// Posición del turista: se marca con [UserLocationIcon].
+  final LatLng? userLocation;
   final MapPlace? selected;
   final ValueChanged<MapPlace>? onSelectPlace;
   final double height;
@@ -37,6 +43,29 @@ class MapPanel extends StatefulWidget {
 class _MapPanelState extends State<MapPanel> {
   GoogleMapController? _controller;
   MapType _mapType = MapType.normal;
+  UserLocationIcon? _userIcon;
+  String? _userIconLabel;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final label = context.l10n.mapScreenUserHereLabel;
+    if (label == _userIconLabel) return;
+    _userIconLabel = label;
+    UserLocationIcon.build(label).then((icon) {
+      if (mounted && icon != null) setState(() => _userIcon = icon);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant MapPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // La ubicación llega después de crear el mapa: centrarlo ahí una vez.
+    final user = widget.userLocation;
+    if (oldWidget.userLocation == null && user != null && widget.center == null) {
+      _controller?.animateCamera(CameraUpdate.newLatLng(user));
+    }
+  }
 
   @override
   void dispose() {
@@ -54,7 +83,7 @@ class _MapPanelState extends State<MapPanel> {
           children: [
             GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: widget.center ?? MapPanel.fallbackCenter,
+                target: widget.center ?? widget.userLocation ?? MapPanel.fallbackCenter,
                 zoom: 14,
               ),
               mapType: _mapType,
@@ -67,6 +96,14 @@ class _MapPanelState extends State<MapPanel> {
                     position: LatLng(place.latitud, place.longitud),
                     infoWindow: InfoWindow(title: place.nombre),
                     onTap: () => widget.onSelectPlace?.call(place),
+                  ),
+                if (widget.userLocation != null)
+                  Marker(
+                    markerId: const MarkerId('mi_ubicacion'),
+                    position: widget.userLocation!,
+                    icon: _userIcon?.icon ?? UserLocationIcon.fallback,
+                    anchor: _userIcon?.anchor ?? const Offset(0.5, 1),
+                    zIndexInt: 1,
                   ),
               },
               myLocationButtonEnabled: false,

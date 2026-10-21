@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -100,11 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   bool _validateForm() {
-    if (_emailController.text.isEmpty) {
+    // Se recorta: un espacio al final (típico al pegar) no hace inválido
+    // el correo.
+    if (_emailController.text.trim().isEmpty) {
       _showError(context.l10n.loginErrorEnterEmail);
       return false;
     }
-    if (!_isValidEmail(_emailController.text)) {
+    if (!_isValidEmail(_emailController.text.trim())) {
       _showError(context.l10n.loginErrorInvalidEmail);
       return false;
     }
@@ -362,6 +365,10 @@ class _LoginScreenState extends State<LoginScreen> {
             emphasized: true,
             keyboardType: TextInputType.emailAddress,
             enabled: !_isLoading,
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'\s')),
+              LengthLimitingTextInputFormatter(150),
+            ],
           ),
           const SizedBox(height: 20),
           UnderlineField(

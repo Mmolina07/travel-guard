@@ -14,12 +14,16 @@ class SubscriptionProvider extends ChangeNotifier {
   final SubscriptionRepository _repository;
 
   int? _usuarioId;
-  Suscripcion? _suscripcion;
+  EstadoSuscripcion _estado = EstadoSuscripcion(const []);
   bool _isLoading = false;
   bool _disposed = false;
 
-  Suscripcion? get suscripcion => _suscripcion;
-  bool get isPremium => _suscripcion?.isActive ?? false;
+  /// HU-23: periodos vigentes, cancelación y plan programado.
+  EstadoSuscripcion get estado => _estado;
+
+  /// El periodo vigente que termina más tarde (hasta cuándo es Premium).
+  Suscripcion? get suscripcion => _estado.ultimo;
+  bool get isPremium => _estado.isActive;
 
   /// Mientras es `true` todavía no se sabe si es Premium — una vista
   /// restringida debe mostrar un loader, no la invitación a suscribirse.
@@ -31,7 +35,7 @@ class SubscriptionProvider extends ChangeNotifier {
     final usuarioId = auth.isAuthenticated ? auth.usuario?.id : null;
     if (usuarioId == _usuarioId) return;
     _usuarioId = usuarioId;
-    _suscripcion = null;
+    _estado = EstadoSuscripcion(const []);
     _isLoading = usuarioId != null;
     // Esto corre dentro del `update` del ProxyProvider (en pleno build):
     // notificar ahí mismo revienta, así que se difiere un microtask.
@@ -51,9 +55,9 @@ class SubscriptionProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final suscripcion = await _repository.fetchSuscripcionActiva(usuarioId);
+      final periodos = await _repository.fetchPeriodosVigentes(usuarioId);
       if (_disposed || usuarioId != _usuarioId) return;
-      _suscripcion = suscripcion;
+      _estado = EstadoSuscripcion(periodos);
     } catch (e, st) {
       debugPrint('SubscriptionProvider.refresh error: $e\n$st');
     } finally {
@@ -62,6 +66,36 @@ class SubscriptionProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  /// HU-23 CA4: cancela la renovación; el acceso sigue hasta el final
+  /// del periodo pagado. Lanza [PaymentException] si falla.
+  Future<void> cancelar() => _gestionar(AccionSuscripcion.cancelar);
+
+  Future<void> reactivar() => _gestionar(AccionSuscripcion.reactivar);
+
+  /// HU-23 CA3: deja [plan] programado para el siguiente periodo (pasar
+  /// el plan actual quita el cambio programado).
+  Future<void> programarPlan(PlanSuscripcion plan) =>
+      _gestionar(AccionSuscripcion.programarPlan, plan: plan);
+
+  Future<void> _gestionar(AccionSuscripcion accion, {PlanSuscripcion? plan}) async {
+    final usuarioId = _usuarioId;
+    if (usuarioId == null) return;
+    final periodos = await _repository.gestionarSuscripcion(
+      usuarioId: usuarioId,
+      accion: accion,
+      plan: plan,
+    );
+    if (_disposed || usuarioId != _usuarioId) return;
+    _estado = EstadoSuscripcion(periodos);
+    notifyListeners();
+  }
+
+  Future<List<PagoResumen>> fetchPagos() async {
+    final usuarioId = _usuarioId;
+    if (usuarioId == null) return const [];
+    return _repository.fetchPagos(usuarioId);
   }
 
   @override

@@ -5,11 +5,15 @@ import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../widgets/over_budget_dialog.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
 import '../widgets/category_field_row.dart';
 import 'trip_model.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/paper_top_bar.dart';
 
 /// Mejora "gestor de presupuesto" (TG-166): antes el presupuesto de un
 /// viaje solo se definía una vez, al crearlo — para cambiarlo había
@@ -26,7 +30,6 @@ class EditTripBudgetScreen extends StatefulWidget {
 }
 
 class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
-  static const Color _primary = AppColors.ink;
 
   late final TextEditingController _maxBudgetController;
   late final TextEditingController _advancePaymentController;
@@ -37,8 +40,10 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
   final TripRepository _tripRepository = TripRepository();
   bool _isSaving = false;
 
+  /// Montos con punto de miles (`1.500.000`), igual que al crear el
+  /// viaje: antes `1.500` se leía como 1,5.
   static final List<TextInputFormatter> _moneyFormatters = [
-    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+    ThousandsInputFormatter(),
   ];
 
   @override
@@ -46,19 +51,19 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     super.initState();
     final trip = widget.trip;
     _maxBudgetController = TextEditingController(
-      text: trip.maxBudget.toStringAsFixed(0),
+      text: groupThousands(trip.maxBudget.round()),
     );
     _advancePaymentController = TextEditingController(
       text: trip.advancePayment > 0
-          ? trip.advancePayment.toStringAsFixed(0)
+          ? groupThousands(trip.advancePayment.round())
           : '',
     );
     _lodgingCostController = TextEditingController(
-      text: trip.lodgingCost > 0 ? trip.lodgingCost.toStringAsFixed(0) : '',
+      text: trip.lodgingCost > 0 ? groupThousands(trip.lodgingCost.round()) : '',
     );
     _emergencyMoneyController = TextEditingController(
       text: trip.emergencyMoney > 0
-          ? trip.emergencyMoney.toStringAsFixed(0)
+          ? groupThousands(trip.emergencyMoney.round())
           : '',
     );
     _categoryRows.addAll(
@@ -90,14 +95,11 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     });
   }
 
-  double get _maxBudget =>
-      double.tryParse(_maxBudgetController.text.trim()) ?? 0;
-  double get _advancePayment =>
-      double.tryParse(_advancePaymentController.text.trim()) ?? 0;
-  double get _lodgingCost =>
-      double.tryParse(_lodgingCostController.text.trim()) ?? 0;
-  double get _emergencyMoney =>
-      double.tryParse(_emergencyMoneyController.text.trim()) ?? 0;
+  static double _amount(TextEditingController c) => (parseThousands(c.text) ?? 0).toDouble();
+  double get _maxBudget => _amount(_maxBudgetController);
+  double get _advancePayment => _amount(_advancePaymentController);
+  double get _lodgingCost => _amount(_lodgingCostController);
+  double get _emergencyMoney => _amount(_emergencyMoneyController);
   double get _categoriesTotal =>
       _categoryRows.fold(0.0, (sum, row) => sum + row.monto);
   double get _estimatedSpent =>
@@ -107,6 +109,21 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     if (_maxBudget <= 0) {
       _showError(context.l10n.editTripBudgetErrorMaxBudgetPositive);
       return;
+    }
+    if (_advancePayment > _maxBudget) {
+      _showError(context.l10n.valAdvanceOverBudget);
+      return;
+    }
+    for (final row in _categoryRows) {
+      final error = Validators.title(context, row.nombreController.text, isRequired: false, max: 80);
+      if (error != null) {
+        _showError('${context.l10n.editTripBudgetCategoryLabel}: $error');
+        return;
+      }
+    }
+    if (_estimatedSpent > _maxBudget) {
+      final confirmed = await confirmOverBudget(context, _estimatedSpent - _maxBudget);
+      if (!confirmed || !mounted) return;
     }
     setState(() => _isSaving = true);
 
@@ -169,37 +186,17 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: Text(
-          context.l10n.editTripBudgetTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: _primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
+      appBar: PaperTopBar(
+        eyebrow: context.l10n.editTripBudgetTitle,
+        onBack: () => Navigator.maybePop(context),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.trip.name,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _primary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.trip.destination,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textMuted,
-              ),
-            ),
+            Text(widget.trip.name, style: AppText.display(34)),
+            Text(widget.trip.destination, style: AppText.displayItalic(34)),
             const SizedBox(height: 24),
 
             _field(
@@ -230,14 +227,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  context.l10n.editTripBudgetCategoriesTitle,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _primary,
-                  ),
-                ),
+                Text(context.l10n.editTripBudgetCategoriesTitle, style: AppText.display(22)),
                 TextButton.icon(
                   onPressed: _addCategoryRow,
                   icon: const Icon(Icons.add, size: 18),
@@ -252,9 +242,14 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
             ],
             const SizedBox(height: 12),
 
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                boxShadow: AppShadow.card,
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -268,7 +263,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
                           : AppColors.inkSoft,
                     ),
                     if (breakdown != null) ...[
-                      const Divider(height: 24),
+                      const Divider(height: 24, color: AppColors.line),
                       Row(
                         children: [
                           Expanded(
@@ -292,29 +287,12 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
             ),
             const SizedBox(height: 32),
 
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _save,
-                style: ElevatedButton.styleFrom(backgroundColor: _primary),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        context.l10n.editTripBudgetSaveButton,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
+            InkButton(
+              label: context.l10n.editTripBudgetSaveButton,
+              onPressed: _save,
+              loading: _isSaving,
+              trailingArrow: true,
+              expand: true,
             ),
             const SizedBox(height: 20),
           ],
@@ -327,20 +305,8 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.textMuted,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: valueColor ?? _primary,
-          ),
-        ),
+        Text(label, style: AppText.ui(14, color: AppColors.textMuted)),
+        Text(value, style: AppText.ui(14, weight: FontWeight.w700, color: valueColor ?? AppColors.ink)),
       ],
     );
   }
@@ -348,18 +314,8 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
   Widget _stat(String label, String value) {
     return Column(
       children: [
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: _primary),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textMuted,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        Text(value, style: AppText.display(22)),
+        Text(label, style: AppText.label(10), textAlign: TextAlign.center),
       ],
     );
   }
@@ -371,7 +327,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
   }) {
     return TextField(
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.number,
       inputFormatters: _moneyFormatters,
       onChanged: (_) => setState(() {}),
       decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
@@ -386,6 +342,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
           flex: 5,
           child: TextField(
             controller: row.nombreController,
+            inputFormatters: [AppInputFormatters.safeText, AppInputFormatters.maxLength(80)],
             decoration: InputDecoration(labelText: context.l10n.editTripBudgetCategoryLabel),
           ),
         ),
@@ -394,7 +351,7 @@ class _EditTripBudgetScreenState extends State<EditTripBudgetScreen> {
           flex: 4,
           child: TextField(
             controller: row.montoController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.number,
             inputFormatters: _moneyFormatters,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(labelText: context.l10n.editTripBudgetAmountLabel),

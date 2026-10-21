@@ -34,6 +34,16 @@ fuera de esa clase.
 | Tipografía | `AppText.display(size)` (Instrument Serif, títulos) / `AppText.displayItalic(size)` (acento en segunda línea) / `AppText.ui(size, {weight, color})` (Instrument Sans, cuerpo/UI) / `AppText.label(size, {weight, color})` (JetBrains Mono MAYÚSCULAS, etiquetas) |
 | Movimiento | `AppMotion.*` (duraciones) + `AppMotion.enter/press/bouncy/...` (curvas) — nunca `Curves.linear` |
 
+Componentes compartidos para pantallas secundarias (comercio, planes, formularios) — úsalos en vez
+de `AppBar`/`ElevatedButton` sueltos:
+
+| Qué necesitas | Usa |
+|---|---|
+| Cabecera de pantalla | `InkHeader` (`lib/widgets/ink_header.dart`): etiqueta mono `mint`, título display + segunda línea itálica, back fantasma; `asCard: true` dentro del shell de escritorio |
+| Botón | `InkButton` (`lib/widgets/ink_button.dart`): `primary` (ink + `inkButton`), `secondary` (borde `hair`), `danger`, `mint` (solo sobre ink); `loading` pone el indicador de 18 px |
+| Etiqueta / error de campo | `FieldLabel` (mono 10 MAYÚSCULAS) / `FieldErrorText` (#B4413A 12) |
+| Bloque de formulario / vacío | `FormSectionCard` (blanco radio 28) / `EmptyStateCard` (`wash` radio 22 + CTA) en `lib/widgets/form_section_card.dart` |
+
 Para campos de formulario, **no repitas** `filled`/`fillColor`/`border`/`enabledBorder` si solo vas
 a reproducir lo que ya da el tema global (`AppTheme.light().inputDecorationTheme`): basta con
 `InputDecoration(labelText: ..., hintText: ..., prefixIcon: ...)` y el campo ya sale con el radio,
@@ -120,6 +130,25 @@ tabla de categorías): las listas (`_categories` en `create_menu_screen.dart`/
 decidió no crear una tabla nueva solo para esto. Si se necesita un lookup real más adelante, el
 patrón a copiar es `ExpenseRepository.fetchCategorias()` (la única tabla de categorías que sí se
 trae dinámicamente hoy).
+
+## HU-11, HU-20 y HU-23 (cierre)
+
+Scripts de base de datos (SQL Editor de Supabase, en este orden):
+
+1. `docs/db/hu20_hu23_menus_suscripcion.sql` — tipo de producto del menú, precio > 0 y columnas de
+   cancelación / plan programado de `suscripciones`. **Ya corrido.**
+2. `docs/db/hu20_realtime.sql` — agrega `comercios`, `menus`, `menu_productos` y `actividades` a la
+   publicación de Supabase Realtime (TG-289). Sin esto la app funciona igual, pero la vista del
+   viajero no se actualiza sola cuando el comercio edita algo.
+
+Edge Function nueva: `suscripcion-gestionar` (cancelar / reactivar / programar plan, HU-23), desplegada
+con `--no-verify-jwt --use-api` como las de pagos.
+
+Notificaciones de HU-11: se muestran dentro de la app (`AppNoticeOverlay`) y, si el turista lo activa en
+Configuración, también como notificación del navegador (`BrowserNotifications`, solo con la pestaña
+abierta: no hay servidor de push). Las reglas de los recordatorios están en
+`lib/features/expenses/utils/reminder_planner.dart`; las del cambio de plan en
+`lib/features/subscriptions/utils/plan_change_policy.dart`.
 
 ## Estado conocido / pendiente
 

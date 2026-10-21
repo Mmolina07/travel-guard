@@ -15,6 +15,16 @@ class PaymentException implements Exception {
   String toString() => 'PaymentException: $message';
 }
 
+/// Acciones de `suscripcion-gestionar` (HU-23).
+enum AccionSuscripcion {
+  cancelar('cancelar'),
+  reactivar('reactivar'),
+  programarPlan('programar_plan');
+
+  const AccionSuscripcion(this.wireName);
+  final String wireName;
+}
+
 /// HU-22 / TG-291: pagos con Mercado Pago (Checkout API).
 ///
 /// 1. La tarjeta se tokeniza **directo contra Mercado Pago** con la
@@ -41,18 +51,45 @@ class SubscriptionRepository {
   final SupabaseClient _client;
   final Dio _dio;
 
-  /// Suscripción vigente más larga del usuario, o `null` si no es Premium.
-  Future<Suscripcion?> fetchSuscripcionActiva(int usuarioId) async {
-    final row = await _client
+  /// HU-23: todos los periodos pagados que no han terminado.
+  Future<List<Suscripcion>> fetchPeriodosVigentes(int usuarioId) async {
+    final rows = await _client
         .from('suscripciones')
         .select()
         .eq('usuario_id', usuarioId)
         .eq('estado', 'activa')
         .gt('fecha_fin', DateTime.now().toUtc().toIso8601String())
-        .order('fecha_fin', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    return row == null ? null : Suscripcion.fromMap(row);
+        .order('fecha_inicio');
+    return (rows as List).map((r) => Suscripcion.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  /// HU-23: historial de pagos del usuario, el más reciente primero.
+  Future<List<PagoResumen>> fetchPagos(int usuarioId, {int limit = 20}) async {
+    final rows = await _client
+        .from('pagos')
+        .select('id, plan, monto, estado, created_at')
+        .eq('usuario_id', usuarioId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return (rows as List).map((r) => PagoResumen.fromMap(r as Map<String, dynamic>)).toList();
+  }
+
+  /// HU-23: cancelar / reactivar la renovación o programar el plan del
+  /// siguiente periodo (Edge Function `suscripcion-gestionar`). Devuelve
+  /// los periodos vigentes ya actualizados.
+  Future<List<Suscripcion>> gestionarSuscripcion({
+    required int usuarioId,
+    required AccionSuscripcion accion,
+    PlanSuscripcion? plan,
+  }) async {
+    final data = await _invoke('suscripcion-gestionar', {
+      'usuario_id': usuarioId,
+      'accion': accion.wireName,
+      if (plan != null) 'plan': plan.name,
+    });
+    final rows = data['suscripciones'];
+    if (rows is! List) throw PaymentException('suscripcion-gestionar: ${data['error'] ?? data}');
+    return rows.map((r) => Suscripcion.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   /// Envía la tarjeta a Mercado Pago y devuelve un token de un solo uso.

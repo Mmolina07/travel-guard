@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/l10n_extension.dart';
 import '../theme/app_theme.dart';
@@ -27,6 +28,8 @@ class UnderlineField extends StatelessWidget {
     this.validator,
     this.onFieldSubmitted,
     this.helperText,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   final String label;
@@ -41,6 +44,10 @@ class UnderlineField extends StatelessWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onFieldSubmitted;
   final String? helperText;
+
+  /// Filtran lo que se escribe o pega (ver `AppInputFormatters`).
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +66,8 @@ class UnderlineField extends StatelessWidget {
                 enabled: enabled,
                 autofocus: autofocus,
                 keyboardType: keyboardType,
+                inputFormatters: inputFormatters,
+                textCapitalization: textCapitalization,
                 validator: validator,
                 onFieldSubmitted: onFieldSubmitted,
                 style: AppText.ui(18, weight: FontWeight.w500),
@@ -68,6 +77,9 @@ class UnderlineField extends StatelessWidget {
                   filled: false,
                   hintText: hint,
                   helperText: helperText,
+                  // En teléfono (~390 px) la ayuda larga se cortaba en "…".
+                  helperMaxLines: 3,
+                  errorMaxLines: 3,
                   hintStyle: AppText.ui(18, color: AppColors.textMuted),
                   errorStyle: AppText.ui(11, color: AppColors.error),
                   contentPadding: const EdgeInsets.only(bottom: 8),

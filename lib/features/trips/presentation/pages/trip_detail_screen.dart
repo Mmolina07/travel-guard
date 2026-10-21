@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -6,15 +7,20 @@ import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/route_pattern_background.dart';
 import '../../../../shell/app_shell.dart';
 import '../../../../widgets/budget_bar.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/ink_header.dart';
+import '../../../../widgets/pressable.dart';
 import '../../../auth/providers/app_auth_provider.dart';
 import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/data/models/gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../../expenses/presentation/widgets/budget_alert_card.dart';
+import '../../../expenses/presentation/widgets/budget_notifications_listener.dart';
 import '../../../expenses/providers/budget_alerts_provider.dart';
 import '../../../expenses/utils/daily_budget_calculator.dart';
 import '../../../subscriptions/presentation/widgets/premium_gate.dart';
@@ -70,7 +76,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   void initState() {
     super.initState();
     trip = widget.trip;
-    _tabController = TabController(length: 5, vsync: this)
+    _tabController = TabController(length: 4, vsync: this)
       ..addListener(() => setState(() {}));
     _currentUserId = context.read<AppAuthProvider>().usuario?.id;
     _loadGastos();
@@ -185,54 +191,26 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   Future<void> _handleInvite() async {
     if (trip.id == null || trip.turistaId == null || _currentUserId == null) return;
 
-    final emailController = TextEditingController();
-    final email = await showDialog<String>(
+    // El diálogo valida y llama al backend él mismo: si el correo está
+    // vacío, mal escrito o no registrado, el error se muestra dentro y la
+    // persona lo corrige sin volver a abrirlo.
+    final collaborator = await showDialog<TripCollaborator>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.tripDetailInviteDialogTitle),
-        content: TextField(
-          controller: emailController,
-          autofocus: true,
-          keyboardType: TextInputType.emailAddress,
-          onSubmitted: (value) => Navigator.pop(ctx, value),
-          decoration: InputDecoration(
-            hintText: context.l10n.tripDetailInviteEmailHint,
-            helperText: context.l10n.tripDetailInviteEmailHelper,
-          ),
+      builder: (ctx) => _InviteCollaboratorDialog(
+        onInvite: (email) => _tripRepository.addCollaboratorByEmail(
+          tripId: trip.id!,
+          ownerId: trip.turistaId!,
+          email: email,
+          invitedBy: _currentUserId!,
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.tripDetailCancelButton)),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, emailController.text),
-            child: Text(context.l10n.tripDetailInviteButton),
-          ),
-        ],
       ),
     );
-    emailController.dispose();
-    if (email == null || email.trim().isEmpty) return;
-
-    try {
-      final collaborator = await _tripRepository.addCollaboratorByEmail(
-        tripId: trip.id!,
-        ownerId: trip.turistaId!,
-        email: email,
-        invitedBy: _currentUserId!,
-      );
-      if (!mounted) return;
-      setState(() => _collaborators = [..._collaborators, collaborator]);
-      _showSnack(
-        context.l10n.tripDetailCollaboratorAddedSnackbar(collaborator.nombreCompleto),
-        color: AppColors.ink,
-      );
-    } on TripInviteException catch (e) {
-      if (!mounted) return;
-      _showSnack(e.message);
-    } catch (e, st) {
-      debugPrint('TripDetailScreen._handleInvite error: $e\n$st');
-      if (!mounted) return;
-      _showSnack(context.l10n.tripDetailInviteErrorSnackbar);
-    }
+    if (collaborator == null || !mounted) return;
+    setState(() => _collaborators = [..._collaborators, collaborator]);
+    _showSnack(
+      context.l10n.tripDetailCollaboratorAddedSnackbar(collaborator.nombreCompleto),
+      color: AppColors.ink,
+    );
   }
 
   Future<void> _handleRemoveCollaborator(TripCollaborator member) async {
@@ -276,6 +254,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Future<void> _handleAddExpense() async {
+    // Un viaje terminado es de solo lectura (los botones ya no se
+    // muestran; esto es por si se llega igual).
+    if (trip.isFinished) {
+      _showSnack(context.l10n.tripFinishedReadOnlyNotice);
+      return;
+    }
     if (trip.id == null) {
       _showSnack(context.l10n.tripDetailTripNotSavedSnackbar);
       return;
@@ -308,6 +292,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       );
       if (!mounted) return;
       setState(() => _gastos = [gasto, ..._gastos]);
+      // HU-11: aviso inmediato con el % al que llegó el día del gasto.
+      notifyExpenseBudget(context, trip: trip, day: _dailyBudget.statusFor(result.fecha));
       context.read<BudgetAlertsProvider>().refresh();
       _showSnack(
         context.l10n.tripDetailExpenseAddedSnackbar(context.formatMoney(result.monto), result.categoria.nombre),
@@ -360,6 +346,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   /// (monto máximo, categorías, hospedaje, emergencias) en cualquier
   /// momento, sin tener que borrar y recrear el viaje.
   Future<void> _editBudget() async {
+    if (trip.isFinished) {
+      _showSnack(context.l10n.tripFinishedReadOnlyNotice);
+      return;
+    }
     final updated = await Navigator.push<Trip>(
       context,
       MaterialPageRoute(builder: (context) => EditTripBudgetScreen(trip: trip)),
@@ -436,6 +426,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       case AppSection.mapa:
         context.go('/mapa');
         break;
+      case AppSection.actividades:
+        context.go('/actividades');
+        break;
       case AppSection.promociones:
         context.go('/promociones');
         break;
@@ -493,7 +486,6 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           tabs: [
             Tab(text: context.l10n.tripDetailTabResumen),
             Tab(text: context.l10n.tripDetailTabHospedaje),
-            Tab(text: context.l10n.tripDetailTabTransporte),
             Tab(text: context.l10n.tripDetailTabGastos),
             Tab(text: context.l10n.tripDetailTabGrupo),
           ],
@@ -502,8 +494,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         switch (_tabController.index) {
           0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
           1 => _buildHospedajeTab(),
-          2 => _buildTransporteTab(),
-          3 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+          2 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
           _ => _buildGrupoTab(),
         },
       ],
@@ -550,13 +541,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     ),
                     Row(
                       children: [
-                        _HeaderButton(label: context.l10n.tripDetailEditButton, translucent: true, onTap: _editBudget),
-                        const SizedBox(width: 10),
-                        _HeaderButton(
-                          label: context.l10n.tripDetailAddExpenseButton,
-                          translucent: false,
-                          onTap: _handleAddExpense,
-                        ),
+                        if (trip.isFinished)
+                          const _FinishedBadge()
+                        else ...[
+                          _HeaderButton(label: context.l10n.tripDetailEditButton, translucent: true, onTap: _editBudget),
+                          const SizedBox(width: 10),
+                          _HeaderButton(
+                            label: context.l10n.tripDetailAddExpenseButton,
+                            translucent: false,
+                            onTap: _handleAddExpense,
+                          ),
+                        ],
                         if (_isOwner) ...[
                           const SizedBox(width: 10),
                           _HeaderIconButton(icon: Icons.more_horiz, onTap: _confirmDeleteTrip),
@@ -754,11 +749,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               labelColor: AppColors.textOnInk,
               titleColor: AppColors.paper,
               detailColor: AppColors.textOnInk,
-              label: context.l10n.tripDetailTransportLabel,
-              title: trip.startTransport.isNotEmpty ? trip.startTransport : '—',
-              detail: trip.duringTransport.isNotEmpty
-                  ? context.l10n.tripDetailDuringTransportDetail(trip.duringTransport)
-                  : '',
+              // Antes mostraba el transporte, que se quitó del viaje.
+              label: context.l10n.tripDetailLodgingTitle,
+              title: trip.lodgingType.isNotEmpty ? trip.lodgingType : '—',
+              detail: trip.lodgingCost > 0 ? context.formatMoney(trip.lodgingCost) : '',
             ),
           ),
           const SizedBox(width: 16),
@@ -956,21 +950,6 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     );
   }
 
-  // ─── Tab: Transporte ───
-
-  Widget _buildTransporteTab() {
-    return _SectionCard(
-      title: context.l10n.tripDetailTransportTabTitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _kv(context.l10n.tripDetailStartTransportLabel, trip.startTransport.isNotEmpty ? trip.startTransport : '—'),
-          _kv(context.l10n.tripDetailDuringTransportKvLabel, trip.duringTransport.isNotEmpty ? trip.duringTransport : '—'),
-        ],
-      ),
-    );
-  }
-
   // ─── Tab: Gastos ───
 
   Widget _buildGastosTab({required double totalSpent, required double remaining}) {
@@ -1092,35 +1071,89 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     }
 
     final safePersons = trip.persons < 1 ? 1 : trip.persons;
-    final perPersonSpent = totalSpent / safePersons;
+    // `totalSpent` = lo planeado al crear el viaje + los gastos
+    // registrados. Se muestran por separado: antes salía todo junto como
+    // "llevas gastado", y contradecía "Gastos registrados $0".
+    final planned = trip.getTotalSpent();
+    final registered = _gastosTotal;
+    final l10n = context.l10n;
 
-    Widget? paceRow;
+    final children = <Widget>[];
     if (remainingDays != null && remaining > 0) {
-      final dailyForGroup = remaining / remainingDays;
-      final dailyPerPerson = dailyForGroup / safePersons;
-      paceRow = Row(
-        children: [
-          Expanded(
-            child: _buildDailyStat(
-              icon: Icons.groups_outlined,
-              label: context.l10n.tripDetailGroupDailySpendLabel,
-              value: context.formatMoney(dailyForGroup),
+      final perDay = remaining / remainingDays;
+      children.addAll([
+        const SizedBox(height: 12),
+        Text(
+          l10n.tripDetailPaceRemaining(context.formatMoney(remaining)),
+          style: AppText.ui(13, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDailyStat(
+                icon: safePersons > 1 ? Icons.groups_outlined : Icons.today_outlined,
+                label: safePersons > 1 ? l10n.tripDetailPacePerDayGroup : l10n.tripDetailPacePerDaySolo,
+                value: context.formatMoney(perDay),
+              ),
             ),
+            // Con una sola persona "grupo" y "por persona" son lo mismo.
+            if (safePersons > 1) ...[
+              Container(width: 1, height: 36, color: AppColors.line),
+              Expanded(
+                child: _buildDailyStat(
+                  icon: Icons.person_outline,
+                  label: l10n.tripDetailPacePerPersonDay,
+                  value: context.formatMoney(perDay / safePersons),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ]);
+    } else if (remainingDays != null) {
+      children.addAll([
+        const SizedBox(height: 12),
+        Text(
+          l10n.tripDetailPaceNoBudgetLeft,
+          style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.error),
+        ),
+      ]);
+    }
+
+    Widget amountRow(String label, double value, {bool strong = false}) => Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: AppText.ui(12, color: AppColors.textMuted)),
+              Text(
+                context.formatMoney(value),
+                style: AppText.ui(13, weight: strong ? FontWeight.w700 : FontWeight.w600,
+                    color: strong ? AppColors.inkSoft : AppColors.ink),
+              ),
+            ],
           ),
-          Container(width: 1, height: 36, color: AppColors.line),
-          Expanded(
-            child: _buildDailyStat(
-              icon: Icons.person_outline,
-              label: context.l10n.tripDetailPerPersonDailyLabel,
-              value: context.formatMoney(dailyPerPerson),
-            ),
+        );
+
+    if (planned > 0 || registered > 0) {
+      children.addAll([
+        const SizedBox(height: 14),
+        const Divider(height: 1, color: AppColors.line),
+        const SizedBox(height: 14),
+        amountRow(l10n.tripDetailPacePlanned, planned),
+        amountRow(l10n.tripDetailPaceRegistered, registered),
+        if (safePersons > 1)
+          amountRow(
+            l10n.tripDetailPacePerPerson(safePersons),
+            (planned + registered) / safePersons,
+            strong: true,
           ),
-        ],
-      );
+      ]);
     }
 
     return _SectionCard(
-      title: context.l10n.tripDetailSpendingPaceTitle,
+      title: l10n.tripDetailSpendingPaceTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1131,19 +1164,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               Expanded(child: Text(phaseLabel, style: AppText.ui(13, weight: FontWeight.w600))),
             ],
           ),
-          if (paceRow != null) ...[const SizedBox(height: 14), paceRow],
-          if (totalSpent > 0) ...[
-            const SizedBox(height: 14),
-            const Divider(height: 1, color: AppColors.line),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(context.l10n.tripDetailSpentPerPersonLabel, style: AppText.ui(12, color: AppColors.textMuted)),
-                Text(context.formatMoney(perPersonSpent), style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
-              ],
-            ),
-          ],
+          ...children,
         ],
       ),
     );
@@ -1439,58 +1460,247 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   // No forma parte del alcance de esta pasada de escritorio; mantiene
   // la estructura anterior (info plana + botones fijos) funcionando.
 
+  // ─── Móvil ───
+  // Anatomía móvil del handoff (› Detalle del viaje): cabecera `ink`
+  // con `bottomRight: 44` y el presupuesto, pestañas con el mismo
+  // contenido que escritorio y pie fijo con "Añadir gasto" + `⋯`.
+
   Widget _buildMobile(BuildContext context, {required double totalSpent, required double remaining}) {
-    final percentage = trip.maxBudget > 0 ? (totalSpent / trip.maxBudget) * 100 : 0.0;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(context.l10n.tripDetailMobileAppBarTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.edit_outlined), tooltip: context.l10n.tripDetailEditBudgetTooltip, onPressed: _editBudget),
-          if (_isOwner)
-            IconButton(icon: const Icon(Icons.more_vert), tooltip: context.l10n.tripDetailMoreTooltip, onPressed: _confirmDeleteTrip),
+      backgroundColor: AppColors.paper,
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          _buildMobileHeader(totalSpent: totalSpent),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelColor: AppColors.ink,
+                  unselectedLabelColor: AppColors.textMuted,
+                  indicatorColor: AppColors.ink,
+                  dividerColor: AppColors.line,
+                  labelStyle: AppText.ui(14, weight: FontWeight.w700),
+                  unselectedLabelStyle: AppText.ui(14, weight: FontWeight.w500),
+                  tabAlignment: TabAlignment.start,
+                  tabs: [
+                    Tab(text: context.l10n.tripDetailTabResumen),
+                    Tab(text: context.l10n.tripDetailTabHospedaje),
+                    Tab(text: context.l10n.tripDetailTabGastos),
+                    Tab(text: context.l10n.tripDetailTabGrupo),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                switch (_tabController.index) {
+                  0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
+                  1 => _buildHospedajeTab(),
+                  2 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+                  _ => _buildGrupoTab(),
+                },
+              ],
+            ),
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(trip.name, style: AppText.display(24)),
-            const SizedBox(height: 4),
-            Text(trip.destination, style: AppText.ui(14, color: AppColors.textMuted)),
-            const SizedBox(height: 20),
-            _SectionCard(
-              title: context.l10n.tripDetailBudgetTitle,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+          // Alto fijo: `bottomNavigationBar` no acota la altura y el botón
+          // se estiraba a toda la pantalla.
+          child: SizedBox(
+            height: 58,
+            child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: trip.isFinished
+                    // Terminado: en vez de "Añadir gasto", por qué no se puede.
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.wash,
+                          borderRadius: BorderRadius.circular(AppRadius.button),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.lock_outline, size: 18, color: AppColors.inkSoft),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                context.l10n.tripFinishedReadOnlyNotice,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : InkButton(
+                        label: context.l10n.tripDetailAddExpenseButton,
+                        icon: Icons.add,
+                        expand: true,
+                        onPressed: _handleAddExpense,
+                      ),
+              ),
+              if (_isOwner) ...[
+                const SizedBox(width: 12),
+                Pressable(
+                  onTap: _confirmDeleteTrip,
+                  semanticLabel: context.l10n.tripDetailMoreTooltip,
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.button),
+                      border: Border.all(color: AppColors.hair),
+                    ),
+                    child: const Icon(Icons.more_horiz, color: AppColors.ink),
+                  ),
+                ),
+              ],
+            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileHeader({required double totalSpent}) {
+    final progress = trip.maxBudget > 0 ? (totalSpent / trip.maxBudget).clamp(0.0, 1.0) : 0.0;
+    return Container(
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(color: AppColors.ink, borderRadius: AppRadius.headerDetail),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: RoutePatternBackground(opacity: 0.10)),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(26, 18, 26, 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _kv(context.l10n.tripDetailSpentKvLabel, context.formatMoney(totalSpent)),
-                  _kv(context.l10n.tripDetailAvailableKvLabel, context.formatMoney(remaining)),
+                  Row(
+                    children: [
+                      GhostIconButton(icon: Icons.arrow_back, onTap: () => context.go('/')),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.inkSoft,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.luggage_outlined, color: AppColors.mint, size: 20),
+                      ),
+                      const Spacer(),
+                      if (trip.isFinished)
+                        const _FinishedBadge()
+                      else
+                        GhostIconButton(
+                          icon: Icons.edit_outlined,
+                          tooltip: context.l10n.tripDetailEditBudgetTooltip,
+                          onTap: _editBudget,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(context.l10n.tripDetailHeaderTripToPrefix.trim(), style: AppText.display(40, color: AppColors.paper)),
+                  Text(trip.destination, style: AppText.displayItalic(40, color: AppColors.mint)),
                   const SizedBox(height: 10),
-                  BudgetBar(progress: (percentage / 100).clamp(0, 1)),
-                  const SizedBox(height: 6),
-                  Text(context.l10n.tripDetailBudgetUsedPercent(percentage.toStringAsFixed(1)), style: AppText.label(10)),
+                  Text(
+                    context.l10n.tripDetailHeaderSubtitle(
+                      trip.startDate,
+                      trip.endDate,
+                      trip.persons,
+                      trip.tripType.toUpperCase(),
+                    ),
+                    style: AppText.label(11, color: AppColors.textOnInk),
+                  ),
+                  const SizedBox(height: 26),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(context.l10n.tripDetailSpentLabel, style: AppText.label(10, color: AppColors.textOnInk)),
+                            const SizedBox(height: 4),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                context.formatMoney(totalSpent),
+                                style: AppText.display(40, color: AppColors.paper),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(context.l10n.tripDetailCapLabel, style: AppText.label(10, color: AppColors.textOnInk)),
+                          const SizedBox(height: 4),
+                          Text(context.formatMoney(trip.maxBudget), style: AppText.ui(18, color: AppColors.textOnInk)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  BudgetBar(
+                    progress: progress,
+                    height: 8,
+                    track: Colors.white.withValues(alpha: 0.24),
+                    fill: AppColors.mint,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBudgetStatus(totalSpent: totalSpent),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            _buildTodayBudgetAlert(),
-            _buildHospedajeTab(),
-            const SizedBox(height: 16),
-            _buildTransporteTab(),
-            const SizedBox(height: 16),
-            _SectionCard(title: context.l10n.tripDetailExpensesRegisteredTitle, trailing: context.formatMoney(_gastosTotal), child: _buildGastosList()),
-            const SizedBox(height: 16),
-            _buildGrupoTab(),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Etiqueta "Viaje terminado" sobre `ink`, donde iban Editar / Añadir
+/// gasto en un viaje que ya acabó.
+class _FinishedBadge extends StatelessWidget {
+  const _FinishedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock_outline, size: 14, color: AppColors.mint),
+          const SizedBox(width: 6),
+          Text(
+            context.l10n.tripFinishedBadge.toUpperCase(),
+            style: AppText.label(10, color: AppColors.mint),
+          ),
+        ],
       ),
     );
   }
@@ -1624,6 +1834,115 @@ class _MiniCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+
+/// Diálogo "Invitar al viaje": valida el correo (vacío, formato) antes de
+/// buscarlo, muestra bajo el campo por qué no se pudo invitar (no
+/// registrado, no es turista, ya está en el viaje...) y bloquea el botón
+/// mientras responde el servidor.
+class _InviteCollaboratorDialog extends StatefulWidget {
+  const _InviteCollaboratorDialog({required this.onInvite});
+
+  final Future<TripCollaborator> Function(String email) onInvite;
+
+  @override
+  State<_InviteCollaboratorDialog> createState() => _InviteCollaboratorDialogState();
+}
+
+class _InviteCollaboratorDialogState extends State<_InviteCollaboratorDialog> {
+  final _controller = TextEditingController();
+  String? _error;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_loading) return;
+    final email = _controller.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = context.l10n.valInviteEmailRequired);
+      return;
+    }
+    if (!Validators.isEmail(email)) {
+      setState(() => _error = context.l10n.valEmail);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final collaborator = await widget.onInvite(email);
+      if (!mounted) return;
+      Navigator.pop(context, collaborator);
+    } on TripInviteException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
+    } catch (e, st) {
+      debugPrint('_InviteCollaboratorDialog error: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = context.l10n.tripDetailInviteErrorSnackbar;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.tripDetailInviteDialogTitle),
+      content: SizedBox(
+        width: 380,
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          enabled: !_loading,
+          keyboardType: TextInputType.emailAddress,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+            LengthLimitingTextInputFormatter(150),
+          ],
+          onChanged: (_) {
+            if (_error != null) setState(() => _error = null);
+          },
+          onSubmitted: (_) => _submit(),
+          decoration: InputDecoration(
+            hintText: l10n.tripDetailInviteEmailHint,
+            helperText: l10n.tripDetailInviteEmailHelper,
+            helperMaxLines: 2,
+            errorText: _error,
+            errorMaxLines: 3,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: Text(l10n.tripDetailCancelButton),
+        ),
+        ElevatedButton(
+          onPressed: _loading ? null : _submit,
+          child: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.mint),
+                )
+              : Text(l10n.tripDetailInviteButton),
+        ),
+      ],
     );
   }
 }

@@ -7,7 +7,7 @@ import '../../utils/daily_budget_calculator.dart';
 
 /// Tarjeta del presupuesto diario de hoy (HU-11): barra con el % ya
 /// consumido y, a partir del 75%, la advertencia correspondiente
-/// (preventiva en ámbar, límite superado en rojo).
+/// (ámbar al 75% y 85%, rojo al llegar al límite).
 ///
 /// Con [compact] solo se dibuja cuando hay algo que advertir — para
 /// Inicio, donde una tarjeta "vas bien" en cada visita sería ruido.
@@ -35,6 +35,13 @@ class BudgetAlertCard extends StatelessWidget {
           Icons.error_outline_rounded,
           context.l10n.dailyBudgetExceededTitle,
           context.l10n.dailyBudgetExceededMessage(context.formatMoney(status.remaining.abs())),
+        ),
+      DailyBudgetLevel.nearLimit => (
+          AppColors.warning,
+          AppColors.warningWash,
+          Icons.savings_outlined,
+          context.l10n.dailyBudgetWarningTitle,
+          context.l10n.budgetNoticeNearLimitTitle(context.formatMoney(status.remaining), context.l10n.budgetNoticeToday),
         ),
       DailyBudgetLevel.warning => (
           AppColors.warning,
@@ -91,7 +98,7 @@ class BudgetAlertCard extends StatelessWidget {
                 Text(message, style: AppText.ui(13, color: AppColors.textMuted)),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppRadius.control),
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(end: (status.percentage / 100).clamp(0.0, 1.0)),
                     duration: AppMotion.meter,

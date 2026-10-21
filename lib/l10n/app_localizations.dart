@@ -563,13 +563,13 @@ abstract class AppLocalizations {
   /// No description provided for @commerceRegisterNitInvalid.
   ///
   /// In es, this message translates to:
-  /// **'NIT inválido o ya registrado'**
+  /// **'NIT inválido: usa solo números (5 a 15 dígitos)'**
   String get commerceRegisterNitInvalid;
 
   /// No description provided for @commerceRegisterEmailInvalidOrTaken.
   ///
   /// In es, this message translates to:
-  /// **'Email inválido o ya registrado'**
+  /// **'Ingresa un correo válido (ej. nombre@correo.com)'**
   String get commerceRegisterEmailInvalidOrTaken;
 
   /// No description provided for @commerceRegisterPasswordMin.
@@ -623,7 +623,7 @@ abstract class AppLocalizations {
   /// No description provided for @configNotificationsToggleLabel.
   ///
   /// In es, this message translates to:
-  /// **'Activar notificaciones'**
+  /// **'Mostrar alertas'**
   String get configNotificationsToggleLabel;
 
   /// No description provided for @configSectionSecurity.
@@ -755,7 +755,7 @@ abstract class AppLocalizations {
   /// No description provided for @addExpenseInvalidAmount.
   ///
   /// In es, this message translates to:
-  /// **'Ingresa un monto válido'**
+  /// **'Ingresa un monto mayor a 0'**
   String get addExpenseInvalidAmount;
 
   /// No description provided for @addExpenseTitle.
@@ -1907,13 +1907,13 @@ abstract class AppLocalizations {
   /// No description provided for @createTripStep2TitleLine1.
   ///
   /// In es, this message translates to:
-  /// **'¿Cómo nos'**
+  /// **'¿En qué lo'**
   String get createTripStep2TitleLine1;
 
   /// No description provided for @createTripStep2TitleLine2.
   ///
   /// In es, this message translates to:
-  /// **'movemos?'**
+  /// **'vas a gastar?'**
   String get createTripStep2TitleLine2;
 
   /// No description provided for @createTripStepNameDestination.
@@ -1931,7 +1931,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTripStepNameTransport.
   ///
   /// In es, this message translates to:
-  /// **'Transporte'**
+  /// **'Gastos'**
   String get createTripStepNameTransport;
 
   /// No description provided for @createTripErrorSelectStartDateFirst.
@@ -1997,7 +1997,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTripErrorEmergencyAmountMustBePositive.
   ///
   /// In es, this message translates to:
-  /// **'El monto debe ser mayor a 0'**
+  /// **'Ingresa un monto válido (0 o más)'**
   String get createTripErrorEmergencyAmountMustBePositive;
 
   /// No description provided for @createTripIncompleteDataDialogTitle.
@@ -2327,7 +2327,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTripEstimatedLabel.
   ///
   /// In es, this message translates to:
-  /// **'Estimado (con lo ingresado)'**
+  /// **'Gastos planeados'**
   String get createTripEstimatedLabel;
 
   /// No description provided for @createTripOverBudgetLabel.
@@ -2339,7 +2339,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTripAvailableLabel.
   ///
   /// In es, this message translates to:
-  /// **'Disponible'**
+  /// **'Disponible sin planear'**
   String get createTripAvailableLabel;
 
   /// No description provided for @createTripOverBudgetWarning.
@@ -2441,7 +2441,7 @@ abstract class AppLocalizations {
   /// No description provided for @editTripBudgetEstimatedLabel.
   ///
   /// In es, this message translates to:
-  /// **'Estimado'**
+  /// **'Gastos planeados'**
   String get editTripBudgetEstimatedLabel;
 
   /// No description provided for @editTripBudgetOverBudgetLabel.
@@ -2525,7 +2525,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeClientPickTripTitle.
   ///
   /// In es, this message translates to:
-  /// **'¿A qué viaje pertenece?'**
+  /// **'¿A qué viaje quieres agregar el gasto?'**
   String get homeClientPickTripTitle;
 
   /// No description provided for @homeClientPickTripSubtitle.
@@ -2691,8 +2691,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeClientMapCardPlacesCount.
   ///
   /// In es, this message translates to:
-  /// **'14 lugares cerca'**
-  String get homeClientMapCardPlacesCount;
+  /// **'{count, plural, =0{Explora lugares} one{1 lugar cerca} other{{count} lugares cerca}}'**
+  String homeClientMapCardPlacesCount(int count);
 
   /// No description provided for @homeClientNextExpenseLabel.
   ///
@@ -3611,44 +3611,8 @@ abstract class AppLocalizations {
   /// No description provided for @configExchangeRatePreview.
   ///
   /// In es, this message translates to:
-  /// **'1 USD = {rate}'**
-  String configExchangeRatePreview(String rate);
-
-  /// No description provided for @configExchangeRateDialogTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Tasa de cambio'**
-  String get configExchangeRateDialogTitle;
-
-  /// No description provided for @configExchangeRateDialogHint.
-  ///
-  /// In es, this message translates to:
-  /// **'Sin conexión a ningún servicio: ingresa tú mismo cuántos pesos colombianos equivalen a 1 dólar y a 1 euro. Solo cambia cómo se ven los montos en la app — lo guardado en tus viajes y gastos sigue siendo el valor real en pesos.'**
-  String get configExchangeRateDialogHint;
-
-  /// No description provided for @configExchangeRateUsdLabel.
-  ///
-  /// In es, this message translates to:
-  /// **'1 USD equivale a (COP)'**
-  String get configExchangeRateUsdLabel;
-
-  /// No description provided for @configExchangeRateEurLabel.
-  ///
-  /// In es, this message translates to:
-  /// **'1 EUR equivale a (COP)'**
-  String get configExchangeRateEurLabel;
-
-  /// No description provided for @configExchangeRateInvalid.
-  ///
-  /// In es, this message translates to:
-  /// **'Ingresa valores válidos, mayores a 0'**
-  String get configExchangeRateInvalid;
-
-  /// No description provided for @configExchangeRateSavedSnackbar.
-  ///
-  /// In es, this message translates to:
-  /// **'Tasa de cambio actualizada'**
-  String get configExchangeRateSavedSnackbar;
+  /// **'1 {code} = {rate}'**
+  String configExchangeRatePreview(String code, String rate);
 
   /// No description provided for @tripCardSpentOfBudget.
   ///
@@ -4133,7 +4097,7 @@ abstract class AppLocalizations {
   /// No description provided for @addExpenseExceedsDailyBudget.
   ///
   /// In es, this message translates to:
-  /// **'Este gasto supera el presupuesto de ese día por {over} (presupuesto diario: {budget}).'**
+  /// **'Vas a exceder tu presupuesto en {over} (presupuesto de ese día: {budget}).'**
   String addExpenseExceedsDailyBudget(String over, String budget);
 
   /// No description provided for @addExpenseOverBudgetDialogTitle.
@@ -4145,7 +4109,7 @@ abstract class AppLocalizations {
   /// No description provided for @addExpenseOverBudgetDialogContent.
   ///
   /// In es, this message translates to:
-  /// **'El presupuesto disponible para ese día es {budget} y con este gasto te pasarías {over}. ¿Quieres registrarlo de todas formas?'**
+  /// **'El presupuesto disponible para ese día es {budget}. Vas a exceder tu presupuesto en {over}. Puedes registrarlo de todas formas.'**
   String addExpenseOverBudgetDialogContent(String budget, String over);
 
   /// No description provided for @addExpenseOverBudgetConfirm.
@@ -4415,7 +4379,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsBenefitDailyAlerts.
   ///
   /// In es, this message translates to:
-  /// **'Cuánto llevas del presupuesto de hoy, con alertas al 75% y al 100%'**
+  /// **'Cuánto llevas del presupuesto de hoy, con alertas al 75%, 85% y 100%'**
   String get subscriptionsBenefitDailyAlerts;
 
   /// No description provided for @subscriptionsBenefitOverspendWarning.
@@ -4427,7 +4391,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionsBenefitReminder.
   ///
   /// In es, this message translates to:
-  /// **'Recordatorio a las 11 PM si no registraste gastos'**
+  /// **'Recordatorios: gastos sin registrar, resumen y cierre del día, y aviso antes de cada viaje'**
   String get subscriptionsBenefitReminder;
 
   /// No description provided for @premiumGateBadge.
@@ -4457,19 +4421,19 @@ abstract class AppLocalizations {
   /// No description provided for @dailyBudgetLockedDescription.
   ///
   /// In es, this message translates to:
-  /// **'Con Premium ves cuánto llevas hoy y te avisamos al 75% y al 100%.'**
+  /// **'Con Premium ves cuánto llevas hoy y te avisamos al 75%, 85% y 100%.'**
   String get dailyBudgetLockedDescription;
 
   /// No description provided for @placeDetailsPromosLockedTitle.
   ///
   /// In es, this message translates to:
-  /// **'Promociones exclusivas ({count})'**
+  /// **'Exclusivo Premium ({count})'**
   String placeDetailsPromosLockedTitle(int count);
 
   /// No description provided for @placeDetailsPromosLockedDescription.
   ///
   /// In es, this message translates to:
-  /// **'Este comercio tiene ofertas solo para usuarios Premium.'**
+  /// **'Este comercio tiene promociones y actividades solo para usuarios Premium.'**
   String get placeDetailsPromosLockedDescription;
 
   /// No description provided for @promosEyebrow.
@@ -4519,6 +4483,1988 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'HASTA {date}'**
   String promosValidUntil(String date);
+
+  /// No description provided for @productFormRequiredFields.
+  ///
+  /// In es, this message translates to:
+  /// **'Debe completar los campos obligatorios'**
+  String get productFormRequiredFields;
+
+  /// No description provided for @productFormRequiredField.
+  ///
+  /// In es, this message translates to:
+  /// **'Campo obligatorio'**
+  String get productFormRequiredField;
+
+  /// No description provided for @productFormInvalidPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un precio válido mayor a cero'**
+  String get productFormInvalidPrice;
+
+  /// No description provided for @productFormCategoryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Tipo de producto'**
+  String get productFormCategoryLabel;
+
+  /// No description provided for @productFormDescriptionOptionalLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción (opcional)'**
+  String get productFormDescriptionOptionalLabel;
+
+  /// No description provided for @productFormEditTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar producto'**
+  String get productFormEditTitle;
+
+  /// No description provided for @productFormSaveButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get productFormSaveButton;
+
+  /// No description provided for @productCategoryPlato.
+  ///
+  /// In es, this message translates to:
+  /// **'Plato'**
+  String get productCategoryPlato;
+
+  /// No description provided for @productCategoryPlatos.
+  ///
+  /// In es, this message translates to:
+  /// **'Platos'**
+  String get productCategoryPlatos;
+
+  /// No description provided for @productCategoryBebida.
+  ///
+  /// In es, this message translates to:
+  /// **'Bebida'**
+  String get productCategoryBebida;
+
+  /// No description provided for @productCategoryBebidas.
+  ///
+  /// In es, this message translates to:
+  /// **'Bebidas'**
+  String get productCategoryBebidas;
+
+  /// No description provided for @productCategoryPostre.
+  ///
+  /// In es, this message translates to:
+  /// **'Postre'**
+  String get productCategoryPostre;
+
+  /// No description provided for @productCategoryPostres.
+  ///
+  /// In es, this message translates to:
+  /// **'Postres'**
+  String get productCategoryPostres;
+
+  /// No description provided for @productCategoryOtro.
+  ///
+  /// In es, this message translates to:
+  /// **'Otro'**
+  String get productCategoryOtro;
+
+  /// No description provided for @productCategoryOtros.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros'**
+  String get productCategoryOtros;
+
+  /// No description provided for @businessSettingsNameTooShort.
+  ///
+  /// In es, this message translates to:
+  /// **'El nombre debe tener al menos 3 caracteres'**
+  String get businessSettingsNameTooShort;
+
+  /// No description provided for @businessSettingsPhoneInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un teléfono válido (7 a 15 dígitos)'**
+  String get businessSettingsPhoneInvalid;
+
+  /// No description provided for @businessSettingsScheduleIncomplete.
+  ///
+  /// In es, this message translates to:
+  /// **'Define la hora de apertura y la de cierre, o deja las dos sin definir'**
+  String get businessSettingsScheduleIncomplete;
+
+  /// No description provided for @businessSettingsScheduleSameTime.
+  ///
+  /// In es, this message translates to:
+  /// **'La hora de cierre no puede ser igual a la de apertura'**
+  String get businessSettingsScheduleSameTime;
+
+  /// No description provided for @businessSettingsDescriptionLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción'**
+  String get businessSettingsDescriptionLabel;
+
+  /// No description provided for @businessSettingsDescriptionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuéntales a los viajeros qué ofreces'**
+  String get businessSettingsDescriptionHint;
+
+  /// No description provided for @businessSettingsLocationTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación'**
+  String get businessSettingsLocationTitle;
+
+  /// No description provided for @businessSettingsLocationSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Así te encuentran los viajeros en el mapa. Busca tu dirección y ajusta el marcador si hace falta.'**
+  String get businessSettingsLocationSubtitle;
+
+  /// No description provided for @businessSettingsAddressNotFound.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos ubicar esa dirección en el mapa. Corrígela (agrega ciudad o barrio) para poder guardar.'**
+  String get businessSettingsAddressNotFound;
+
+  /// No description provided for @placeDetailsMenuTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Menú'**
+  String get placeDetailsMenuTitle;
+
+  /// No description provided for @businessSettingsHeaderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos de'**
+  String get businessSettingsHeaderTitle;
+
+  /// No description provided for @businessSettingsHeaderAccent.
+  ///
+  /// In es, this message translates to:
+  /// **'tu negocio'**
+  String get businessSettingsHeaderAccent;
+
+  /// No description provided for @createMenuHeaderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo'**
+  String get createMenuHeaderTitle;
+
+  /// No description provided for @createMenuHeaderAccent.
+  ///
+  /// In es, this message translates to:
+  /// **'menú'**
+  String get createMenuHeaderAccent;
+
+  /// No description provided for @subscriptionsHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaja sin salirte'**
+  String get subscriptionsHeroTitle;
+
+  /// No description provided for @subscriptionsHeroAccent.
+  ///
+  /// In es, this message translates to:
+  /// **'de tu presupuesto'**
+  String get subscriptionsHeroAccent;
+
+  /// No description provided for @subscriptionsSubscribeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscribirme'**
+  String get subscriptionsSubscribeButton;
+
+  /// No description provided for @mySubscriptionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi suscripción'**
+  String get mySubscriptionTitle;
+
+  /// No description provided for @mySubscriptionHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu suscripción'**
+  String get mySubscriptionHeroTitle;
+
+  /// No description provided for @mySubscriptionStatusActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa'**
+  String get mySubscriptionStatusActive;
+
+  /// No description provided for @mySubscriptionStatusCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelada'**
+  String get mySubscriptionStatusCancelled;
+
+  /// No description provided for @mySubscriptionStatRenewal.
+  ///
+  /// In es, this message translates to:
+  /// **'Renovación'**
+  String get mySubscriptionStatRenewal;
+
+  /// No description provided for @mySubscriptionStatEnds.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso hasta'**
+  String get mySubscriptionStatEnds;
+
+  /// No description provided for @mySubscriptionStatDaysLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Días restantes'**
+  String get mySubscriptionStatDaysLeft;
+
+  /// No description provided for @mySubscriptionDetailsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles del plan'**
+  String get mySubscriptionDetailsTitle;
+
+  /// No description provided for @mySubscriptionRowPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan actual'**
+  String get mySubscriptionRowPlan;
+
+  /// No description provided for @mySubscriptionRowStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado'**
+  String get mySubscriptionRowStatus;
+
+  /// No description provided for @mySubscriptionRowPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Periodo actual'**
+  String get mySubscriptionRowPeriod;
+
+  /// No description provided for @mySubscriptionRowRenewalDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de renovación'**
+  String get mySubscriptionRowRenewalDate;
+
+  /// No description provided for @mySubscriptionRowRenewalMode.
+  ///
+  /// In es, this message translates to:
+  /// **'Renovación'**
+  String get mySubscriptionRowRenewalMode;
+
+  /// No description provided for @mySubscriptionRowNextPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan al renovar'**
+  String get mySubscriptionRowNextPlan;
+
+  /// No description provided for @mySubscriptionRowPrepaid.
+  ///
+  /// In es, this message translates to:
+  /// **'Periodos ya pagados'**
+  String get mySubscriptionRowPrepaid;
+
+  /// No description provided for @mySubscriptionPeriodRange.
+  ///
+  /// In es, this message translates to:
+  /// **'{from} – {to}'**
+  String mySubscriptionPeriodRange(String from, String to);
+
+  /// No description provided for @mySubscriptionRenewalManual.
+  ///
+  /// In es, this message translates to:
+  /// **'Manual: pagas el siguiente periodo cuando quieras, sin cobros automáticos'**
+  String get mySubscriptionRenewalManual;
+
+  /// No description provided for @mySubscriptionRenewalCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'No se renovará. Tienes Premium hasta el {date}.'**
+  String mySubscriptionRenewalCancelled(String date);
+
+  /// No description provided for @mySubscriptionRenewSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu Premium vence en {days} días.'**
+  String mySubscriptionRenewSoon(int days);
+
+  /// No description provided for @mySubscriptionRenewNow.
+  ///
+  /// In es, this message translates to:
+  /// **'Renovar {plan}'**
+  String mySubscriptionRenewNow(String plan);
+
+  /// No description provided for @mySubscriptionChangeTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar de plan'**
+  String get mySubscriptionChangeTitle;
+
+  /// No description provided for @mySubscriptionChangeSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Al pasar a anual pagas ahora y empieza cuando termina lo que ya pagaste. Al pasar a mensual no se cobra nada: aplica al renovar.'**
+  String get mySubscriptionChangeSubtitle;
+
+  /// No description provided for @mySubscriptionChangeCancelledHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Reactiva tu suscripción para poder cambiar de plan.'**
+  String get mySubscriptionChangeCancelledHint;
+
+  /// No description provided for @mySubscriptionCurrentBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu plan'**
+  String get mySubscriptionCurrentBadge;
+
+  /// No description provided for @mySubscriptionScheduledBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Programado al renovar'**
+  String get mySubscriptionScheduledBadge;
+
+  /// No description provided for @mySubscriptionUpgradeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar a anual'**
+  String get mySubscriptionUpgradeButton;
+
+  /// No description provided for @mySubscriptionDowngradeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar a mensual'**
+  String get mySubscriptionDowngradeButton;
+
+  /// No description provided for @mySubscriptionKeepPlan.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener {plan}'**
+  String mySubscriptionKeepPlan(String plan);
+
+  /// No description provided for @mySubscriptionUpgradeDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar al plan anual'**
+  String get mySubscriptionUpgradeDialogTitle;
+
+  /// No description provided for @mySubscriptionUpgradeDialogBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagas {price} ahora. El plan anual va del {from} al {until}: empieza cuando termina lo que ya pagaste, así no pierdes ningún día.'**
+  String mySubscriptionUpgradeDialogBody(
+    String price,
+    String from,
+    String until,
+  );
+
+  /// No description provided for @mySubscriptionUpgradeConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar plan anual'**
+  String get mySubscriptionUpgradeConfirm;
+
+  /// No description provided for @mySubscriptionDowngradeDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar al plan mensual'**
+  String get mySubscriptionDowngradeDialogTitle;
+
+  /// No description provided for @mySubscriptionDowngradeDialogBody.
+  ///
+  /// In es, this message translates to:
+  /// **'No se cobra nada ahora. Conservas lo que ya pagaste hasta el {date}; al renovar pagarás el plan mensual ({price}).'**
+  String mySubscriptionDowngradeDialogBody(String date, String price);
+
+  /// No description provided for @mySubscriptionDowngradeConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Programar cambio'**
+  String get mySubscriptionDowngradeConfirm;
+
+  /// No description provided for @mySubscriptionChangeScheduledSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambio programado: al renovar pasarás al {plan}.'**
+  String mySubscriptionChangeScheduledSnackbar(String plan);
+
+  /// No description provided for @mySubscriptionChangeUndoneSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo, conservas tu plan actual.'**
+  String get mySubscriptionChangeUndoneSnackbar;
+
+  /// No description provided for @mySubscriptionCancelTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar suscripción'**
+  String get mySubscriptionCancelTitle;
+
+  /// No description provided for @mySubscriptionCancelBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu Premium sigue activo hasta el {date} y después no se renueva. No hay reembolso de lo ya pagado.'**
+  String mySubscriptionCancelBody(String date);
+
+  /// No description provided for @mySubscriptionCancelDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cancelar tu suscripción?'**
+  String get mySubscriptionCancelDialogTitle;
+
+  /// No description provided for @mySubscriptionCancelConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, cancelar'**
+  String get mySubscriptionCancelConfirm;
+
+  /// No description provided for @mySubscriptionCancelKeep.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantener Premium'**
+  String get mySubscriptionCancelKeep;
+
+  /// No description provided for @mySubscriptionCancelledSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripción cancelada. Tienes Premium hasta el {date}.'**
+  String mySubscriptionCancelledSnackbar(String date);
+
+  /// No description provided for @mySubscriptionCancelledTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripción cancelada'**
+  String get mySubscriptionCancelledTitle;
+
+  /// No description provided for @mySubscriptionReactivateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Reactivar suscripción'**
+  String get mySubscriptionReactivateButton;
+
+  /// No description provided for @mySubscriptionReactivatedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Suscripción reactivada.'**
+  String get mySubscriptionReactivatedSnackbar;
+
+  /// No description provided for @mySubscriptionHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de pagos'**
+  String get mySubscriptionHistoryTitle;
+
+  /// No description provided for @mySubscriptionHistoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay pagos.'**
+  String get mySubscriptionHistoryEmpty;
+
+  /// No description provided for @mySubscriptionHistoryError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus pagos.'**
+  String get mySubscriptionHistoryError;
+
+  /// No description provided for @mySubscriptionEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes una suscripción activa'**
+  String get mySubscriptionEmptyTitle;
+
+  /// No description provided for @mySubscriptionEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hazte Premium para ver promociones exclusivas y recibir alertas de tu presupuesto diario.'**
+  String get mySubscriptionEmptySubtitle;
+
+  /// No description provided for @mySubscriptionSeePlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver planes'**
+  String get mySubscriptionSeePlans;
+
+  /// No description provided for @mySubscriptionActionError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo actualizar tu suscripción. Intenta de nuevo.'**
+  String get mySubscriptionActionError;
+
+  /// No description provided for @mySubscriptionManageButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Gestionar mi suscripción'**
+  String get mySubscriptionManageButton;
+
+  /// No description provided for @mySubscriptionGoTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver mi suscripción'**
+  String get mySubscriptionGoTo;
+
+  /// No description provided for @paymentStatusApproved.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprobado'**
+  String get paymentStatusApproved;
+
+  /// No description provided for @paymentStatusInProcess.
+  ///
+  /// In es, this message translates to:
+  /// **'En proceso'**
+  String get paymentStatusInProcess;
+
+  /// No description provided for @paymentStatusPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendiente'**
+  String get paymentStatusPending;
+
+  /// No description provided for @paymentStatusRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Rechazado'**
+  String get paymentStatusRejected;
+
+  /// No description provided for @paymentStatusCancelled.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelado'**
+  String get paymentStatusCancelled;
+
+  /// No description provided for @paymentStatusRefunded.
+  ///
+  /// In es, this message translates to:
+  /// **'Reembolsado'**
+  String get paymentStatusRefunded;
+
+  /// No description provided for @budgetNoticeOpenTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver viaje'**
+  String get budgetNoticeOpenTrip;
+
+  /// No description provided for @configNotificationsToggleSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alertas del presupuesto diario y recordatorios. Apagado, tus gastos se siguen registrando.'**
+  String get configNotificationsToggleSubtitle;
+
+  /// No description provided for @budgetNoticeToday.
+  ///
+  /// In es, this message translates to:
+  /// **'hoy'**
+  String get budgetNoticeToday;
+
+  /// No description provided for @budgetNoticeOnDate.
+  ///
+  /// In es, this message translates to:
+  /// **'el {date}'**
+  String budgetNoticeOnDate(String date);
+
+  /// No description provided for @budgetNoticeWarningTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Has gastado el {pct}% de tu presupuesto diario'**
+  String budgetNoticeWarningTitle(int pct);
+
+  /// No description provided for @budgetNoticeWarningMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Cuidado! {trip}: te quedan {amount} para {day}.'**
+  String budgetNoticeWarningMessage(String trip, String amount, String day);
+
+  /// No description provided for @budgetNoticeNearLimitTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan {amount} de presupuesto para {day}'**
+  String budgetNoticeNearLimitTitle(String amount, String day);
+
+  /// No description provided for @budgetNoticeNearLimitMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Cuidado! {trip}: ya vas en el {pct}% del presupuesto de {day}.'**
+  String budgetNoticeNearLimitMessage(String trip, int pct, String day);
+
+  /// No description provided for @budgetNoticeExceededTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Has alcanzado tu límite diario'**
+  String get budgetNoticeExceededTitle;
+
+  /// No description provided for @budgetNoticeExceededMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip}: vas en el {pct}% ({spent} de {budget} para {day}). Los próximos días tendrán menos disponible.'**
+  String budgetNoticeExceededMessage(
+    String trip,
+    int pct,
+    String spent,
+    String budget,
+    String day,
+  );
+
+  /// No description provided for @configBrowserNotificationsLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Notificaciones del navegador'**
+  String get configBrowserNotificationsLabel;
+
+  /// No description provided for @configBrowserNotificationsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Además de dentro de la app, recibe las alertas como notificación de tu navegador (con la pestaña abierta).'**
+  String get configBrowserNotificationsSubtitle;
+
+  /// No description provided for @configBrowserNotificationsDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'El navegador bloqueó las notificaciones. Permítelas en la configuración del sitio (ícono del candado junto a la dirección).'**
+  String get configBrowserNotificationsDenied;
+
+  /// No description provided for @configBrowserNotificationsUnsupported.
+  ///
+  /// In es, this message translates to:
+  /// **'Este navegador no admite notificaciones.'**
+  String get configBrowserNotificationsUnsupported;
+
+  /// No description provided for @configBrowserNotificationsTestTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'TravelGuard'**
+  String get configBrowserNotificationsTestTitle;
+
+  /// No description provided for @configBrowserNotificationsTestBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo: así te avisaremos cuando tu presupuesto del día llegue al 75%, 85% y 100%.'**
+  String get configBrowserNotificationsTestBody;
+
+  /// No description provided for @reminderNoExpensesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Tuviste gastos hoy que no hayas registrado?'**
+  String get reminderNoExpensesTitle;
+
+  /// No description provided for @reminderNoExpensesMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip}: llevas más de {hours} horas sin registrar gastos.'**
+  String reminderNoExpensesMessage(String trip, int hours);
+
+  /// No description provided for @reminderNoExpensesEndOfDay.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip}: hoy no registraste ningún gasto. Anótalos para que tu presupuesto siga siendo real.'**
+  String reminderNoExpensesEndOfDay(String trip);
+
+  /// No description provided for @reminderRegisterExpense.
+  ///
+  /// In es, this message translates to:
+  /// **'Registrar gasto'**
+  String get reminderRegisterExpense;
+
+  /// No description provided for @reminderDailySummaryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto de hoy: {spent}. Presupuesto restante: {remaining}'**
+  String reminderDailySummaryTitle(String spent, String remaining);
+
+  /// No description provided for @reminderDailySummaryMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip} · resumen del día'**
+  String reminderDailySummaryMessage(String trip);
+
+  /// No description provided for @reminderDayClosingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Día {day}: Presupuesto {budget} | Gastaste {spent} | Ahorro {saved}'**
+  String reminderDayClosingTitle(
+    int day,
+    String budget,
+    String spent,
+    String saved,
+  );
+
+  /// No description provided for @reminderDayClosingOverTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Día {day}: Presupuesto {budget} | Gastaste {spent} | Exceso {over}'**
+  String reminderDayClosingOverTitle(
+    int day,
+    String budget,
+    String spent,
+    String over,
+  );
+
+  /// No description provided for @reminderDayClosingMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'{trip} · cierre del {date}'**
+  String reminderDayClosingMessage(String trip, String date);
+
+  /// No description provided for @reminderUpcomingTripTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu viaje a {destination} inicia en {days, plural, =1{1 día} other{{days} días}}'**
+  String reminderUpcomingTripTitle(String destination, int days);
+
+  /// No description provided for @reminderUpcomingTripMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres revisar tu presupuesto?'**
+  String get reminderUpcomingTripMessage;
+
+  /// No description provided for @reminderReviewBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar presupuesto'**
+  String get reminderReviewBudget;
+
+  /// No description provided for @configRemindersTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorios'**
+  String get configRemindersTitle;
+
+  /// No description provided for @configReminderHoursLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordarme si no registro gastos en'**
+  String get configReminderHoursLabel;
+
+  /// No description provided for @configReminderHoursOption.
+  ///
+  /// In es, this message translates to:
+  /// **'{hours} h'**
+  String configReminderHoursOption(int hours);
+
+  /// No description provided for @configReminderHoursHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo entre las 8 AM y las 10 PM, durante un viaje.'**
+  String get configReminderHoursHint;
+
+  /// No description provided for @configDailySummaryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen diario a las 11 PM'**
+  String get configDailySummaryLabel;
+
+  /// No description provided for @configDailySummarySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto de hoy y presupuesto restante.'**
+  String get configDailySummarySubtitle;
+
+  /// No description provided for @configTripReminderLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Aviso antes de un viaje'**
+  String get configTripReminderLabel;
+
+  /// No description provided for @configTripReminderSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'3 días y 1 día antes, para revisar tu presupuesto.'**
+  String get configTripReminderSubtitle;
+
+  /// No description provided for @configRemindersPremiumHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Las alertas y recordatorios son parte de Premium.'**
+  String get configRemindersPremiumHint;
+
+  /// No description provided for @mySubscriptionStatCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Costo'**
+  String get mySubscriptionStatCost;
+
+  /// No description provided for @mySubscriptionRowCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Costo del plan'**
+  String get mySubscriptionRowCost;
+
+  /// No description provided for @mySubscriptionCostValue.
+  ///
+  /// In es, this message translates to:
+  /// **'{price} {period}'**
+  String mySubscriptionCostValue(String price, String period);
+
+  /// No description provided for @mySubscriptionRowRenewalCost.
+  ///
+  /// In es, this message translates to:
+  /// **'Próxima renovación'**
+  String get mySubscriptionRowRenewalCost;
+
+  /// No description provided for @mySubscriptionRenewalCostValue.
+  ///
+  /// In es, this message translates to:
+  /// **'{date} · {price}'**
+  String mySubscriptionRenewalCostValue(String date, String price);
+
+  /// No description provided for @businessSettingsPhotoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto de portada'**
+  String get businessSettingsPhotoTitle;
+
+  /// No description provided for @businessSettingsPhotoSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Es la imagen que ven los viajeros en la tarjeta de tu comercio y en su ficha.'**
+  String get businessSettingsPhotoSubtitle;
+
+  /// No description provided for @businessSettingsPhotoUpload.
+  ///
+  /// In es, this message translates to:
+  /// **'Subir foto'**
+  String get businessSettingsPhotoUpload;
+
+  /// No description provided for @businessSettingsPhotoChange.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar foto'**
+  String get businessSettingsPhotoChange;
+
+  /// No description provided for @businessSettingsPhotoRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar'**
+  String get businessSettingsPhotoRemove;
+
+  /// No description provided for @businessSettingsPhotoEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin foto de portada'**
+  String get businessSettingsPhotoEmpty;
+
+  /// No description provided for @businessSettingsPhotoHint.
+  ///
+  /// In es, this message translates to:
+  /// **'JPG, PNG o WebP · máx. 5 MB · horizontal se ve mejor'**
+  String get businessSettingsPhotoHint;
+
+  /// No description provided for @businessSettingsPhotoTooLarge.
+  ///
+  /// In es, this message translates to:
+  /// **'La imagen pesa más de 5 MB. Elige una más liviana.'**
+  String get businessSettingsPhotoTooLarge;
+
+  /// No description provided for @businessSettingsPhotoInvalidType.
+  ///
+  /// In es, this message translates to:
+  /// **'Formato no admitido. Usa una imagen JPG, PNG o WebP.'**
+  String get businessSettingsPhotoInvalidType;
+
+  /// No description provided for @businessSettingsPhotoPickError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la imagen. Intenta con otra.'**
+  String get businessSettingsPhotoPickError;
+
+  /// No description provided for @homeComercioPhotoUploadError.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos no se guardaron porque la foto no se pudo subir. Intenta de nuevo.'**
+  String get homeComercioPhotoUploadError;
+
+  /// No description provided for @comercioNavSectionLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'NEGOCIO'**
+  String get comercioNavSectionLabel;
+
+  /// No description provided for @comercioPublicProfileLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'TU PERFIL PÚBLICO'**
+  String get comercioPublicProfileLabel;
+
+  /// No description provided for @comercioViewAsTourist.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver como turista →'**
+  String get comercioViewAsTourist;
+
+  /// No description provided for @comercioSignOutShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir'**
+  String get comercioSignOutShort;
+
+  /// No description provided for @comercioSearchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar actividades o platos'**
+  String get comercioSearchHint;
+
+  /// No description provided for @comercioPanelEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'PANEL DEL NEGOCIO'**
+  String get comercioPanelEyebrow;
+
+  /// No description provided for @comercioGreetingPrefix.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Hola, '**
+  String get comercioGreetingPrefix;
+
+  /// No description provided for @comercioYourMenuTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu menú'**
+  String get comercioYourMenuTitle;
+
+  /// No description provided for @comercioEditLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar'**
+  String get comercioEditLink;
+
+  /// No description provided for @comercioEmptyActivitiesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Las actividades publicadas aparecen en el mapa y en la lista de comercios cercanos de los turistas.'**
+  String get comercioEmptyActivitiesBody;
+
+  /// No description provided for @comercioCreateFirstActivity.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear la primera →'**
+  String get comercioCreateFirstActivity;
+
+  /// No description provided for @comercioEmptyMenuShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay platos.'**
+  String get comercioEmptyMenuShort;
+
+  /// No description provided for @comercioRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get comercioRetry;
+
+  /// No description provided for @comercioStatusPublished.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicada'**
+  String get comercioStatusPublished;
+
+  /// No description provided for @comercioStatusDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrador'**
+  String get comercioStatusDraft;
+
+  /// No description provided for @comercioStatusPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'Pausada'**
+  String get comercioStatusPaused;
+
+  /// No description provided for @comercioFilterAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas'**
+  String get comercioFilterAll;
+
+  /// No description provided for @comercioDatesNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fecha'**
+  String get comercioDatesNone;
+
+  /// No description provided for @comercioDatesFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Desde {date}'**
+  String comercioDatesFrom(String date);
+
+  /// No description provided for @comercioFree.
+  ///
+  /// In es, this message translates to:
+  /// **'Gratis'**
+  String get comercioFree;
+
+  /// No description provided for @comercioActivitiesTotal.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} EN TOTAL'**
+  String comercioActivitiesTotal(int count);
+
+  /// No description provided for @comercioActivitiesTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis '**
+  String get comercioActivitiesTitle1;
+
+  /// No description provided for @comercioActivitiesTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'actividades'**
+  String get comercioActivitiesTitle2;
+
+  /// No description provided for @comercioColActivity.
+  ///
+  /// In es, this message translates to:
+  /// **'ACTIVIDAD'**
+  String get comercioColActivity;
+
+  /// No description provided for @comercioColCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'CATEGORÍA'**
+  String get comercioColCategory;
+
+  /// No description provided for @comercioColDates.
+  ///
+  /// In es, this message translates to:
+  /// **'FECHAS'**
+  String get comercioColDates;
+
+  /// No description provided for @comercioColPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'PRECIO'**
+  String get comercioColPrice;
+
+  /// No description provided for @comercioColStatus.
+  ///
+  /// In es, this message translates to:
+  /// **'ESTADO'**
+  String get comercioColStatus;
+
+  /// No description provided for @comercioActivitiesEmptyFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay actividades con este estado.'**
+  String get comercioActivitiesEmptyFilter;
+
+  /// No description provided for @comercioNoDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin descripción'**
+  String get comercioNoDescription;
+
+  /// No description provided for @comercioMenuProductsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} PRODUCTOS'**
+  String comercioMenuProductsCount(int count);
+
+  /// No description provided for @comercioMenuTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu '**
+  String get comercioMenuTitle1;
+
+  /// No description provided for @comercioMenuTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'menú'**
+  String get comercioMenuTitle2;
+
+  /// No description provided for @comercioMenuSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Platos, bebidas y servicios que ofrece tu negocio.'**
+  String get comercioMenuSubtitle;
+
+  /// No description provided for @comercioAddProductButton.
+  ///
+  /// In es, this message translates to:
+  /// **'+ Agregar producto'**
+  String get comercioAddProductButton;
+
+  /// No description provided for @comercioAddProductShort.
+  ///
+  /// In es, this message translates to:
+  /// **'+ Producto'**
+  String get comercioAddProductShort;
+
+  /// No description provided for @comercioMenuEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu menú está vacío. Agrega el primer plato y aparecerá en tu perfil público.'**
+  String get comercioMenuEmpty;
+
+  /// No description provided for @comercioMenuDetailLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver detalle'**
+  String get comercioMenuDetailLink;
+
+  /// No description provided for @comercioPickMenuTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A qué menú lo agregas?'**
+  String get comercioPickMenuTitle;
+
+  /// No description provided for @comercioNewActivityEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVA ACTIVIDAD'**
+  String get comercioNewActivityEyebrow;
+
+  /// No description provided for @comercioPreviewTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Así la verán'**
+  String get comercioPreviewTitle1;
+
+  /// No description provided for @comercioPreviewTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'los turistas'**
+  String get comercioPreviewTitle2;
+
+  /// No description provided for @comercioPreviewDescPlaceholder.
+  ///
+  /// In es, this message translates to:
+  /// **'La descripción aparecerá aquí.'**
+  String get comercioPreviewDescPlaceholder;
+
+  /// No description provided for @comercioStatusNotePublished.
+  ///
+  /// In es, this message translates to:
+  /// **'Visible en el mapa al guardar'**
+  String get comercioStatusNotePublished;
+
+  /// No description provided for @comercioStatusNotePaused.
+  ///
+  /// In es, this message translates to:
+  /// **'Oculta para los turistas'**
+  String get comercioStatusNotePaused;
+
+  /// No description provided for @comercioStatusNoteDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo tú la ves mientras sea borrador'**
+  String get comercioStatusNoteDraft;
+
+  /// No description provided for @comercioNoEndToggle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fin'**
+  String get comercioNoEndToggle;
+
+  /// No description provided for @comercioEndShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Fin'**
+  String get comercioEndShort;
+
+  /// No description provided for @comercioPickDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir fecha'**
+  String get comercioPickDate;
+
+  /// No description provided for @comercioSubmitPublish.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar actividad'**
+  String get comercioSubmitPublish;
+
+  /// No description provided for @comercioSubmitPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar pausada'**
+  String get comercioSubmitPaused;
+
+  /// No description provided for @comercioSubmitDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar borrador'**
+  String get comercioSubmitDraft;
+
+  /// No description provided for @comercioNewMenuEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVO MENÚ'**
+  String get comercioNewMenuEyebrow;
+
+  /// No description provided for @comercioMenuPreviewTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Así lo verán'**
+  String get comercioMenuPreviewTitle1;
+
+  /// No description provided for @comercioMenuPreviewEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Los productos aparecerán aquí.'**
+  String get comercioMenuPreviewEmpty;
+
+  /// No description provided for @comercioSearchNoResults.
+  ///
+  /// In es, this message translates to:
+  /// **'Nada coincide con «{query}».'**
+  String comercioSearchNoResults(String query);
+
+  /// No description provided for @valRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Este campo es obligatorio'**
+  String get valRequired;
+
+  /// No description provided for @valTooShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Debe tener al menos {min} caracteres'**
+  String valTooShort(int min);
+
+  /// No description provided for @valTooLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Máximo {max} caracteres'**
+  String valTooLong(int max);
+
+  /// No description provided for @valPersonName.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo se permiten letras y espacios'**
+  String get valPersonName;
+
+  /// No description provided for @valNeedsLetter.
+  ///
+  /// In es, this message translates to:
+  /// **'Debe contener al menos una letra'**
+  String get valNeedsLetter;
+
+  /// No description provided for @valInvalidChars.
+  ///
+  /// In es, this message translates to:
+  /// **'No se permiten símbolos como < > [ ] o \\'**
+  String get valInvalidChars;
+
+  /// No description provided for @valEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un correo válido (ej. nombre@correo.com)'**
+  String get valEmail;
+
+  /// No description provided for @valPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un teléfono válido: solo números, de 7 a 15 dígitos'**
+  String get valPhone;
+
+  /// No description provided for @valPasswordMin.
+  ///
+  /// In es, this message translates to:
+  /// **'La contraseña debe tener al menos 8 caracteres'**
+  String get valPasswordMin;
+
+  /// No description provided for @valPasswordHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Al menos 8 caracteres'**
+  String get valPasswordHelper;
+
+  /// No description provided for @valAmountPositive.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un monto mayor a 0'**
+  String get valAmountPositive;
+
+  /// No description provided for @valAmountMax.
+  ///
+  /// In es, this message translates to:
+  /// **'El monto no puede superar {max}'**
+  String valAmountMax(String max);
+
+  /// No description provided for @valIntRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Debe ser un número entre {min} y {max}'**
+  String valIntRange(int min, int max);
+
+  /// No description provided for @valEndBeforeStart.
+  ///
+  /// In es, this message translates to:
+  /// **'La fecha de fin no puede ser anterior a la de inicio'**
+  String get valEndBeforeStart;
+
+  /// No description provided for @valDuplicateProduct.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya hay un producto con ese nombre en este menú'**
+  String get valDuplicateProduct;
+
+  /// No description provided for @valCardHolder.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el nombre como aparece en la tarjeta (solo letras)'**
+  String get valCardHolder;
+
+  /// No description provided for @valScheduleBoth.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica la hora de apertura y la de cierre, o ninguna'**
+  String get valScheduleBoth;
+
+  /// No description provided for @valDocLength.
+  ///
+  /// In es, this message translates to:
+  /// **'El documento debe tener entre 5 y 12 dígitos'**
+  String get valDocLength;
+
+  /// No description provided for @valInviteEmailRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el correo de la persona'**
+  String get valInviteEmailRequired;
+
+  /// No description provided for @valOverBudgetTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo planeado supera el presupuesto'**
+  String get valOverBudgetTitle;
+
+  /// No description provided for @valOverBudgetContent.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que planeaste supera tu presupuesto máximo por {amount}. ¿Quieres guardar igual?'**
+  String valOverBudgetContent(String amount);
+
+  /// No description provided for @valOverBudgetConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar igual'**
+  String get valOverBudgetConfirm;
+
+  /// No description provided for @valOverBudgetCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar'**
+  String get valOverBudgetCancel;
+
+  /// No description provided for @valAdvanceOverBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Los pagos anticipados no pueden superar el presupuesto máximo'**
+  String get valAdvanceOverBudget;
+
+  /// No description provided for @valPersonsRange.
+  ///
+  /// In es, this message translates to:
+  /// **'Las personas deben ser entre 1 y 50'**
+  String get valPersonsRange;
+
+  /// No description provided for @valLoadTripsError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus viajes. Revisa tu conexión.'**
+  String get valLoadTripsError;
+
+  /// No description provided for @valLoadPlacesError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar los lugares cercanos.'**
+  String get valLoadPlacesError;
+
+  /// No description provided for @valLoadGastosError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar tus gastos: las barras muestran solo lo planeado.'**
+  String get valLoadGastosError;
+
+  /// No description provided for @valLoadMapError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar los lugares del mapa.'**
+  String get valLoadMapError;
+
+  /// No description provided for @valNitFormat.
+  ///
+  /// In es, this message translates to:
+  /// **'NIT inválido: usa solo números (5 a 15 dígitos) y, si quieres, -dígito de verificación'**
+  String get valNitFormat;
+
+  /// No description provided for @valCommerceAddress.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe una dirección válida'**
+  String get valCommerceAddress;
+
+  /// No description provided for @placeDetailsDirectionsSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible próximamente'**
+  String get placeDetailsDirectionsSoon;
+
+  /// No description provided for @createTripAutoMealsRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Comidas no incluidas ({meals})'**
+  String createTripAutoMealsRow(String meals);
+
+  /// No description provided for @createTripAutoTransfersRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Traslados'**
+  String get createTripAutoTransfersRow;
+
+  /// No description provided for @createTripServicesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca lo que ya cubre tu hospedaje: eso no lo tienes que presupuestar. Lo que no esté incluido lo agregamos a los gastos del último paso para que le pongas un monto.'**
+  String get createTripServicesHint;
+
+  /// No description provided for @createTripEstimatedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Hospedaje + pagos anticipados + gastos adicionales + emergencias'**
+  String get createTripEstimatedHint;
+
+  /// No description provided for @createTripCoveredByLodging.
+  ///
+  /// In es, this message translates to:
+  /// **'Cubierto por el hospedaje: {services}'**
+  String createTripCoveredByLodging(String services);
+
+  /// No description provided for @createTripIncompleteFieldsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Te faltan estos campos:'**
+  String get createTripIncompleteFieldsIntro;
+
+  /// No description provided for @createTripIncompleteFieldsOutro.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes crear el viaje así, pero el presupuesto será menos preciso. Si alguno no aplica, escribe 0.'**
+  String get createTripIncompleteFieldsOutro;
+
+  /// No description provided for @createTripIncompleteFillButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Completarlos'**
+  String get createTripIncompleteFillButton;
+
+  /// No description provided for @tripDetailPaceRemaining.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan {amount} del presupuesto, ya descontando lo planeado y lo gastado. Para no pasarte, puedes gastar:'**
+  String tripDetailPaceRemaining(String amount);
+
+  /// No description provided for @tripDetailPacePerDayGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Por día, todo el grupo'**
+  String get tripDetailPacePerDayGroup;
+
+  /// No description provided for @tripDetailPacePerDaySolo.
+  ///
+  /// In es, this message translates to:
+  /// **'Por día'**
+  String get tripDetailPacePerDaySolo;
+
+  /// No description provided for @tripDetailPacePerPersonDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Por persona, por día'**
+  String get tripDetailPacePerPersonDay;
+
+  /// No description provided for @tripDetailPaceNoBudgetLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo planeado y lo gastado ya cubren todo el presupuesto: no queda margen para gastos nuevos.'**
+  String get tripDetailPaceNoBudgetLeft;
+
+  /// No description provided for @tripDetailPacePlanned.
+  ///
+  /// In es, this message translates to:
+  /// **'Planeado al crear el viaje'**
+  String get tripDetailPacePlanned;
+
+  /// No description provided for @tripDetailPaceRegistered.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastos registrados'**
+  String get tripDetailPaceRegistered;
+
+  /// No description provided for @tripDetailPacePerPerson.
+  ///
+  /// In es, this message translates to:
+  /// **'Total por persona ({persons} personas)'**
+  String tripDetailPacePerPerson(int persons);
+
+  /// No description provided for @appShellNavActivities.
+  ///
+  /// In es, this message translates to:
+  /// **'Actividades'**
+  String get appShellNavActivities;
+
+  /// No description provided for @activitiesEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} PARA HACER'**
+  String activitiesEyebrow(int count);
+
+  /// No description provided for @activitiesTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Actividades '**
+  String get activitiesTitle1;
+
+  /// No description provided for @activitiesTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'cerca de ti'**
+  String get activitiesTitle2;
+
+  /// No description provided for @activitiesSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eventos, tours, clases y planes que publican los comercios de TravelGuard.'**
+  String get activitiesSubtitle;
+
+  /// No description provided for @activitiesAllFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas'**
+  String get activitiesAllFilter;
+
+  /// No description provided for @activitiesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay actividades publicadas. Vuelve pronto.'**
+  String get activitiesEmpty;
+
+  /// No description provided for @activitiesEmptyFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay actividades de esta categoría.'**
+  String get activitiesEmptyFilter;
+
+  /// No description provided for @activitiesLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar las actividades.'**
+  String get activitiesLoadError;
+
+  /// No description provided for @activitiesPromoBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Buscas descuentos? Las promociones exclusivas están en Promociones.'**
+  String get activitiesPromoBanner;
+
+  /// No description provided for @activitiesPromoLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver promociones →'**
+  String get activitiesPromoLink;
+
+  /// No description provided for @activitiesViewBusiness.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver comercio →'**
+  String get activitiesViewBusiness;
+
+  /// No description provided for @activitiesBusinessUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Este comercio todavía no tiene su ficha disponible.'**
+  String get activitiesBusinessUnavailable;
+
+  /// No description provided for @homeClientViewActivitiesButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver actividades →'**
+  String get homeClientViewActivitiesButton;
+
+  /// No description provided for @configDemoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Probar notificaciones'**
+  String get configDemoTitle;
+
+  /// No description provided for @configDemoSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Muestra cada aviso al instante con tu viaje más reciente, sin esperar a que pase de verdad. No cambia ningún dato.'**
+  String get configDemoSubtitle;
+
+  /// No description provided for @configDemoNoTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea un viaje primero para probar las notificaciones.'**
+  String get configDemoNoTrip;
+
+  /// No description provided for @configDemoWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto al 75%'**
+  String get configDemoWarning;
+
+  /// No description provided for @configDemoNearLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto al 85%'**
+  String get configDemoNearLimit;
+
+  /// No description provided for @configDemoExceeded.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto superado'**
+  String get configDemoExceeded;
+
+  /// No description provided for @configDemoNoExpenses.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin gastos registrados'**
+  String get configDemoNoExpenses;
+
+  /// No description provided for @configDemoSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen del día'**
+  String get configDemoSummary;
+
+  /// No description provided for @configDemoClosing.
+  ///
+  /// In es, this message translates to:
+  /// **'Cierre del día'**
+  String get configDemoClosing;
+
+  /// No description provided for @configDemoUpcoming.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje próximo'**
+  String get configDemoUpcoming;
+
+  /// No description provided for @comercioNavPromos.
+  ///
+  /// In es, this message translates to:
+  /// **'Promociones'**
+  String get comercioNavPromos;
+
+  /// No description provided for @comercioCreatePromoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear promoción'**
+  String get comercioCreatePromoTitle;
+
+  /// No description provided for @comercioCreatePromoDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Ofertas y descuentos exclusivos para los turistas Premium de TravelGuard.'**
+  String get comercioCreatePromoDescription;
+
+  /// No description provided for @comercioCreatePromoButton.
+  ///
+  /// In es, this message translates to:
+  /// **'+ Promoción'**
+  String get comercioCreatePromoButton;
+
+  /// No description provided for @comercioPromosTotal.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} PROMOCIONES'**
+  String comercioPromosTotal(int count);
+
+  /// No description provided for @comercioPromosTitle1.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis '**
+  String get comercioPromosTitle1;
+
+  /// No description provided for @comercioPromosTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'promociones'**
+  String get comercioPromosTitle2;
+
+  /// No description provided for @comercioPromosSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo las ven los turistas con TravelGuard Premium, en su sección de Promociones y en la ficha de tu negocio.'**
+  String get comercioPromosSubtitle;
+
+  /// No description provided for @comercioPromosEmptyFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay promociones con este estado.'**
+  String get comercioPromosEmptyFilter;
+
+  /// No description provided for @comercioNewPromoEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVA PROMOCIÓN'**
+  String get comercioNewPromoEyebrow;
+
+  /// No description provided for @comercioNewPromoHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva promoción'**
+  String get comercioNewPromoHeading;
+
+  /// No description provided for @comercioNewPromoSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Una oferta exclusiva para turistas Premium: descuento, combo o beneficio especial.'**
+  String get comercioNewPromoSubtitle;
+
+  /// No description provided for @comercioPromoPreviewTitle2.
+  ///
+  /// In es, this message translates to:
+  /// **'los turistas Premium'**
+  String get comercioPromoPreviewTitle2;
+
+  /// No description provided for @comercioPromoNameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de la promoción'**
+  String get comercioPromoNameLabel;
+
+  /// No description provided for @comercioPromoNameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. 2x1 en almuerzos'**
+  String get comercioPromoNameHint;
+
+  /// No description provided for @comercioSubmitPublishPromo.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar promoción'**
+  String get comercioSubmitPublishPromo;
+
+  /// No description provided for @comercioAudienceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién la puede ver?'**
+  String get comercioAudienceLabel;
+
+  /// No description provided for @comercioAudiencePublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Todo el público'**
+  String get comercioAudiencePublic;
+
+  /// No description provided for @comercioAudiencePremium.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo Premium'**
+  String get comercioAudiencePremium;
+
+  /// No description provided for @comercioAudiencePremiumNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo la verán los turistas con Premium; los demás la ven con candado.'**
+  String get comercioAudiencePremiumNote;
+
+  /// No description provided for @comercioPromoAudienceNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Las promociones son siempre exclusivas para turistas Premium.'**
+  String get comercioPromoAudienceNote;
+
+  /// No description provided for @comercioPremiumBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'PREMIUM'**
+  String get comercioPremiumBadge;
+
+  /// No description provided for @comercioPromoCreatedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Promoción \"{name}\" creada'**
+  String comercioPromoCreatedSnackbar(String name);
+
+  /// No description provided for @activitiesPremiumLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Exclusiva Premium'**
+  String get activitiesPremiumLocked;
+
+  /// No description provided for @activitiesPremiumLockedHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Hazte Premium para ver los detalles →'**
+  String get activitiesPremiumLockedHint;
+
+  /// No description provided for @commonFixMarkedFields.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa los campos marcados en rojo'**
+  String get commonFixMarkedFields;
+
+  /// No description provided for @comercioEditActivityHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar actividad'**
+  String get comercioEditActivityHeading;
+
+  /// No description provided for @comercioEditPromoHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar promoción'**
+  String get comercioEditPromoHeading;
+
+  /// No description provided for @comercioEditEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'EDITANDO'**
+  String get comercioEditEyebrow;
+
+  /// No description provided for @comercioEditSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambia lo que necesites, incluido el estado: borrador, publicada o pausada.'**
+  String get comercioEditSubtitle;
+
+  /// No description provided for @comercioActivityUpdatedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'\"{name}\" actualizada'**
+  String comercioActivityUpdatedSnackbar(String name);
+
+  /// No description provided for @comercioEditSaveError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron guardar los cambios, intenta de nuevo'**
+  String get comercioEditSaveError;
+
+  /// No description provided for @comercioEditTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar'**
+  String get comercioEditTooltip;
+
+  /// No description provided for @comercioEditNotFound.
+  ///
+  /// In es, this message translates to:
+  /// **'No se encontró esa actividad'**
+  String get comercioEditNotFound;
+
+  /// No description provided for @comercioDeleteButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get comercioDeleteButton;
+
+  /// No description provided for @comercioDeleteConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar \"{name}\"?'**
+  String comercioDeleteConfirmTitle(String name);
+
+  /// No description provided for @comercioDeleteConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borra para siempre y los turistas dejarán de verla. No se puede deshacer.'**
+  String get comercioDeleteConfirmBody;
+
+  /// No description provided for @comercioDeletedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'\"{name}\" eliminada'**
+  String comercioDeletedSnackbar(String name);
+
+  /// No description provided for @comercioDeleteError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo eliminar, intenta de nuevo'**
+  String get comercioDeleteError;
+
+  /// No description provided for @receiptScanTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanear recibo'**
+  String get receiptScanTooltip;
+
+  /// No description provided for @receiptScanButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Escanear recibo'**
+  String get receiptScanButton;
+
+  /// No description provided for @receiptPreviewTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa la foto'**
+  String get receiptPreviewTitle;
+
+  /// No description provided for @receiptPreviewHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Que se lean bien el nombre del negocio, la fecha y el total.'**
+  String get receiptPreviewHint;
+
+  /// No description provided for @receiptRetakeButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Retomar'**
+  String get receiptRetakeButton;
+
+  /// No description provided for @receiptConfirmButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar'**
+  String get receiptConfirmButton;
+
+  /// No description provided for @receiptAnalyzing.
+  ///
+  /// In es, this message translates to:
+  /// **'Analizando recibo...'**
+  String get receiptAnalyzing;
+
+  /// No description provided for @receiptReadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos leer el recibo. Intenta tomar una fotografía más clara.'**
+  String get receiptReadError;
+
+  /// No description provided for @receiptCameraError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir la cámara.'**
+  String get receiptCameraError;
+
+  /// No description provided for @receiptFilledNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Llenamos lo que leímos del recibo. Revisa los datos antes de guardar.'**
+  String get receiptFilledNotice;
+
+  /// No description provided for @receiptDateOutOfTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'La fecha del recibo ({date}) está fuera de las fechas del viaje; elige la fecha del gasto.'**
+  String receiptDateOutOfTrip(String date);
+
+  /// No description provided for @tripFinishedReadOnlyNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Este viaje ya terminó: no se pueden agregar gastos ni editar el presupuesto.'**
+  String get tripFinishedReadOnlyNotice;
+
+  /// No description provided for @tripFinishedBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje terminado'**
+  String get tripFinishedBadge;
+
+  /// No description provided for @homeClientNoOpenTripsSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes viajes activos o próximos. Los viajes que ya terminaron no admiten gastos nuevos.'**
+  String get homeClientNoOpenTripsSnackbar;
+
+  /// No description provided for @floatingNavBarAddExpenseSemanticLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar gasto'**
+  String get floatingNavBarAddExpenseSemanticLabel;
 }
 
 class _AppLocalizationsDelegate

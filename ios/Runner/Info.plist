@@ -26,6 +26,27 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Claves de ios/Flutter/MobileKeys.xcconfig (ver docs/movil.md) -->
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOOGLE_IOS_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
+	<key>GMSApiKey</key>
+	<string>$(GOOGLE_MAPS_IOS_API_KEY)</string>
+	<!-- HU-20: foto de portada del comercio (image_picker) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TravelGuard usa tus fotos para que elijas la imagen de portada de tu comercio.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TravelGuard usa la cámara para tomar la foto de portada de tu comercio.</string>
 	<!-- HU-07 / TG-145: requerido por geolocator para pedir permiso de ubicación -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>TravelGuard usa tu ubicación para mostrarte comercios y lugares de interés cercanos en el mapa.</string>

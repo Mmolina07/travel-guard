@@ -8,8 +8,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.travelguard"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.travelguard.app"
+    // flutter_secure_storage exige compilar contra la API 37; solo cambia
+    // las APIs disponibles al compilar, no el comportamiento (targetSdk).
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.travelguard"
+        applicationId = "com.travelguard.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

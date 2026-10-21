@@ -711,3 +711,17 @@ y los métodos nuevos de `PlacesMapRepository`
 (`fetchActividadesDelComercio`, `createActividad`, `updateActividad`,
 `deleteActividad`) deberían funcionar sin el error de "relation does
 not exist" / "column does not exist" que daban antes de correrla.
+
+## Promociones Premium (`hu_promociones_premium.sql`)
+
+Agrega `actividades.solo_premium` (BOOLEAN, por defecto `false`): una
+actividad puede ser para todo el público o solo para turistas Premium,
+y las de categoría `'Promoción'` son siempre Premium (el script marca
+las que ya existían). Las crea el comercio desde "Promociones" → "Crear
+promoción", o desde "Crear actividad" con "¿Quién la puede ver?" = Solo
+Premium.
+
+**Ya se corrió en Supabase el 2026-10-07**, junto con
+`seed_promociones_premium.sql` (6 promociones y 2 actividades Solo
+Premium de ejemplo en La Migueria, Pueblito paisa, almuerzos pacho y
+comida rapida; el seed no duplica si se vuelve a correr).

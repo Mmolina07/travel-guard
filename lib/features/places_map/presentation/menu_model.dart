@@ -7,17 +7,32 @@
 // `home_screen_comercio.dart` — solo cambia cómo se serializan hacia/desde
 // Supabase, no los nombres que ve el resto de la app.
 
+/// Tipo de producto (`menu_productos.categoria`), para mostrar el menú
+/// organizado por secciones (HU-20 CA2). El orden de los valores es el
+/// orden de las secciones.
+enum ProductCategory {
+  plato,
+  bebida,
+  postre,
+  otro;
+
+  static ProductCategory fromDb(String? value) => ProductCategory.values
+      .firstWhere((c) => c.name == value, orElse: () => ProductCategory.plato);
+}
+
 class MenuItem {
   final int? id;
   final String name;
   final String description;
   final double price;
+  final ProductCategory category;
 
   const MenuItem({
     this.id,
     required this.name,
     required this.description,
     required this.price,
+    this.category = ProductCategory.plato,
   });
 
   factory MenuItem.fromRow(Map<String, dynamic> row) {
@@ -26,6 +41,7 @@ class MenuItem {
       name: row['nombre']?.toString() ?? '',
       description: row['descripcion']?.toString() ?? '',
       price: _parsePrice(row['precio']),
+      category: ProductCategory.fromDb(row['categoria'] as String?),
     );
   }
 
@@ -37,6 +53,7 @@ class MenuItem {
       'nombre': name,
       'descripcion': description,
       'precio': price,
+      'categoria': category.name,
     };
   }
 
@@ -60,12 +77,14 @@ class MenuItem {
     String? name,
     String? description,
     double? price,
+    ProductCategory? category,
   }) {
     return MenuItem(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       price: price ?? this.price,
+      category: category ?? this.category,
     );
   }
 }
@@ -103,6 +122,14 @@ class Menu {
   int getProductCount() {
     return products.length;
   }
+
+  /// Productos agrupados por tipo, en el orden de [ProductCategory] y
+  /// sin secciones vacías (HU-20 CA2).
+  Map<ProductCategory, List<MenuItem>> get productsByCategory => {
+        for (final c in ProductCategory.values)
+          if (products.any((p) => p.category == c))
+            c: products.where((p) => p.category == c).toList(),
+      };
 
   Menu copyWith({
     int? id,

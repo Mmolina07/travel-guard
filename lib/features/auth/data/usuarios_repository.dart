@@ -26,11 +26,22 @@ class UsuariosRepository {
     return row == null ? null : UsuarioModel.fromMap(row);
   }
 
+  /// Sin distinguir mayúsculas: cuentas viejas guardaron el correo tal
+  /// como se escribió (`Ana@Gmail.com`) y Firebase lo trata igual que
+  /// `ana@gmail.com`.
   Future<UsuarioModel?> findByEmail(String email) async {
-    final row =
-        await _client.from(table).select().eq('email', email).maybeSingle();
+    final row = await _client
+        .from(table)
+        .select()
+        .ilike('email', escapeLikePattern(email.trim()))
+        .maybeSingle();
     return row == null ? null : UsuarioModel.fromMap(row);
   }
+
+  /// Escapa los comodines de `LIKE` (`%`, `_`) para buscar el texto
+  /// literal — `ana_maria@...` no debe coincidir con `anaxmaria@...`.
+  static String escapeLikePattern(String text) =>
+      text.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
 
   Future<UsuarioModel?> findByGoogleId(String googleId) async {
     final row = await _client
@@ -48,7 +59,7 @@ class UsuariosRepository {
     final row = await _client
         .from(table)
         .insert({
-          'email': email,
+          'email': email.trim().toLowerCase(),
           'proveedor_auth': 'local',
           'tipo_usuario': tipoUsuario,
           'estado': 'activo',
@@ -67,7 +78,7 @@ class UsuariosRepository {
     final row = await _client
         .from(table)
         .insert({
-          'email': email,
+          'email': email.trim().toLowerCase(),
           'proveedor_auth': 'google',
           'google_id': googleId,
           'tipo_usuario': tipoUsuario,

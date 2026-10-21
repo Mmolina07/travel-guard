@@ -51,6 +51,21 @@ void main() {
     expect(status.level, DailyBudgetLevel.warning);
   });
 
+  test('umbrales de HU-11: 75% amarilla, 85% aviso de lo que queda, 100% roja', () {
+    DailyBudgetLevel levelFor(double spent) => DailyBudgetCalculator(
+          trip: _trip(),
+          gastos: [_gasto(DateTime(2026, 10, 1), spent)],
+        ).statusFor(DateTime(2026, 10, 1)).level;
+    // Presupuesto del día: 100.000.
+    expect(levelFor(74999), DailyBudgetLevel.ok);
+    expect(levelFor(75000), DailyBudgetLevel.warning);
+    expect(levelFor(85000), DailyBudgetLevel.nearLimit);
+    expect(levelFor(99999), DailyBudgetLevel.nearLimit);
+    expect(levelFor(100000), DailyBudgetLevel.exceeded);
+    // El orden de los niveles es el que usa el aviso "una vez por umbral".
+    expect(DailyBudgetLevel.values.map((l) => l.index), [0, 1, 2, 3]);
+  });
+
   test('gastar de más un día reduce el presupuesto de los siguientes', () {
     final calc = DailyBudgetCalculator(trip: _trip(), gastos: [
       _gasto(DateTime(2026, 10, 1), 190000),

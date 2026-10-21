@@ -29,6 +29,49 @@
             {
               "client_id": "223103352776-orljp1ln7p011ncbmm470kt724u3qe8n.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "223103352776-94bvmto983j4n7u46ce2v9aavvbf3dp0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.travelguard"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:223103352776:android:d36c78687efbecf0c3cafd",
+        "android_client_info": {
+          "package_name": "com.travelguard.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "223103352776-orljp1ln7p011ncbmm470kt724u3qe8n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJx57aY94VspZV2MsvvIjgbLvBHirMNmU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "223103352776-orljp1ln7p011ncbmm470kt724u3qe8n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "223103352776-94bvmto983j4n7u46ce2v9aavvbf3dp0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.travelguard"
+              }
             }
           ]
         }

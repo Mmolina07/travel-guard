@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../widgets/ink_button.dart';
 import '../../providers/subscription_provider.dart';
 
 /// HU-24 / TG-298: validador de acceso a funciones Premium. Muestra
@@ -65,12 +66,12 @@ class PremiumGate extends StatelessWidget {
               children: [
                 Text(title, style: AppText.ui(14, weight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text(description, style: AppText.ui(12.5, color: AppColors.textMuted)),
+                Text(description, style: AppText.ui(13, color: AppColors.textMuted)),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          _SubscribeButton(compact: true),
+          const _SubscribeButton(compact: true),
         ],
       ),
     );
@@ -96,7 +97,7 @@ class PremiumGate extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.mint.withValues(alpha: 0.18),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(AppRadius.dateField),
                 ),
                 child: Icon(icon, color: AppColors.mint, size: 34),
               ),
@@ -108,7 +109,7 @@ class PremiumGate extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 title,
-                style: AppText.display(28, color: AppColors.paper),
+                style: AppText.display(32, color: AppColors.paper),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
@@ -118,9 +119,11 @@ class PremiumGate extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 22),
+              // Los mismos beneficios que lista la pantalla de planes.
               for (final benefit in [
                 l10n.subscriptionsBenefitPromos,
                 l10n.subscriptionsBenefitDailyAlerts,
+                l10n.subscriptionsBenefitOverspendWarning,
                 l10n.subscriptionsBenefitReminder,
               ])
                 Padding(
@@ -129,12 +132,12 @@ class PremiumGate extends StatelessWidget {
                     children: [
                       const Icon(Icons.check_circle_outline, color: AppColors.mint, size: 18),
                       const SizedBox(width: 10),
-                      Expanded(child: Text(benefit, style: AppText.ui(13.5, color: AppColors.paper))),
+                      Expanded(child: Text(benefit, style: AppText.ui(14, color: AppColors.paper))),
                     ],
                   ),
                 ),
               const SizedBox(height: 18),
-              SizedBox(width: double.infinity, child: _SubscribeButton()),
+              const _SubscribeButton(),
             ],
           ),
         ),
@@ -150,18 +153,13 @@ class _SubscribeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return InkButton(
+      label: compact ? context.l10n.premiumGateCompactButton : context.l10n.premiumGateButton,
+      // Sobre `ink` (vista completa) el CTA va en `mint`.
+      variant: compact ? InkButtonVariant.primary : InkButtonVariant.mint,
+      trailingArrow: !compact,
+      expand: !compact,
       onPressed: () => context.push('/suscripciones'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: compact ? AppColors.ink : AppColors.mint,
-        foregroundColor: compact ? AppColors.paper : AppColors.ink,
-        padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20, vertical: compact ? 12 : 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-      ),
-      child: Text(
-        compact ? context.l10n.premiumGateCompactButton : context.l10n.premiumGateButton,
-        style: AppText.ui(13.5, weight: FontWeight.w700, color: compact ? AppColors.paper : AppColors.ink),
-      ),
     );
   }
 }

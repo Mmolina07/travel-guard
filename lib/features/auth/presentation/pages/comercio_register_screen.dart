@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
 import '../../../../core/widgets/underline_field.dart';
 import '../../../places_map/data/geocoding_service.dart';
@@ -14,8 +15,7 @@ class ComercioRegisterScreen extends StatefulWidget {
   const ComercioRegisterScreen({Key? key}) : super(key: key);
 
   @override
-  State<ComercioRegisterScreen> createState() =>
-      _ComercioRegisterScreenState();
+  State<ComercioRegisterScreen> createState() => _ComercioRegisterScreenState();
 }
 
 class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
@@ -31,6 +31,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _isGoogleAccount = false;
+  final _formKey = GlobalKey<FormState>();
   bool _isGeocoding = false;
   LatLng? _comercioLocation;
   final GeocodingService _geocodingService = GeocodingService();
@@ -108,9 +109,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
     // Navegar SOLO si la validación pasó
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => const HomeScreenComercio(),
-      ),
+      MaterialPageRoute(builder: (context) => const HomeScreenComercio()),
     );
   }
 
@@ -128,7 +127,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       return; // Cancelado por el usuario: no hay error que mostrar.
     }
 
-    final displayName = user.userMetadata?['full_name'] as String? ??
+    final displayName =
+        user.userMetadata?['full_name'] as String? ??
         user.userMetadata?['name'] as String?;
     setState(() {
       _isGoogleAccount = true;
@@ -144,8 +144,16 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
   }
 
   bool _validateForm() {
+    // Formato de cada campo (nombre con letras, teléfono con números,
+    // etc.): los errores quedan marcados bajo cada campo.
+    if (!_formKey.currentState!.validate()) {
+      _showError(_formErrorMessage());
+      return false;
+    }
+
     // Escenario 6 de HU-02: campos obligatorios vacíos.
-    final camposVacios = _nitController.text.trim().isEmpty ||
+    final camposVacios =
+        _nitController.text.trim().isEmpty ||
         _nameController.text.trim().isEmpty ||
         _directionController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
@@ -183,7 +191,7 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
     // HU-02 Escenario 1: mínimo 8 caracteres.
     if (_passwordController.text.length < 8) {
-      _showError(context.l10n.commerceRegisterPasswordMin);
+      _showError(context.l10n.valPasswordMin);
       return false;
     }
     // Escenario 3 de HU-02.
@@ -192,6 +200,30 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       return false;
     }
     return true;
+  }
+
+  /// Mensaje del SnackBar cuando falla la validación del Form: el error
+  /// real (antes siempre decía "completa todos los campos", aunque el
+  /// problema fuera, por ejemplo, que las contraseñas no coinciden).
+  String _formErrorMessage() {
+    final l10n = context.l10n;
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+    final hayVacios =
+        [
+          _nitController,
+          _nameController,
+          _directionController,
+          _phoneController,
+          _sedeController,
+          _emailController,
+        ].any((c) => c.text.trim().isEmpty) ||
+        (!_isGoogleAccount && (password.isEmpty || confirm.isEmpty));
+    if (hayVacios) return l10n.commerceRegisterFieldsRequired;
+    if (!_isGoogleAccount && password != confirm) {
+      return l10n.commonPasswordsMismatch;
+    }
+    return l10n.commonFixMarkedFields;
   }
 
   bool _isValidEmail(String email) {
@@ -208,11 +240,29 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
+  }
+
+  int _reverseRequest = 0;
+
+  /// Al marcar un punto en el mapa, la dirección (y la sede, si está
+  /// vacía, con el barrio) se llenan solas con la dirección de ese
+  /// punto. Si se marcan varios puntos seguidos, solo cuenta el último.
+  Future<void> _onMapLocationSelected(LatLng latLng) async {
+    setState(() => _comercioLocation = latLng);
+    final request = ++_reverseRequest;
+    final result = await _geocodingService.reverseGeocode(latLng);
+    if (!mounted || request != _reverseRequest || result == null) return;
+    setState(() {
+      _directionController.text = result.direccion.length > 255
+          ? result.direccion.substring(0, 255)
+          : result.direccion;
+      final barrio = result.barrio;
+      if (_sedeController.text.trim().isEmpty && barrio != null) {
+        _sedeController.text = barrio.length > 100 ? barrio.substring(0, 100) : barrio;
+      }
+    });
   }
 
   /// Busca [address] con [GeocodingService] y, si encuentra un punto,
@@ -251,10 +301,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
       title: context.l10n.commerceRegisterTitle,
       subtitle: context.l10n.commerceRegisterSubtitle,
       maxContentWidth: 560,
-      content: (context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Column(
+      content: (context) => Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 UnderlineField(
@@ -262,6 +314,18 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   hint: context.l10n.commerceRegisterNitHint,
                   controller: _nitController,
                   enabled: !_isLoading,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    AppInputFormatters.nit,
+                    AppInputFormatters.maxLength(17),
+                  ],
+                  validator: (v) {
+                    final required = Validators.required(context, v);
+                    if (required != null) return required;
+                    return Validators.isNit(v!)
+                        ? null
+                        : context.l10n.valNitFormat;
+                  },
                 ),
                 const SizedBox(height: 20),
                 UnderlineField(
@@ -269,6 +333,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   hint: context.l10n.commerceRegisterNameHint,
                   controller: _nameController,
                   enabled: !_isLoading,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    AppInputFormatters.safeText,
+                    AppInputFormatters.maxLength(150),
+                  ],
+                  validator: (v) => Validators.title(context, v, max: 150),
                 ),
                 const SizedBox(height: 20),
                 UnderlineField(
@@ -276,6 +346,12 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   hint: context.l10n.commerceRegisterAddressHint,
                   controller: _directionController,
                   enabled: !_isLoading,
+                  inputFormatters: [
+                    AppInputFormatters.safeText,
+                    AppInputFormatters.maxLength(255),
+                  ],
+                  validator: (v) =>
+                      Validators.title(context, v, min: 5, max: 255),
                   onFieldSubmitted: _geocodeAddress,
                   helperText: context.l10n.commerceRegisterAddressHelper,
                   trailing: IconButton(
@@ -302,6 +378,11 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   enabled: !_isLoading,
+                  inputFormatters: [
+                    AppInputFormatters.phone,
+                    AppInputFormatters.maxLength(20),
+                  ],
+                  validator: (v) => Validators.phone(context, v),
                 ),
                 const SizedBox(height: 20),
                 UnderlineField(
@@ -309,14 +390,21 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   hint: context.l10n.commerceRegisterSedeHint,
                   controller: _sedeController,
                   enabled: !_isLoading,
+                  inputFormatters: [
+                    AppInputFormatters.safeText,
+                    AppInputFormatters.maxLength(100),
+                  ],
+                  validator: (v) => Validators.title(context, v, max: 100),
                 ),
                 const SizedBox(height: 20),
-                Text(context.l10n.commerceRegisterLocationLabel, style: AppText.label(10)),
+                Text(
+                  context.l10n.commerceRegisterLocationLabel,
+                  style: AppText.label(10),
+                ),
                 const SizedBox(height: 8),
                 LocationPickerField(
                   initialLocation: _comercioLocation,
-                  onLocationSelected: (latLng) =>
-                      setState(() => _comercioLocation = latLng),
+                  onLocationSelected: _onMapLocationSelected,
                 ),
                 const SizedBox(height: 20),
                 UnderlineField(
@@ -325,6 +413,8 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   enabled: !_isLoading,
+                  inputFormatters: [AppInputFormatters.maxLength(150)],
+                  validator: (v) => Validators.email(context, v),
                 ),
                 const SizedBox(height: 20),
                 UnderlineField(
@@ -333,10 +423,15 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   controller: _passwordController,
                   obscure: !_isPasswordVisible,
                   enabled: !_isLoading,
-                  helperText: context.l10n.commerceRegisterPasswordHelper,
+                  helperText: context.l10n.valPasswordHelper,
+                  validator: (v) => _isGoogleAccount
+                      ? null
+                      : Validators.newPassword(context, v),
                   trailing: UnderlineFieldPasswordToggle(
                     visible: _isPasswordVisible,
-                    onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    onTap: () => setState(
+                      () => _isPasswordVisible = !_isPasswordVisible,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -346,61 +441,70 @@ class _ComercioRegisterScreenState extends State<ComercioRegisterScreen> {
                   controller: _confirmPasswordController,
                   obscure: !_isPasswordVisible,
                   enabled: !_isLoading,
+                  validator: (v) {
+                    if (_isGoogleAccount) return null;
+                    if ((v ?? '').isEmpty) return context.l10n.valRequired;
+                    return v == _passwordController.text
+                        ? null
+                        : context.l10n.commonPasswordsMismatch;
+                  },
                 ),
               ],
             ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleRegister,
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(context.l10n.commonRegisterButton),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _handleRegister,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Text(context.l10n.commonRegisterButton),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              const Expanded(child: Divider()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  context.l10n.commerceRegisterOr,
-                  style: TextStyle(color: AppColors.textMuted),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    context.l10n.commerceRegisterOr,
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: _isLoading ? null : _handleGoogleRegister,
+                icon: const Icon(Icons.g_mobiledata, size: 28),
+                label: Text(
+                  _isGoogleAccount
+                      ? context.l10n.commerceRegisterGoogleVerified
+                      : context.l10n.commerceRegisterGoogleVerify,
                 ),
               ),
-              const Expanded(child: Divider()),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 56,
-            child: OutlinedButton.icon(
-              onPressed: _isLoading ? null : _handleGoogleRegister,
-              icon: const Icon(Icons.g_mobiledata, size: 28),
-              label: Text(
-                _isGoogleAccount
-                    ? context.l10n.commerceRegisterGoogleVerified
-                    : context.l10n.commerceRegisterGoogleVerify,
-              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.commonTermsNotice,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              context.l10n.commonTermsNotice,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          ],
+        ),
       ),
     );
   }

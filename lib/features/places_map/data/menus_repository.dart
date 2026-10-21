@@ -17,13 +17,16 @@ class MenusRepository {
   static const String _productosTable = 'menu_productos';
 
   /// Todos los menús de [comercioId], con sus productos ya embebidos
-  /// (una sola consulta vía el embed de PostgREST).
-  Future<List<Menu>> fetchMenus(int comercioId) async {
-    final rows = await _client
+  /// (una sola consulta vía el embed de PostgREST). Con
+  /// [onlyAvailable] trae solo los que el comercio tiene disponibles —
+  /// es lo que ve el turista en la ficha del mapa (HU-20 CA11).
+  Future<List<Menu>> fetchMenus(int comercioId, {bool onlyAvailable = false}) async {
+    var query = _client
         .from(_menusTable)
         .select('*, menu_productos(*)')
-        .eq('comercio_id', comercioId)
-        .order('created_at');
+        .eq('comercio_id', comercioId);
+    if (onlyAvailable) query = query.eq('disponible', true);
+    final rows = await query.order('created_at');
 
     return (rows as List).map((row) {
       final map = row as Map<String, dynamic>;
@@ -108,6 +111,7 @@ class MenusRepository {
       'nombre': producto.name,
       'descripcion': producto.description,
       'precio': producto.price,
+      'categoria': producto.category.name,
     }).eq('id', id);
   }
 

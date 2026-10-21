@@ -103,7 +103,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.dateField),
           child: SizedBox(
             height: 200,
             child: Stack(
@@ -130,7 +130,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                 ),
                 if (_isLocating)
                   Container(
-                    color: Colors.black.withOpacity(0.15),
+                    color: AppColors.ink.withValues(alpha: 0.15),
                     child: const Center(
                       child: CircularProgressIndicator(color: _primary),
                     ),
@@ -140,7 +140,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                   bottom: 8,
                   child: FloatingActionButton.small(
                     heroTag: 'usar_ubicacion_actual',
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.surface,
                     onPressed: _isLocating ? null : _useCurrentLocation,
                     child: const Icon(Icons.my_location, color: _primary),
                   ),
@@ -157,7 +157,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                   _selected!.latitude.toStringAsFixed(5),
                   _selected!.longitude.toStringAsFixed(5),
                 ),
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: AppText.ui(11, color: AppColors.textMuted),
         ),
       ],
     );

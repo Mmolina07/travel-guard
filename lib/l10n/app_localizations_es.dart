@@ -255,11 +255,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'Selecciona la ubicación de tu negocio en el mapa';
 
   @override
-  String get commerceRegisterNitInvalid => 'NIT inválido o ya registrado';
+  String get commerceRegisterNitInvalid =>
+      'NIT inválido: usa solo números (5 a 15 dígitos)';
 
   @override
   String get commerceRegisterEmailInvalidOrTaken =>
-      'Email inválido o ya registrado';
+      'Ingresa un correo válido (ej. nombre@correo.com)';
 
   @override
   String get commerceRegisterPasswordMin =>
@@ -289,7 +290,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get configSectionNotifications => 'Notificaciones';
 
   @override
-  String get configNotificationsToggleLabel => 'Activar notificaciones';
+  String get configNotificationsToggleLabel => 'Mostrar alertas';
 
   @override
   String get configSectionSecurity => 'Seguridad';
@@ -359,7 +360,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Se cerrará tu sesión en la aplicación.';
 
   @override
-  String get addExpenseInvalidAmount => 'Ingresa un monto válido';
+  String get addExpenseInvalidAmount => 'Ingresa un monto mayor a 0';
 
   @override
   String get addExpenseTitle => 'Agregar gasto';
@@ -988,10 +989,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createTripStep1TitleLine2 => 'dormimos?';
 
   @override
-  String get createTripStep2TitleLine1 => '¿Cómo nos';
+  String get createTripStep2TitleLine1 => '¿En qué lo';
 
   @override
-  String get createTripStep2TitleLine2 => 'movemos?';
+  String get createTripStep2TitleLine2 => 'vas a gastar?';
 
   @override
   String get createTripStepNameDestination => 'Destino y fechas';
@@ -1000,7 +1001,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createTripStepNameLodging => 'Hospedaje';
 
   @override
-  String get createTripStepNameTransport => 'Transporte';
+  String get createTripStepNameTransport => 'Gastos';
 
   @override
   String get createTripErrorSelectStartDateFirst =>
@@ -1042,7 +1043,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get createTripErrorEmergencyAmountMustBePositive =>
-      'El monto debe ser mayor a 0';
+      'Ingresa un monto válido (0 o más)';
 
   @override
   String get createTripIncompleteDataDialogTitle => 'Datos incompletos';
@@ -1229,13 +1230,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createTripBudgetSummaryTitle => 'Resumen de presupuesto';
 
   @override
-  String get createTripEstimatedLabel => 'Estimado (con lo ingresado)';
+  String get createTripEstimatedLabel => 'Gastos planeados';
 
   @override
   String get createTripOverBudgetLabel => 'Te excedes por';
 
   @override
-  String get createTripAvailableLabel => 'Disponible';
+  String get createTripAvailableLabel => 'Disponible sin planear';
 
   @override
   String get createTripOverBudgetWarning =>
@@ -1296,7 +1297,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get editTripBudgetAddButton => 'Agregar';
 
   @override
-  String get editTripBudgetEstimatedLabel => 'Estimado';
+  String get editTripBudgetEstimatedLabel => 'Gastos planeados';
 
   @override
   String get editTripBudgetOverBudgetLabel => 'Te excedes por';
@@ -1344,7 +1345,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Crea un viaje primero para poder registrar un gasto.';
 
   @override
-  String get homeClientPickTripTitle => '¿A qué viaje pertenece?';
+  String get homeClientPickTripTitle =>
+      '¿A qué viaje quieres agregar el gasto?';
 
   @override
   String get homeClientPickTripSubtitle =>
@@ -1462,7 +1464,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeClientViewMapButton => 'Ver mapa';
 
   @override
-  String get homeClientMapCardPlacesCount => '14 lugares cerca';
+  String homeClientMapCardPlacesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lugares cerca',
+      one: '1 lugar cerca',
+      zero: 'Explora lugares',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get homeClientNextExpenseLabel => 'PRÓXIMO GASTO';
@@ -2008,29 +2019,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get configExchangeRateLabel => 'Tasa de cambio';
 
   @override
-  String configExchangeRatePreview(String rate) {
-    return '1 USD = $rate';
+  String configExchangeRatePreview(String code, String rate) {
+    return '1 $code = $rate';
   }
-
-  @override
-  String get configExchangeRateDialogTitle => 'Tasa de cambio';
-
-  @override
-  String get configExchangeRateDialogHint =>
-      'Sin conexión a ningún servicio: ingresa tú mismo cuántos pesos colombianos equivalen a 1 dólar y a 1 euro. Solo cambia cómo se ven los montos en la app — lo guardado en tus viajes y gastos sigue siendo el valor real en pesos.';
-
-  @override
-  String get configExchangeRateUsdLabel => '1 USD equivale a (COP)';
-
-  @override
-  String get configExchangeRateEurLabel => '1 EUR equivale a (COP)';
-
-  @override
-  String get configExchangeRateInvalid =>
-      'Ingresa valores válidos, mayores a 0';
-
-  @override
-  String get configExchangeRateSavedSnackbar => 'Tasa de cambio actualizada';
 
   @override
   String tripCardSpentOfBudget(String spent, String maxBudget) {
@@ -2321,7 +2312,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String addExpenseExceedsDailyBudget(String over, String budget) {
-    return 'Este gasto supera el presupuesto de ese día por $over (presupuesto diario: $budget).';
+    return 'Vas a exceder tu presupuesto en $over (presupuesto de ese día: $budget).';
   }
 
   @override
@@ -2329,7 +2320,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String addExpenseOverBudgetDialogContent(String budget, String over) {
-    return 'El presupuesto disponible para ese día es $budget y con este gasto te pasarías $over. ¿Quieres registrarlo de todas formas?';
+    return 'El presupuesto disponible para ese día es $budget. Vas a exceder tu presupuesto en $over. Puedes registrarlo de todas formas.';
   }
 
   @override
@@ -2489,7 +2480,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionsBenefitDailyAlerts =>
-      'Cuánto llevas del presupuesto de hoy, con alertas al 75% y al 100%';
+      'Cuánto llevas del presupuesto de hoy, con alertas al 75%, 85% y 100%';
 
   @override
   String get subscriptionsBenefitOverspendWarning =>
@@ -2497,7 +2488,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get subscriptionsBenefitReminder =>
-      'Recordatorio a las 11 PM si no registraste gastos';
+      'Recordatorios: gastos sin registrar, resumen y cierre del día, y aviso antes de cada viaje';
 
   @override
   String get premiumGateBadge => 'EXCLUSIVO PREMIUM';
@@ -2513,16 +2504,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dailyBudgetLockedDescription =>
-      'Con Premium ves cuánto llevas hoy y te avisamos al 75% y al 100%.';
+      'Con Premium ves cuánto llevas hoy y te avisamos al 75%, 85% y 100%.';
 
   @override
   String placeDetailsPromosLockedTitle(int count) {
-    return 'Promociones exclusivas ($count)';
+    return 'Exclusivo Premium ($count)';
   }
 
   @override
   String get placeDetailsPromosLockedDescription =>
-      'Este comercio tiene ofertas solo para usuarios Premium.';
+      'Este comercio tiene promociones y actividades solo para usuarios Premium.';
 
   @override
   String get promosEyebrow => 'EXCLUSIVO PREMIUM';
@@ -2553,4 +2544,1172 @@ class AppLocalizationsEs extends AppLocalizations {
   String promosValidUntil(String date) {
     return 'HASTA $date';
   }
+
+  @override
+  String get productFormRequiredFields =>
+      'Debe completar los campos obligatorios';
+
+  @override
+  String get productFormRequiredField => 'Campo obligatorio';
+
+  @override
+  String get productFormInvalidPrice => 'Ingresa un precio válido mayor a cero';
+
+  @override
+  String get productFormCategoryLabel => 'Tipo de producto';
+
+  @override
+  String get productFormDescriptionOptionalLabel => 'Descripción (opcional)';
+
+  @override
+  String get productFormEditTitle => 'Editar producto';
+
+  @override
+  String get productFormSaveButton => 'Guardar';
+
+  @override
+  String get productCategoryPlato => 'Plato';
+
+  @override
+  String get productCategoryPlatos => 'Platos';
+
+  @override
+  String get productCategoryBebida => 'Bebida';
+
+  @override
+  String get productCategoryBebidas => 'Bebidas';
+
+  @override
+  String get productCategoryPostre => 'Postre';
+
+  @override
+  String get productCategoryPostres => 'Postres';
+
+  @override
+  String get productCategoryOtro => 'Otro';
+
+  @override
+  String get productCategoryOtros => 'Otros';
+
+  @override
+  String get businessSettingsNameTooShort =>
+      'El nombre debe tener al menos 3 caracteres';
+
+  @override
+  String get businessSettingsPhoneInvalid =>
+      'Ingresa un teléfono válido (7 a 15 dígitos)';
+
+  @override
+  String get businessSettingsScheduleIncomplete =>
+      'Define la hora de apertura y la de cierre, o deja las dos sin definir';
+
+  @override
+  String get businessSettingsScheduleSameTime =>
+      'La hora de cierre no puede ser igual a la de apertura';
+
+  @override
+  String get businessSettingsDescriptionLabel => 'Descripción';
+
+  @override
+  String get businessSettingsDescriptionHint =>
+      'Cuéntales a los viajeros qué ofreces';
+
+  @override
+  String get businessSettingsLocationTitle => 'Ubicación';
+
+  @override
+  String get businessSettingsLocationSubtitle =>
+      'Así te encuentran los viajeros en el mapa. Busca tu dirección y ajusta el marcador si hace falta.';
+
+  @override
+  String get businessSettingsAddressNotFound =>
+      'No pudimos ubicar esa dirección en el mapa. Corrígela (agrega ciudad o barrio) para poder guardar.';
+
+  @override
+  String get placeDetailsMenuTitle => 'Menú';
+
+  @override
+  String get businessSettingsHeaderTitle => 'Datos de';
+
+  @override
+  String get businessSettingsHeaderAccent => 'tu negocio';
+
+  @override
+  String get createMenuHeaderTitle => 'Nuevo';
+
+  @override
+  String get createMenuHeaderAccent => 'menú';
+
+  @override
+  String get subscriptionsHeroTitle => 'Viaja sin salirte';
+
+  @override
+  String get subscriptionsHeroAccent => 'de tu presupuesto';
+
+  @override
+  String get subscriptionsSubscribeButton => 'Suscribirme';
+
+  @override
+  String get mySubscriptionTitle => 'Mi suscripción';
+
+  @override
+  String get mySubscriptionHeroTitle => 'Tu suscripción';
+
+  @override
+  String get mySubscriptionStatusActive => 'Activa';
+
+  @override
+  String get mySubscriptionStatusCancelled => 'Cancelada';
+
+  @override
+  String get mySubscriptionStatRenewal => 'Renovación';
+
+  @override
+  String get mySubscriptionStatEnds => 'Acceso hasta';
+
+  @override
+  String get mySubscriptionStatDaysLeft => 'Días restantes';
+
+  @override
+  String get mySubscriptionDetailsTitle => 'Detalles del plan';
+
+  @override
+  String get mySubscriptionRowPlan => 'Plan actual';
+
+  @override
+  String get mySubscriptionRowStatus => 'Estado';
+
+  @override
+  String get mySubscriptionRowPeriod => 'Periodo actual';
+
+  @override
+  String get mySubscriptionRowRenewalDate => 'Fecha de renovación';
+
+  @override
+  String get mySubscriptionRowRenewalMode => 'Renovación';
+
+  @override
+  String get mySubscriptionRowNextPlan => 'Plan al renovar';
+
+  @override
+  String get mySubscriptionRowPrepaid => 'Periodos ya pagados';
+
+  @override
+  String mySubscriptionPeriodRange(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get mySubscriptionRenewalManual =>
+      'Manual: pagas el siguiente periodo cuando quieras, sin cobros automáticos';
+
+  @override
+  String mySubscriptionRenewalCancelled(String date) {
+    return 'No se renovará. Tienes Premium hasta el $date.';
+  }
+
+  @override
+  String mySubscriptionRenewSoon(int days) {
+    return 'Tu Premium vence en $days días.';
+  }
+
+  @override
+  String mySubscriptionRenewNow(String plan) {
+    return 'Renovar $plan';
+  }
+
+  @override
+  String get mySubscriptionChangeTitle => 'Cambiar de plan';
+
+  @override
+  String get mySubscriptionChangeSubtitle =>
+      'Al pasar a anual pagas ahora y empieza cuando termina lo que ya pagaste. Al pasar a mensual no se cobra nada: aplica al renovar.';
+
+  @override
+  String get mySubscriptionChangeCancelledHint =>
+      'Reactiva tu suscripción para poder cambiar de plan.';
+
+  @override
+  String get mySubscriptionCurrentBadge => 'Tu plan';
+
+  @override
+  String get mySubscriptionScheduledBadge => 'Programado al renovar';
+
+  @override
+  String get mySubscriptionUpgradeButton => 'Cambiar a anual';
+
+  @override
+  String get mySubscriptionDowngradeButton => 'Cambiar a mensual';
+
+  @override
+  String mySubscriptionKeepPlan(String plan) {
+    return 'Mantener $plan';
+  }
+
+  @override
+  String get mySubscriptionUpgradeDialogTitle => 'Cambiar al plan anual';
+
+  @override
+  String mySubscriptionUpgradeDialogBody(
+    String price,
+    String from,
+    String until,
+  ) {
+    return 'Pagas $price ahora. El plan anual va del $from al $until: empieza cuando termina lo que ya pagaste, así no pierdes ningún día.';
+  }
+
+  @override
+  String get mySubscriptionUpgradeConfirm => 'Pagar plan anual';
+
+  @override
+  String get mySubscriptionDowngradeDialogTitle => 'Cambiar al plan mensual';
+
+  @override
+  String mySubscriptionDowngradeDialogBody(String date, String price) {
+    return 'No se cobra nada ahora. Conservas lo que ya pagaste hasta el $date; al renovar pagarás el plan mensual ($price).';
+  }
+
+  @override
+  String get mySubscriptionDowngradeConfirm => 'Programar cambio';
+
+  @override
+  String mySubscriptionChangeScheduledSnackbar(String plan) {
+    return 'Cambio programado: al renovar pasarás al $plan.';
+  }
+
+  @override
+  String get mySubscriptionChangeUndoneSnackbar =>
+      'Listo, conservas tu plan actual.';
+
+  @override
+  String get mySubscriptionCancelTitle => 'Cancelar suscripción';
+
+  @override
+  String mySubscriptionCancelBody(String date) {
+    return 'Tu Premium sigue activo hasta el $date y después no se renueva. No hay reembolso de lo ya pagado.';
+  }
+
+  @override
+  String get mySubscriptionCancelDialogTitle => '¿Cancelar tu suscripción?';
+
+  @override
+  String get mySubscriptionCancelConfirm => 'Sí, cancelar';
+
+  @override
+  String get mySubscriptionCancelKeep => 'Mantener Premium';
+
+  @override
+  String mySubscriptionCancelledSnackbar(String date) {
+    return 'Suscripción cancelada. Tienes Premium hasta el $date.';
+  }
+
+  @override
+  String get mySubscriptionCancelledTitle => 'Suscripción cancelada';
+
+  @override
+  String get mySubscriptionReactivateButton => 'Reactivar suscripción';
+
+  @override
+  String get mySubscriptionReactivatedSnackbar => 'Suscripción reactivada.';
+
+  @override
+  String get mySubscriptionHistoryTitle => 'Historial de pagos';
+
+  @override
+  String get mySubscriptionHistoryEmpty => 'Aún no hay pagos.';
+
+  @override
+  String get mySubscriptionHistoryError => 'No pudimos cargar tus pagos.';
+
+  @override
+  String get mySubscriptionEmptyTitle => 'No tienes una suscripción activa';
+
+  @override
+  String get mySubscriptionEmptySubtitle =>
+      'Hazte Premium para ver promociones exclusivas y recibir alertas de tu presupuesto diario.';
+
+  @override
+  String get mySubscriptionSeePlans => 'Ver planes';
+
+  @override
+  String get mySubscriptionActionError =>
+      'No se pudo actualizar tu suscripción. Intenta de nuevo.';
+
+  @override
+  String get mySubscriptionManageButton => 'Gestionar mi suscripción';
+
+  @override
+  String get mySubscriptionGoTo => 'Ver mi suscripción';
+
+  @override
+  String get paymentStatusApproved => 'Aprobado';
+
+  @override
+  String get paymentStatusInProcess => 'En proceso';
+
+  @override
+  String get paymentStatusPending => 'Pendiente';
+
+  @override
+  String get paymentStatusRejected => 'Rechazado';
+
+  @override
+  String get paymentStatusCancelled => 'Cancelado';
+
+  @override
+  String get paymentStatusRefunded => 'Reembolsado';
+
+  @override
+  String get budgetNoticeOpenTrip => 'Ver viaje';
+
+  @override
+  String get configNotificationsToggleSubtitle =>
+      'Alertas del presupuesto diario y recordatorios. Apagado, tus gastos se siguen registrando.';
+
+  @override
+  String get budgetNoticeToday => 'hoy';
+
+  @override
+  String budgetNoticeOnDate(String date) {
+    return 'el $date';
+  }
+
+  @override
+  String budgetNoticeWarningTitle(int pct) {
+    return 'Has gastado el $pct% de tu presupuesto diario';
+  }
+
+  @override
+  String budgetNoticeWarningMessage(String trip, String amount, String day) {
+    return '¡Cuidado! $trip: te quedan $amount para $day.';
+  }
+
+  @override
+  String budgetNoticeNearLimitTitle(String amount, String day) {
+    return 'Te quedan $amount de presupuesto para $day';
+  }
+
+  @override
+  String budgetNoticeNearLimitMessage(String trip, int pct, String day) {
+    return '¡Cuidado! $trip: ya vas en el $pct% del presupuesto de $day.';
+  }
+
+  @override
+  String get budgetNoticeExceededTitle => 'Has alcanzado tu límite diario';
+
+  @override
+  String budgetNoticeExceededMessage(
+    String trip,
+    int pct,
+    String spent,
+    String budget,
+    String day,
+  ) {
+    return '$trip: vas en el $pct% ($spent de $budget para $day). Los próximos días tendrán menos disponible.';
+  }
+
+  @override
+  String get configBrowserNotificationsLabel => 'Notificaciones del navegador';
+
+  @override
+  String get configBrowserNotificationsSubtitle =>
+      'Además de dentro de la app, recibe las alertas como notificación de tu navegador (con la pestaña abierta).';
+
+  @override
+  String get configBrowserNotificationsDenied =>
+      'El navegador bloqueó las notificaciones. Permítelas en la configuración del sitio (ícono del candado junto a la dirección).';
+
+  @override
+  String get configBrowserNotificationsUnsupported =>
+      'Este navegador no admite notificaciones.';
+
+  @override
+  String get configBrowserNotificationsTestTitle => 'TravelGuard';
+
+  @override
+  String get configBrowserNotificationsTestBody =>
+      'Listo: así te avisaremos cuando tu presupuesto del día llegue al 75%, 85% y 100%.';
+
+  @override
+  String get reminderNoExpensesTitle =>
+      '¿Tuviste gastos hoy que no hayas registrado?';
+
+  @override
+  String reminderNoExpensesMessage(String trip, int hours) {
+    return '$trip: llevas más de $hours horas sin registrar gastos.';
+  }
+
+  @override
+  String reminderNoExpensesEndOfDay(String trip) {
+    return '$trip: hoy no registraste ningún gasto. Anótalos para que tu presupuesto siga siendo real.';
+  }
+
+  @override
+  String get reminderRegisterExpense => 'Registrar gasto';
+
+  @override
+  String reminderDailySummaryTitle(String spent, String remaining) {
+    return 'Gasto de hoy: $spent. Presupuesto restante: $remaining';
+  }
+
+  @override
+  String reminderDailySummaryMessage(String trip) {
+    return '$trip · resumen del día';
+  }
+
+  @override
+  String reminderDayClosingTitle(
+    int day,
+    String budget,
+    String spent,
+    String saved,
+  ) {
+    return 'Día $day: Presupuesto $budget | Gastaste $spent | Ahorro $saved';
+  }
+
+  @override
+  String reminderDayClosingOverTitle(
+    int day,
+    String budget,
+    String spent,
+    String over,
+  ) {
+    return 'Día $day: Presupuesto $budget | Gastaste $spent | Exceso $over';
+  }
+
+  @override
+  String reminderDayClosingMessage(String trip, String date) {
+    return '$trip · cierre del $date';
+  }
+
+  @override
+  String reminderUpcomingTripTitle(String destination, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '1 día',
+    );
+    return 'Tu viaje a $destination inicia en $_temp0';
+  }
+
+  @override
+  String get reminderUpcomingTripMessage => '¿Quieres revisar tu presupuesto?';
+
+  @override
+  String get reminderReviewBudget => 'Revisar presupuesto';
+
+  @override
+  String get configRemindersTitle => 'Recordatorios';
+
+  @override
+  String get configReminderHoursLabel => 'Recordarme si no registro gastos en';
+
+  @override
+  String configReminderHoursOption(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String get configReminderHoursHint =>
+      'Solo entre las 8 AM y las 10 PM, durante un viaje.';
+
+  @override
+  String get configDailySummaryLabel => 'Resumen diario a las 11 PM';
+
+  @override
+  String get configDailySummarySubtitle =>
+      'Gasto de hoy y presupuesto restante.';
+
+  @override
+  String get configTripReminderLabel => 'Aviso antes de un viaje';
+
+  @override
+  String get configTripReminderSubtitle =>
+      '3 días y 1 día antes, para revisar tu presupuesto.';
+
+  @override
+  String get configRemindersPremiumHint =>
+      'Las alertas y recordatorios son parte de Premium.';
+
+  @override
+  String get mySubscriptionStatCost => 'Costo';
+
+  @override
+  String get mySubscriptionRowCost => 'Costo del plan';
+
+  @override
+  String mySubscriptionCostValue(String price, String period) {
+    return '$price $period';
+  }
+
+  @override
+  String get mySubscriptionRowRenewalCost => 'Próxima renovación';
+
+  @override
+  String mySubscriptionRenewalCostValue(String date, String price) {
+    return '$date · $price';
+  }
+
+  @override
+  String get businessSettingsPhotoTitle => 'Foto de portada';
+
+  @override
+  String get businessSettingsPhotoSubtitle =>
+      'Es la imagen que ven los viajeros en la tarjeta de tu comercio y en su ficha.';
+
+  @override
+  String get businessSettingsPhotoUpload => 'Subir foto';
+
+  @override
+  String get businessSettingsPhotoChange => 'Cambiar foto';
+
+  @override
+  String get businessSettingsPhotoRemove => 'Quitar';
+
+  @override
+  String get businessSettingsPhotoEmpty => 'Sin foto de portada';
+
+  @override
+  String get businessSettingsPhotoHint =>
+      'JPG, PNG o WebP · máx. 5 MB · horizontal se ve mejor';
+
+  @override
+  String get businessSettingsPhotoTooLarge =>
+      'La imagen pesa más de 5 MB. Elige una más liviana.';
+
+  @override
+  String get businessSettingsPhotoInvalidType =>
+      'Formato no admitido. Usa una imagen JPG, PNG o WebP.';
+
+  @override
+  String get businessSettingsPhotoPickError =>
+      'No se pudo abrir la imagen. Intenta con otra.';
+
+  @override
+  String get homeComercioPhotoUploadError =>
+      'Tus datos no se guardaron porque la foto no se pudo subir. Intenta de nuevo.';
+
+  @override
+  String get comercioNavSectionLabel => 'NEGOCIO';
+
+  @override
+  String get comercioPublicProfileLabel => 'TU PERFIL PÚBLICO';
+
+  @override
+  String get comercioViewAsTourist => 'Ver como turista →';
+
+  @override
+  String get comercioSignOutShort => 'Salir';
+
+  @override
+  String get comercioSearchHint => 'Buscar actividades o platos';
+
+  @override
+  String get comercioPanelEyebrow => 'PANEL DEL NEGOCIO';
+
+  @override
+  String get comercioGreetingPrefix => '¡Hola, ';
+
+  @override
+  String get comercioYourMenuTitle => 'Tu menú';
+
+  @override
+  String get comercioEditLink => 'Editar';
+
+  @override
+  String get comercioEmptyActivitiesBody =>
+      'Las actividades publicadas aparecen en el mapa y en la lista de comercios cercanos de los turistas.';
+
+  @override
+  String get comercioCreateFirstActivity => 'Crear la primera →';
+
+  @override
+  String get comercioEmptyMenuShort => 'Todavía no hay platos.';
+
+  @override
+  String get comercioRetry => 'Reintentar';
+
+  @override
+  String get comercioStatusPublished => 'Publicada';
+
+  @override
+  String get comercioStatusDraft => 'Borrador';
+
+  @override
+  String get comercioStatusPaused => 'Pausada';
+
+  @override
+  String get comercioFilterAll => 'Todas';
+
+  @override
+  String get comercioDatesNone => 'Sin fecha';
+
+  @override
+  String comercioDatesFrom(String date) {
+    return 'Desde $date';
+  }
+
+  @override
+  String get comercioFree => 'Gratis';
+
+  @override
+  String comercioActivitiesTotal(int count) {
+    return '$count EN TOTAL';
+  }
+
+  @override
+  String get comercioActivitiesTitle1 => 'Mis ';
+
+  @override
+  String get comercioActivitiesTitle2 => 'actividades';
+
+  @override
+  String get comercioColActivity => 'ACTIVIDAD';
+
+  @override
+  String get comercioColCategory => 'CATEGORÍA';
+
+  @override
+  String get comercioColDates => 'FECHAS';
+
+  @override
+  String get comercioColPrice => 'PRECIO';
+
+  @override
+  String get comercioColStatus => 'ESTADO';
+
+  @override
+  String get comercioActivitiesEmptyFilter =>
+      'No hay actividades con este estado.';
+
+  @override
+  String get comercioNoDescription => 'Sin descripción';
+
+  @override
+  String comercioMenuProductsCount(int count) {
+    return '$count PRODUCTOS';
+  }
+
+  @override
+  String get comercioMenuTitle1 => 'Tu ';
+
+  @override
+  String get comercioMenuTitle2 => 'menú';
+
+  @override
+  String get comercioMenuSubtitle =>
+      'Platos, bebidas y servicios que ofrece tu negocio.';
+
+  @override
+  String get comercioAddProductButton => '+ Agregar producto';
+
+  @override
+  String get comercioAddProductShort => '+ Producto';
+
+  @override
+  String get comercioMenuEmpty =>
+      'Tu menú está vacío. Agrega el primer plato y aparecerá en tu perfil público.';
+
+  @override
+  String get comercioMenuDetailLink => 'Ver detalle';
+
+  @override
+  String get comercioPickMenuTitle => '¿A qué menú lo agregas?';
+
+  @override
+  String get comercioNewActivityEyebrow => 'NUEVA ACTIVIDAD';
+
+  @override
+  String get comercioPreviewTitle1 => 'Así la verán';
+
+  @override
+  String get comercioPreviewTitle2 => 'los turistas';
+
+  @override
+  String get comercioPreviewDescPlaceholder => 'La descripción aparecerá aquí.';
+
+  @override
+  String get comercioStatusNotePublished => 'Visible en el mapa al guardar';
+
+  @override
+  String get comercioStatusNotePaused => 'Oculta para los turistas';
+
+  @override
+  String get comercioStatusNoteDraft => 'Solo tú la ves mientras sea borrador';
+
+  @override
+  String get comercioNoEndToggle => 'Sin fin';
+
+  @override
+  String get comercioEndShort => 'Fin';
+
+  @override
+  String get comercioPickDate => 'Elegir fecha';
+
+  @override
+  String get comercioSubmitPublish => 'Publicar actividad';
+
+  @override
+  String get comercioSubmitPaused => 'Guardar pausada';
+
+  @override
+  String get comercioSubmitDraft => 'Guardar borrador';
+
+  @override
+  String get comercioNewMenuEyebrow => 'NUEVO MENÚ';
+
+  @override
+  String get comercioMenuPreviewTitle1 => 'Así lo verán';
+
+  @override
+  String get comercioMenuPreviewEmpty => 'Los productos aparecerán aquí.';
+
+  @override
+  String comercioSearchNoResults(String query) {
+    return 'Nada coincide con «$query».';
+  }
+
+  @override
+  String get valRequired => 'Este campo es obligatorio';
+
+  @override
+  String valTooShort(int min) {
+    return 'Debe tener al menos $min caracteres';
+  }
+
+  @override
+  String valTooLong(int max) {
+    return 'Máximo $max caracteres';
+  }
+
+  @override
+  String get valPersonName => 'Solo se permiten letras y espacios';
+
+  @override
+  String get valNeedsLetter => 'Debe contener al menos una letra';
+
+  @override
+  String get valInvalidChars => 'No se permiten símbolos como < > [ ] o \\';
+
+  @override
+  String get valEmail => 'Ingresa un correo válido (ej. nombre@correo.com)';
+
+  @override
+  String get valPhone =>
+      'Ingresa un teléfono válido: solo números, de 7 a 15 dígitos';
+
+  @override
+  String get valPasswordMin => 'La contraseña debe tener al menos 8 caracteres';
+
+  @override
+  String get valPasswordHelper => 'Al menos 8 caracteres';
+
+  @override
+  String get valAmountPositive => 'Ingresa un monto mayor a 0';
+
+  @override
+  String valAmountMax(String max) {
+    return 'El monto no puede superar $max';
+  }
+
+  @override
+  String valIntRange(int min, int max) {
+    return 'Debe ser un número entre $min y $max';
+  }
+
+  @override
+  String get valEndBeforeStart =>
+      'La fecha de fin no puede ser anterior a la de inicio';
+
+  @override
+  String get valDuplicateProduct =>
+      'Ya hay un producto con ese nombre en este menú';
+
+  @override
+  String get valCardHolder =>
+      'Escribe el nombre como aparece en la tarjeta (solo letras)';
+
+  @override
+  String get valScheduleBoth =>
+      'Indica la hora de apertura y la de cierre, o ninguna';
+
+  @override
+  String get valDocLength => 'El documento debe tener entre 5 y 12 dígitos';
+
+  @override
+  String get valInviteEmailRequired => 'Escribe el correo de la persona';
+
+  @override
+  String get valOverBudgetTitle => 'Lo planeado supera el presupuesto';
+
+  @override
+  String valOverBudgetContent(String amount) {
+    return 'Lo que planeaste supera tu presupuesto máximo por $amount. ¿Quieres guardar igual?';
+  }
+
+  @override
+  String get valOverBudgetConfirm => 'Guardar igual';
+
+  @override
+  String get valOverBudgetCancel => 'Revisar';
+
+  @override
+  String get valAdvanceOverBudget =>
+      'Los pagos anticipados no pueden superar el presupuesto máximo';
+
+  @override
+  String get valPersonsRange => 'Las personas deben ser entre 1 y 50';
+
+  @override
+  String get valLoadTripsError =>
+      'No pudimos cargar tus viajes. Revisa tu conexión.';
+
+  @override
+  String get valLoadPlacesError => 'No pudimos cargar los lugares cercanos.';
+
+  @override
+  String get valLoadGastosError =>
+      'No pudimos cargar tus gastos: las barras muestran solo lo planeado.';
+
+  @override
+  String get valLoadMapError => 'No pudimos cargar los lugares del mapa.';
+
+  @override
+  String get valNitFormat =>
+      'NIT inválido: usa solo números (5 a 15 dígitos) y, si quieres, -dígito de verificación';
+
+  @override
+  String get valCommerceAddress => 'Escribe una dirección válida';
+
+  @override
+  String get placeDetailsDirectionsSoon => 'Disponible próximamente';
+
+  @override
+  String createTripAutoMealsRow(String meals) {
+    return 'Comidas no incluidas ($meals)';
+  }
+
+  @override
+  String get createTripAutoTransfersRow => 'Traslados';
+
+  @override
+  String get createTripServicesHint =>
+      'Marca lo que ya cubre tu hospedaje: eso no lo tienes que presupuestar. Lo que no esté incluido lo agregamos a los gastos del último paso para que le pongas un monto.';
+
+  @override
+  String get createTripEstimatedHint =>
+      'Hospedaje + pagos anticipados + gastos adicionales + emergencias';
+
+  @override
+  String createTripCoveredByLodging(String services) {
+    return 'Cubierto por el hospedaje: $services';
+  }
+
+  @override
+  String get createTripIncompleteFieldsIntro => 'Te faltan estos campos:';
+
+  @override
+  String get createTripIncompleteFieldsOutro =>
+      'Puedes crear el viaje así, pero el presupuesto será menos preciso. Si alguno no aplica, escribe 0.';
+
+  @override
+  String get createTripIncompleteFillButton => 'Completarlos';
+
+  @override
+  String tripDetailPaceRemaining(String amount) {
+    return 'Te quedan $amount del presupuesto, ya descontando lo planeado y lo gastado. Para no pasarte, puedes gastar:';
+  }
+
+  @override
+  String get tripDetailPacePerDayGroup => 'Por día, todo el grupo';
+
+  @override
+  String get tripDetailPacePerDaySolo => 'Por día';
+
+  @override
+  String get tripDetailPacePerPersonDay => 'Por persona, por día';
+
+  @override
+  String get tripDetailPaceNoBudgetLeft =>
+      'Lo planeado y lo gastado ya cubren todo el presupuesto: no queda margen para gastos nuevos.';
+
+  @override
+  String get tripDetailPacePlanned => 'Planeado al crear el viaje';
+
+  @override
+  String get tripDetailPaceRegistered => 'Gastos registrados';
+
+  @override
+  String tripDetailPacePerPerson(int persons) {
+    return 'Total por persona ($persons personas)';
+  }
+
+  @override
+  String get appShellNavActivities => 'Actividades';
+
+  @override
+  String activitiesEyebrow(int count) {
+    return '$count PARA HACER';
+  }
+
+  @override
+  String get activitiesTitle1 => 'Actividades ';
+
+  @override
+  String get activitiesTitle2 => 'cerca de ti';
+
+  @override
+  String get activitiesSubtitle =>
+      'Eventos, tours, clases y planes que publican los comercios de TravelGuard.';
+
+  @override
+  String get activitiesAllFilter => 'Todas';
+
+  @override
+  String get activitiesEmpty =>
+      'Todavía no hay actividades publicadas. Vuelve pronto.';
+
+  @override
+  String get activitiesEmptyFilter => 'No hay actividades de esta categoría.';
+
+  @override
+  String get activitiesLoadError => 'No pudimos cargar las actividades.';
+
+  @override
+  String get activitiesPromoBanner =>
+      '¿Buscas descuentos? Las promociones exclusivas están en Promociones.';
+
+  @override
+  String get activitiesPromoLink => 'Ver promociones →';
+
+  @override
+  String get activitiesViewBusiness => 'Ver comercio →';
+
+  @override
+  String get activitiesBusinessUnavailable =>
+      'Este comercio todavía no tiene su ficha disponible.';
+
+  @override
+  String get homeClientViewActivitiesButton => 'Ver actividades →';
+
+  @override
+  String get configDemoTitle => 'Probar notificaciones';
+
+  @override
+  String get configDemoSubtitle =>
+      'Muestra cada aviso al instante con tu viaje más reciente, sin esperar a que pase de verdad. No cambia ningún dato.';
+
+  @override
+  String get configDemoNoTrip =>
+      'Crea un viaje primero para probar las notificaciones.';
+
+  @override
+  String get configDemoWarning => 'Presupuesto al 75%';
+
+  @override
+  String get configDemoNearLimit => 'Presupuesto al 85%';
+
+  @override
+  String get configDemoExceeded => 'Presupuesto superado';
+
+  @override
+  String get configDemoNoExpenses => 'Sin gastos registrados';
+
+  @override
+  String get configDemoSummary => 'Resumen del día';
+
+  @override
+  String get configDemoClosing => 'Cierre del día';
+
+  @override
+  String get configDemoUpcoming => 'Viaje próximo';
+
+  @override
+  String get comercioNavPromos => 'Promociones';
+
+  @override
+  String get comercioCreatePromoTitle => 'Crear promoción';
+
+  @override
+  String get comercioCreatePromoDescription =>
+      'Ofertas y descuentos exclusivos para los turistas Premium de TravelGuard.';
+
+  @override
+  String get comercioCreatePromoButton => '+ Promoción';
+
+  @override
+  String comercioPromosTotal(int count) {
+    return '$count PROMOCIONES';
+  }
+
+  @override
+  String get comercioPromosTitle1 => 'Mis ';
+
+  @override
+  String get comercioPromosTitle2 => 'promociones';
+
+  @override
+  String get comercioPromosSubtitle =>
+      'Solo las ven los turistas con TravelGuard Premium, en su sección de Promociones y en la ficha de tu negocio.';
+
+  @override
+  String get comercioPromosEmptyFilter => 'No hay promociones con este estado.';
+
+  @override
+  String get comercioNewPromoEyebrow => 'NUEVA PROMOCIÓN';
+
+  @override
+  String get comercioNewPromoHeading => 'Nueva promoción';
+
+  @override
+  String get comercioNewPromoSubtitle =>
+      'Una oferta exclusiva para turistas Premium: descuento, combo o beneficio especial.';
+
+  @override
+  String get comercioPromoPreviewTitle2 => 'los turistas Premium';
+
+  @override
+  String get comercioPromoNameLabel => 'Nombre de la promoción';
+
+  @override
+  String get comercioPromoNameHint => 'Ej. 2x1 en almuerzos';
+
+  @override
+  String get comercioSubmitPublishPromo => 'Publicar promoción';
+
+  @override
+  String get comercioAudienceLabel => '¿Quién la puede ver?';
+
+  @override
+  String get comercioAudiencePublic => 'Todo el público';
+
+  @override
+  String get comercioAudiencePremium => 'Solo Premium';
+
+  @override
+  String get comercioAudiencePremiumNote =>
+      'Solo la verán los turistas con Premium; los demás la ven con candado.';
+
+  @override
+  String get comercioPromoAudienceNote =>
+      'Las promociones son siempre exclusivas para turistas Premium.';
+
+  @override
+  String get comercioPremiumBadge => 'PREMIUM';
+
+  @override
+  String comercioPromoCreatedSnackbar(String name) {
+    return 'Promoción \"$name\" creada';
+  }
+
+  @override
+  String get activitiesPremiumLocked => 'Exclusiva Premium';
+
+  @override
+  String get activitiesPremiumLockedHint =>
+      'Hazte Premium para ver los detalles →';
+
+  @override
+  String get commonFixMarkedFields => 'Revisa los campos marcados en rojo';
+
+  @override
+  String get comercioEditActivityHeading => 'Editar actividad';
+
+  @override
+  String get comercioEditPromoHeading => 'Editar promoción';
+
+  @override
+  String get comercioEditEyebrow => 'EDITANDO';
+
+  @override
+  String get comercioEditSubtitle =>
+      'Cambia lo que necesites, incluido el estado: borrador, publicada o pausada.';
+
+  @override
+  String comercioActivityUpdatedSnackbar(String name) {
+    return '\"$name\" actualizada';
+  }
+
+  @override
+  String get comercioEditSaveError =>
+      'No se pudieron guardar los cambios, intenta de nuevo';
+
+  @override
+  String get comercioEditTooltip => 'Editar';
+
+  @override
+  String get comercioEditNotFound => 'No se encontró esa actividad';
+
+  @override
+  String get comercioDeleteButton => 'Eliminar';
+
+  @override
+  String comercioDeleteConfirmTitle(String name) {
+    return '¿Eliminar \"$name\"?';
+  }
+
+  @override
+  String get comercioDeleteConfirmBody =>
+      'Se borra para siempre y los turistas dejarán de verla. No se puede deshacer.';
+
+  @override
+  String comercioDeletedSnackbar(String name) {
+    return '\"$name\" eliminada';
+  }
+
+  @override
+  String get comercioDeleteError => 'No se pudo eliminar, intenta de nuevo';
+
+  @override
+  String get receiptScanTooltip => 'Escanear recibo';
+
+  @override
+  String get receiptScanButton => 'Escanear recibo';
+
+  @override
+  String get receiptPreviewTitle => 'Revisa la foto';
+
+  @override
+  String get receiptPreviewHint =>
+      'Que se lean bien el nombre del negocio, la fecha y el total.';
+
+  @override
+  String get receiptRetakeButton => 'Retomar';
+
+  @override
+  String get receiptConfirmButton => 'Confirmar';
+
+  @override
+  String get receiptAnalyzing => 'Analizando recibo...';
+
+  @override
+  String get receiptReadError =>
+      'No pudimos leer el recibo. Intenta tomar una fotografía más clara.';
+
+  @override
+  String get receiptCameraError => 'No se pudo abrir la cámara.';
+
+  @override
+  String get receiptFilledNotice =>
+      'Llenamos lo que leímos del recibo. Revisa los datos antes de guardar.';
+
+  @override
+  String receiptDateOutOfTrip(String date) {
+    return 'La fecha del recibo ($date) está fuera de las fechas del viaje; elige la fecha del gasto.';
+  }
+
+  @override
+  String get tripFinishedReadOnlyNotice =>
+      'Este viaje ya terminó: no se pueden agregar gastos ni editar el presupuesto.';
+
+  @override
+  String get tripFinishedBadge => 'Viaje terminado';
+
+  @override
+  String get homeClientNoOpenTripsSnackbar =>
+      'No tienes viajes activos o próximos. Los viajes que ya terminaron no admiten gastos nuevos.';
+
+  @override
+  String get floatingNavBarAddExpenseSemanticLabel => 'Agregar gasto';
 }

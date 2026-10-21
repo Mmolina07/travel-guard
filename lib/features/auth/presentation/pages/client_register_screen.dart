@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/auth_screen_shell.dart';
 import '../../../../core/widgets/underline_field.dart';
 import '../../../trips/presentation/pages/home_screen_client.dart';
@@ -47,6 +48,11 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
   void _submitForm() async {
     // Activa las validaciones visuales del Form
     if (!_formKey.currentState!.validate()) {
+      final password = _passwordController.text;
+      final confirm = _confirmPasswordController.text;
+      if (password.isNotEmpty && confirm.isNotEmpty && password != confirm) {
+        _showError(context.l10n.commonPasswordsMismatch);
+      }
       return;
     }
 
@@ -110,10 +116,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -128,81 +131,80 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  UnderlineField(
-                    label: context.l10n.clientRegisterNameLabel,
-                    hint: context.l10n.clientRegisterNameHint,
-                    controller: _nameController,
-                    enabled: !_isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return context.l10n.clientRegisterNameRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  UnderlineField(
-                    label: context.l10n.commonEmailLabel,
-                    hint: context.l10n.commonEmailHint,
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    enabled: !_isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return context.l10n.commonEmailRequired;
-                      }
-                      final emailRegex = RegExp(
-                        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-                      );
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return context.l10n.commonEmailInvalid;
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  UnderlineField(
-                    label: context.l10n.commonPasswordLabel,
-                    hint: '••••••••',
-                    controller: _passwordController,
-                    obscure: !_isPasswordVisible,
-                    enabled: !_isLoading,
-                    helperText: context.l10n.clientRegisterPasswordHelper,
-                    trailing: UnderlineFieldPasswordToggle(
-                      visible: _isPasswordVisible,
-                      onTap: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UnderlineField(
+                  label: context.l10n.clientRegisterNameLabel,
+                  hint: context.l10n.clientRegisterNameHint,
+                  controller: _nameController,
+                  enabled: !_isLoading,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    AppInputFormatters.personName,
+                    AppInputFormatters.maxLength(100),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return context.l10n.clientRegisterNameRequired;
+                    }
+                    return Validators.personName(context, value);
+                  },
+                ),
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonEmailLabel,
+                  hint: context.l10n.commonEmailHint,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
+                  inputFormatters: [AppInputFormatters.maxLength(150)],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return context.l10n.commonEmailRequired;
+                    }
+                    return Validators.email(context, value);
+                  },
+                ),
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonPasswordLabel,
+                  hint: '••••••••',
+                  controller: _passwordController,
+                  obscure: !_isPasswordVisible,
+                  enabled: !_isLoading,
+                  helperText: context.l10n.valPasswordHelper,
+                  trailing: UnderlineFieldPasswordToggle(
+                    visible: _isPasswordVisible,
+                    onTap: () => setState(
+                      () => _isPasswordVisible = !_isPasswordVisible,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return context.l10n.commonPasswordRequired;
-                      }
-                      if (value.length < 6) {
-                        return context.l10n.clientRegisterPasswordMin;
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 20),
-                  UnderlineField(
-                    label: context.l10n.commonConfirmPasswordLabel,
-                    hint: '••••••••',
-                    controller: _confirmPasswordController,
-                    obscure: !_isPasswordVisible,
-                    enabled: !_isLoading,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return context.l10n.clientRegisterConfirmPasswordRequired;
-                      }
-                      if (value != _passwordController.text) {
-                        return context.l10n.commonPasswordsMismatch;
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return context.l10n.commonPasswordRequired;
+                    }
+                    return Validators.newPassword(context, value);
+                  },
+                ),
+                const SizedBox(height: 20),
+                UnderlineField(
+                  label: context.l10n.commonConfirmPasswordLabel,
+                  hint: '••••••••',
+                  controller: _confirmPasswordController,
+                  obscure: !_isPasswordVisible,
+                  enabled: !_isLoading,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return context.l10n.clientRegisterConfirmPasswordRequired;
+                    }
+                    if (value != _passwordController.text) {
+                      return context.l10n.commonPasswordsMismatch;
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
             SizedBox(
               height: 56,
@@ -214,8 +216,9 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                         width: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(context.l10n.commonRegisterButton),
@@ -229,10 +232,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     context.l10n.clientRegisterOrContinueWith,
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                 ),
                 const Expanded(child: Divider()),
@@ -252,10 +252,7 @@ class _ClienteRegisterScreenState extends State<ClienteRegisterScreen> {
               child: Text(
                 context.l10n.commonTermsNotice,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ),
           ],

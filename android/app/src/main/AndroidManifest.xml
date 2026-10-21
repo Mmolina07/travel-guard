@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase, Firebase, Mercado Pago y Google Maps: sin esto el APK
+         de release no tiene red (el manifest de debug sí lo trae). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- HU-07 / TG-145: geolocalización del turista -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>

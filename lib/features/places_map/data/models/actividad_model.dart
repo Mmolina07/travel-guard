@@ -26,6 +26,14 @@ class Actividad {
   final DateTime? fechaInicio;
   final DateTime? fechaFin;
 
+  /// Solo la ven los turistas Premium (`actividades.solo_premium`). Las
+  /// promociones ([categoriaPromocion]) siempre lo son.
+  final bool soloPremium;
+
+  /// Es una promoción (sección "Promociones" del comercio y del turista
+  /// Premium), no una actividad normal.
+  bool get esPromocion => categoria == categoriaPromocion;
+
   const Actividad({
     required this.id,
     this.comercioId,
@@ -38,6 +46,7 @@ class Actividad {
     this.activo = true,
     this.fechaInicio,
     this.fechaFin,
+    this.soloPremium = false,
   });
 
   factory Actividad.fromRow(Map<String, dynamic> row) {
@@ -53,6 +62,9 @@ class Actividad {
       activo: row['activo'] as bool? ?? true,
       fechaInicio: _parseDate(row['fecha_inicio']),
       fechaFin: _parseDate(row['fecha_fin']),
+      // Filas de antes de la columna: las promociones ya eran Premium.
+      soloPremium: row['solo_premium'] as bool? ??
+          row['categoria'] == categoriaPromocion,
     );
   }
 
@@ -69,6 +81,20 @@ class Promocion {
   final String? comercioDireccion;
 
   const Promocion({
+    required this.actividad,
+    this.comercioNombre,
+    this.comercioDireccion,
+  });
+}
+
+/// Una actividad publicada con el comercio que la ofrece — lo que ve el
+/// turista en la sección "Actividades".
+class ActividadConComercio {
+  final Actividad actividad;
+  final String? comercioNombre;
+  final String? comercioDireccion;
+
+  const ActividadConComercio({
     required this.actividad,
     this.comercioNombre,
     this.comercioDireccion,

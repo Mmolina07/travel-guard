@@ -22,8 +22,49 @@ enum AppSection {
   misViajes,
   comercios,
   mapa,
+  actividades,
   promociones,
   suscripciones,
+}
+
+/// Las 3 vistas del panel del comercio (`PROMPT_COMERCIO.md`).
+enum ComercioSection { inicio, actividades, promociones, menu }
+
+/// Lo que el `SideNav` necesita en modo comercio: secciones con su
+/// contador, la tarjeta "TU PERFIL PÚBLICO" y las acciones del pie.
+class ComercioShellData {
+  const ComercioShellData({
+    required this.section,
+    required this.onNavigate,
+    required this.activityCount,
+    this.promoCount = 0,
+    required this.productCount,
+    required this.businessName,
+    required this.zone,
+    required this.onViewAsTourist,
+    required this.onBusinessSettings,
+    this.searchQuery = '',
+    this.onSearchChanged,
+  });
+
+  final ComercioSection section;
+  final ValueChanged<ComercioSection> onNavigate;
+  final int activityCount;
+
+  /// Promociones (exclusivas Premium) del comercio.
+  final int promoCount;
+  final int productCount;
+  final String businessName;
+
+  /// Sede o dirección del comercio; vacío si no tiene.
+  final String zone;
+  final VoidCallback onViewAsTourist;
+  final VoidCallback onBusinessSettings;
+
+  /// Texto actual del buscador del `TopBar` (filtra actividades y
+  /// platos). Vive fuera del shell porque cada vista monta el suyo.
+  final String searchQuery;
+  final ValueChanged<String>? onSearchChanged;
 }
 
 /// Shell de escritorio/tablet: `Row` de sidebar fijo + columna de
@@ -44,7 +85,24 @@ class AppShell extends StatefulWidget {
     required this.onCreateTrip,
     this.activeTrip,
     this.activeTripSpent,
-  });
+  }) : comercio = null;
+
+  /// Mismo shell en modo comercio: el `SideNav` muestra la marca
+  /// `COMERCIO`, la CTA "Crear actividad" ([onCreateActivity]), la
+  /// sección `NEGOCIO` y el perfil público al pie, en lugar de la
+  /// navegación y el presupuesto del turista.
+  const AppShell.comercio({
+    super.key,
+    required ComercioShellData this.comercio,
+    required this.child,
+    required VoidCallback onCreateActivity,
+  }) : section = AppSection.inicio,
+       onNavigate = _ignoreSection,
+       onCreateTrip = onCreateActivity,
+       activeTrip = null,
+       activeTripSpent = null;
+
+  static void _ignoreSection(AppSection _) {}
 
   final AppSection section;
   final Widget child;
@@ -63,6 +121,9 @@ class AppShell extends StatefulWidget {
   /// calcula quien pasa `activeTrip`, porque solo esa pantalla sabe si
   /// ya tiene los gastos reales a mano.
   final double? activeTripSpent;
+
+  /// No nulo en modo comercio ([AppShell.comercio]).
+  final ComercioShellData? comercio;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -96,11 +157,18 @@ class _AppShellState extends State<AppShell> {
             onCreateTrip: widget.onCreateTrip,
             activeTrip: widget.activeTrip,
             activeTripSpent: widget.activeTripSpent,
+            comercio: widget.comercio,
           ),
           Expanded(
             child: Column(
               children: [
-                const _TopBar(),
+                _TopBar(
+                  searchHint: widget.comercio != null
+                      ? context.l10n.comercioSearchHint
+                      : context.l10n.appShellSearchHint,
+                  initialQuery: widget.comercio?.searchQuery ?? '',
+                  onChanged: widget.comercio?.onSearchChanged,
+                ),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -129,6 +197,7 @@ class _SideNav extends StatelessWidget {
     required this.onCreateTrip,
     required this.activeTrip,
     required this.activeTripSpent,
+    required this.comercio,
   });
 
   final bool collapsed;
@@ -137,6 +206,53 @@ class _SideNav extends StatelessWidget {
   final VoidCallback onCreateTrip;
   final Trip? activeTrip;
   final double? activeTripSpent;
+  final ComercioShellData? comercio;
+
+  /// Items de navegación según el rol.
+  List<_NavEntry> _entries(BuildContext context) {
+    final comercio = this.comercio;
+    if (comercio == null) {
+      return [
+        for (final item in _items(context))
+          _NavEntry(
+            icon: item.icon,
+            label: item.label,
+            active: item.section == section,
+            onTap: () => onNavigate(item.section),
+          ),
+      ];
+    }
+    final l10n = context.l10n;
+    return [
+      _NavEntry(
+        icon: Icons.home_outlined,
+        label: l10n.homeComercioNavHome,
+        active: comercio.section == ComercioSection.inicio,
+        onTap: () => comercio.onNavigate(ComercioSection.inicio),
+      ),
+      _NavEntry(
+        icon: Icons.event_note_outlined,
+        label: l10n.homeComercioNavActivities,
+        count: comercio.activityCount,
+        active: comercio.section == ComercioSection.actividades,
+        onTap: () => comercio.onNavigate(ComercioSection.actividades),
+      ),
+      _NavEntry(
+        icon: Icons.local_offer_outlined,
+        label: l10n.comercioNavPromos,
+        count: comercio.promoCount,
+        active: comercio.section == ComercioSection.promociones,
+        onTap: () => comercio.onNavigate(ComercioSection.promociones),
+      ),
+      _NavEntry(
+        icon: Icons.restaurant_menu_outlined,
+        label: l10n.homeComercioNavMenu,
+        count: comercio.productCount,
+        active: comercio.section == ComercioSection.menu,
+        onTap: () => comercio.onNavigate(ComercioSection.menu),
+      ),
+    ];
+  }
 
   List<({AppSection section, IconData icon, String label})> _items(
     BuildContext context,
@@ -155,6 +271,11 @@ class _SideNav extends StatelessWidget {
       section: AppSection.comercios,
       icon: Icons.storefront_outlined,
       label: context.l10n.appShellNavCommerces,
+    ),
+    (
+      section: AppSection.actividades,
+      icon: Icons.local_activity_outlined,
+      label: context.l10n.appShellNavActivities,
     ),
     (
       section: AppSection.mapa,
@@ -181,67 +302,137 @@ class _SideNav extends StatelessWidget {
         color: AppColors.paperDeep,
         border: Border(right: BorderSide(color: AppColors.line)),
       ),
-      // Con ventanas bajas los ítems + resumen + perfil no caben: se
-      // vuelve desplazable. `minHeight` + `IntrinsicHeight` mantienen el
-      // `Spacer` (perfil pegado abajo) cuando sí hay espacio.
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            vertical: 26,
-            horizontal: collapsed ? 12 : 18,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: (constraints.maxHeight - 52).clamp(0, double.infinity),
+      // Marca, CTA y la tarjeta + perfil del pie quedan fijos; solo la
+      // lista de navegación se desplaza cuando la ventana es baja.
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: 26,
+          horizontal: collapsed ? 12 : 18,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Brand(
+              collapsed: collapsed,
+              roleLabel: comercio != null
+                  ? context.l10n.appShellRoleCommerce.toUpperCase()
+                  : null,
             ),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            const SizedBox(height: 26),
+            _CreateTripCta(
+              collapsed: collapsed,
+              onTap: onCreateTrip,
+              label: comercio != null
+                  ? context.l10n.homeComercioCreateActivityTitle
+                  : context.l10n.appShellCreateTripButton,
+            ),
+            const SizedBox(height: 26),
+            if (!collapsed)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  comercio != null
+                      ? context.l10n.comercioNavSectionLabel
+                      : context.l10n.appShellNavSectionLabel,
+                  style: AppText.label(10),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _NavList(
                 children: [
-                  _Brand(collapsed: collapsed),
-                  const SizedBox(height: 26),
-                  _CreateTripCta(collapsed: collapsed, onTap: onCreateTrip),
-                  const SizedBox(height: 26),
-                  if (!collapsed)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        context.l10n.appShellNavSectionLabel,
-                        style: AppText.label(10),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  for (final item in _items(context))
+                  for (final entry in _entries(context))
                     _NavItem(
                       collapsed: collapsed,
-                      icon: item.icon,
-                      label: item.label,
-                      active: item.section == section,
-                      onTap: () => onNavigate(item.section),
+                      icon: entry.icon,
+                      label: entry.label,
+                      active: entry.active,
+                      count: entry.count,
+                      onTap: entry.onTap,
                     ),
-                  const Spacer(),
-                  const SizedBox(height: 26),
-                  _BudgetSummary(
-                    collapsed: collapsed,
-                    trip: activeTrip,
-                    spent: activeTripSpent,
-                  ),
-                  const SizedBox(height: 14),
-                  _ProfileRow(collapsed: collapsed),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 20),
+            if (comercio case final comercio?) ...[
+              _PublicProfileCard(collapsed: collapsed, data: comercio),
+              const SizedBox(height: 12),
+              _ComercioProfileRow(collapsed: collapsed, data: comercio),
+            ] else ...[
+              _BudgetSummary(
+                collapsed: collapsed,
+                trip: activeTrip,
+                spent: activeTripSpent,
+              ),
+              const SizedBox(height: 14),
+              _ProfileRow(collapsed: collapsed),
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
+/// Lista de navegación del sidebar: la única parte que se desplaza.
+/// Con su propio `ScrollController` para no chocar con el del área
+/// principal.
+class _NavList extends StatefulWidget {
+  const _NavList({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  State<_NavList> createState() => _NavListState();
+}
+
+class _NavListState extends State<_NavList> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      child: SingleChildScrollView(
+        controller: _controller,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: widget.children,
+        ),
+      ),
+    );
+  }
+}
+
+class _NavEntry {
+  const _NavEntry({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.count,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final int? count;
+}
+
 class _Brand extends StatelessWidget {
-  const _Brand({required this.collapsed});
+  const _Brand({required this.collapsed, this.roleLabel});
 
   final bool collapsed;
+
+  /// Segunda línea bajo `TRAVELGUARD` (p. ej. `COMERCIO`), mono 9.
+  final String? roleLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -276,12 +467,28 @@ class _Brand extends StatelessWidget {
         children: [
           mark,
           const SizedBox(width: 12),
-          Text(
-            'TRAVELGUARD',
-            style: AppText.label(
-              11,
-              color: AppColors.ink,
-            ).copyWith(letterSpacing: 11 * 0.18),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'TRAVELGUARD',
+                style: AppText.label(
+                  11,
+                  color: AppColors.ink,
+                ).copyWith(letterSpacing: 11 * 0.18),
+              ),
+              if (roleLabel case final role?) ...[
+                const SizedBox(height: 2),
+                Text(
+                  role,
+                  style: AppText.label(
+                    9,
+                    color: AppColors.inkSoft,
+                  ).copyWith(letterSpacing: 9 * 0.18),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -289,11 +496,18 @@ class _Brand extends StatelessWidget {
   }
 }
 
+/// CTA principal del sidebar: "Crear viaje" (turista) o "Crear
+/// actividad" (comercio).
 class _CreateTripCta extends StatelessWidget {
-  const _CreateTripCta({required this.collapsed, required this.onTap});
+  const _CreateTripCta({
+    required this.collapsed,
+    required this.onTap,
+    required this.label,
+  });
 
   final bool collapsed;
   final VoidCallback onTap;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +540,7 @@ class _CreateTripCta extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      context.l10n.appShellCreateTripButton,
+                      label,
                       style: AppText.ui(
                         15,
                         weight: FontWeight.w700,
@@ -349,6 +563,7 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.count,
   });
 
   final bool collapsed;
@@ -356,6 +571,9 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
+
+  /// Contador mono 11 a la derecha (modo comercio).
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
@@ -388,7 +606,13 @@ class _NavItem extends StatelessWidget {
                     weight: active ? FontWeight.w700 : FontWeight.w400,
                     color: color,
                   ),
-                  child: Text(label),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(label)),
+                      if (count case final count?)
+                        Text('$count', style: AppText.label(11)),
+                    ],
+                  ),
                 ),
         ),
       ),
@@ -527,7 +751,7 @@ class _ProfileRow extends StatelessWidget {
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
-            onTap: () => _confirmSignOut(context),
+            onTap: () => confirmSignOut(context),
             child: avatar,
           ),
         ),
@@ -575,14 +799,15 @@ class _ProfileRow extends StatelessWidget {
               color: AppColors.textMuted,
             ),
             tooltip: context.l10n.appShellSignOutTooltip,
-            onPressed: () => _confirmSignOut(context),
+            onPressed: () => confirmSignOut(context),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _confirmSignOut(BuildContext context) async {
+  /// También la usa la fila de perfil del comercio.
+  static Future<void> confirmSignOut(BuildContext context) async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -612,11 +837,43 @@ class _ProfileRow extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar();
+class _TopBar extends StatefulWidget {
+  const _TopBar({
+    required this.searchHint,
+    this.initialQuery = '',
+    this.onChanged,
+  });
+
+  final String searchHint;
+  final String initialQuery;
+
+  /// `null` = buscador sin filtro asociado (lado turista).
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<_TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<_TopBar> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialQuery,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _controller.clear();
+    widget.onChanged?.call('');
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
+    final searchHint = widget.searchHint;
     final today = DateTime.now();
     final l10n = context.l10n;
     final months = [
@@ -679,13 +936,20 @@ class _TopBar extends StatelessWidget {
                         Expanded(
                           child: TextField(
                             focusNode: searchFocusNode,
+                            controller: _controller,
+                            onChanged: widget.onChanged == null
+                                ? null
+                                : (value) {
+                                    widget.onChanged!(value);
+                                    setState(() {});
+                                  },
                             decoration: InputDecoration(
                               isDense: true,
                               filled: false,
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              hintText: context.l10n.appShellSearchHint,
+                              hintText: searchHint,
                               hintStyle: AppText.ui(
                                 14,
                                 color: AppColors.textMuted,
@@ -693,6 +957,19 @@ class _TopBar extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (widget.onChanged != null &&
+                            _controller.text.isNotEmpty)
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: _clear,
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -724,6 +1001,192 @@ class _TopBar extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Pie del sidebar en modo comercio: tarjeta `wash` con el nombre del
+/// negocio, la zona y "Ver como turista →".
+class _PublicProfileCard extends StatelessWidget {
+  const _PublicProfileCard({required this.collapsed, required this.data});
+
+  final bool collapsed;
+  final ComercioShellData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    if (collapsed) {
+      return Center(
+        child: Tooltip(
+          message: l10n.comercioViewAsTourist,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: data.onViewAsTourist,
+              child: const Icon(
+                Icons.storefront_outlined,
+                color: AppColors.inkSoft,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.wash,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.comercioPublicProfileLabel,
+            style: AppText.label(10, color: AppColors.inkSoft),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            data.businessName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.display(22).copyWith(height: 1.1),
+          ),
+          if (data.zone.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              data.zone,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.ui(12, color: AppColors.textMuted),
+            ),
+          ],
+          const SizedBox(height: 12),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: data.onViewAsTourist,
+              child: Text(
+                l10n.comercioViewAsTourist,
+                style: AppText.ui(
+                  13,
+                  weight: FontWeight.w600,
+                  color: AppColors.inkSoft,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fila de perfil del comercio: iniciales, nombre, rol, ajustes del
+/// negocio y "Salir" (antes "Cerrar sesión" en la cabecera del home).
+class _ComercioProfileRow extends StatelessWidget {
+  const _ComercioProfileRow({required this.collapsed, required this.data});
+
+  final bool collapsed;
+  final ComercioShellData data;
+
+  static String _initials(String name) {
+    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+    final letters = words.take(2).map((w) => w[0].toUpperCase()).join();
+    return letters.isEmpty ? '?' : letters;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final avatar = Container(
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        _initials(data.businessName),
+        style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.mint),
+      ),
+    );
+
+    if (collapsed) {
+      return Column(
+        children: [
+          Tooltip(
+            message: l10n.homeComercioBusinessSettingsTooltip,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: data.onBusinessSettings,
+                child: avatar,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          IconButton(
+            icon: const Icon(
+              Icons.logout,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
+            tooltip: l10n.appShellSignOutTooltip,
+            onPressed: () => _ProfileRow.confirmSignOut(context),
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        children: [
+          avatar,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.businessName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.ui(14, weight: FontWeight.w600),
+                ),
+                Text(
+                  l10n.appShellRoleCommerce,
+                  style: AppText.ui(11, color: AppColors.textLabel),
+                ),
+              ],
+            ),
+          ),
+          // Ajustes del negocio (antes el icono de la cabecera del home).
+          IconButton(
+            icon: const Icon(
+              Icons.settings_outlined,
+              size: 18,
+              color: AppColors.inkSoft,
+            ),
+            tooltip: l10n.homeComercioBusinessSettingsTooltip,
+            onPressed: data.onBusinessSettings,
+          ),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => _ProfileRow.confirmSignOut(context),
+              child: Text(
+                l10n.comercioSignOutShort,
+                style: AppText.ui(13, color: AppColors.textLabel),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

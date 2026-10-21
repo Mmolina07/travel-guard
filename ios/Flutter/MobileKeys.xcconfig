@@ -1,0 +1,16 @@
+// Claves de iOS de TravelGuard — rellenar antes de compilar para iOS
+// (ver docs/movil.md). Info.plist y AppDelegate.swift las leen de aquí.
+// Ojo: en .xcconfig "//" empieza un comentario; estos valores no llevan.
+
+// Login con Google (HU-03): cliente OAuth de tipo iOS creado en el MISMO
+// proyecto de Google Cloud que el cliente web de Supabase (522265539593),
+// con bundle id com.travelguard.app. Ej.:
+//   GOOGLE_IOS_CLIENT_ID = 522265539593-xxxx.apps.googleusercontent.com
+//   GOOGLE_IOS_REVERSED_CLIENT_ID = com.googleusercontent.apps.522265539593-xxxx
+GOOGLE_IOS_CLIENT_ID =
+GOOGLE_IOS_REVERSED_CLIENT_ID =
+
+// Google Maps (HU-07): clave con "Maps SDK for iOS" habilitado.
+// Provisional: la misma de Android; si esa clave está restringida a apps
+// Android, el mapa sale en blanco en iOS hasta poner una válida.
+GOOGLE_MAPS_IOS_API_KEY = AIzaSyDDEb-lMODsnzHysO_Lv4go8QH9a6WbDYs

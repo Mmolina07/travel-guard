@@ -241,10 +241,10 @@ class AppAuthProvider extends ChangeNotifier {
     required String email,
   }) async {
     if (await _comercios.findByNit(nit) != null) {
-      throw const AuthException('NIT inválido o ya registrado');
+      throw const AuthException('Este NIT ya está registrado.');
     }
     if (await _usuarios.findByEmail(email) != null) {
-      throw const AuthException('Email inválido o ya registrado');
+      throw const AuthException('Este correo ya tiene una cuenta.');
     }
   }
 
@@ -253,10 +253,10 @@ class AppAuthProvider extends ChangeNotifier {
   Never _rethrowComercioConstraintViolation(PostgrestException e) {
     final detail = '${e.message} ${e.details ?? ''}'.toLowerCase();
     if (detail.contains('nit')) {
-      throw const AuthException('NIT inválido o ya registrado');
+      throw const AuthException('Este NIT ya está registrado.');
     }
     if (detail.contains('email')) {
-      throw const AuthException('Email inválido o ya registrado');
+      throw const AuthException('Este correo ya tiene una cuenta.');
     }
     throw e;
   }
@@ -276,8 +276,10 @@ class AppAuthProvider extends ChangeNotifier {
         throw const AuthException('No existe una cuenta con este correo.');
       }
       if (usuario.tipoUsuario != expectedTipoUsuario) {
+        final real = usuario.tipoUsuario == 'comercio' ? 'Comercio' : 'Turista';
         throw AuthException(
-          'Esta cuenta no está registrada como $expectedTipoUsuario.',
+          'Esta cuenta está registrada como ${real.toLowerCase()}. '
+          'Elige "$real" arriba para entrar.',
         );
       }
       final updated = await _usuarios.touchLastLogin(usuario.id);

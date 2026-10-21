@@ -6,7 +6,12 @@ import '../../features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/reset_password_screen.dart';
 import '../../features/auth/providers/app_auth_provider.dart';
+import '../../features/places_map/presentation/actividades_screen.dart';
+import '../../features/places_map/presentation/comercio_actividades_screen.dart';
+import '../../features/places_map/presentation/comercio_menu_screen.dart';
 import '../../features/places_map/presentation/comercios_cercanos_screen.dart';
+import '../../features/places_map/presentation/create_activity_screen.dart';
+import '../../features/places_map/presentation/create_menu_screen.dart';
 import '../../features/places_map/presentation/home_screen_comercio.dart';
 import '../../features/places_map/presentation/map_screen.dart';
 import '../../features/places_map/presentation/promociones_screen.dart';
@@ -20,6 +25,7 @@ import '../utils/page_title.dart';
 import '../../features/auth/presentation/pages/config_screen.dart';
 import '../../../features/subscriptions/presentation/pages/subscriptions_screen.dart';
 import '../../features/subscriptions/data/models/suscripcion_model.dart';
+import '../../features/subscriptions/presentation/pages/my_subscription_screen.dart';
 import '../../features/subscriptions/presentation/pages/payment_result_screen.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
@@ -74,6 +80,92 @@ class AppRouter {
             return const _RootHome();
           },
         ),
+        // Panel del comercio (`PROMPT_COMERCIO.md`). `/` redirige aquí
+        // cuando la sesión es de un comercio.
+        GoRoute(
+          path: '/comercio',
+          name: 'comercioInicio',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Mi negocio');
+            return const HomeScreenComercio();
+          },
+          routes: [
+            GoRoute(
+              path: 'actividades',
+              name: 'comercioActividades',
+              builder: (context, state) {
+                setPageTitle('TravelGuard · Mis actividades');
+                return const ComercioActividadesScreen();
+              },
+              routes: [
+                // Modal "Crear actividad" (ruta hija con `pageBuilder`
+                // de diálogo).
+                GoRoute(
+                  path: 'nueva',
+                  name: 'comercioNuevaActividad',
+                  pageBuilder: (context, state) {
+                    setPageTitle('TravelGuard · Crear actividad');
+                    return buildCreateActivityPage(context, state);
+                  },
+                ),
+                GoRoute(
+                  path: ':id/editar',
+                  name: 'comercioEditarActividad',
+                  pageBuilder: (context, state) {
+                    setPageTitle('TravelGuard · Editar actividad');
+                    return buildCreateActivityPage(context, state);
+                  },
+                ),
+              ],
+            ),
+            // Promociones exclusivas Premium: misma vista y mismo modal
+            // que actividades, en modo promoción.
+            GoRoute(
+              path: 'promociones',
+              name: 'comercioPromociones',
+              builder: (context, state) {
+                setPageTitle('TravelGuard · Mis promociones');
+                return const ComercioActividadesScreen(promociones: true);
+              },
+              routes: [
+                GoRoute(
+                  path: 'nueva',
+                  name: 'comercioNuevaPromocion',
+                  pageBuilder: (context, state) {
+                    setPageTitle('TravelGuard · Crear promoción');
+                    return buildCreateActivityPage(context, state, promocion: true);
+                  },
+                ),
+                GoRoute(
+                  path: ':id/editar',
+                  name: 'comercioEditarPromocion',
+                  pageBuilder: (context, state) {
+                    setPageTitle('TravelGuard · Editar promoción');
+                    return buildCreateActivityPage(context, state, promocion: true);
+                  },
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'menu',
+              name: 'comercioMenu',
+              builder: (context, state) {
+                setPageTitle('TravelGuard · Mi menú');
+                return const ComercioMenuScreen();
+              },
+              routes: [
+                GoRoute(
+                  path: 'nuevo',
+                  name: 'comercioNuevoMenu',
+                  pageBuilder: (context, state) {
+                    setPageTitle('TravelGuard · Nuevo menú');
+                    return buildCreateMenuPage(context, state);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
         GoRoute(
           path: '/comercios',
           name: 'comercios',
@@ -83,11 +175,28 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: '/actividades',
+          name: 'actividades',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Actividades');
+            return const ActividadesScreen();
+          },
+        ),
+        GoRoute(
           path: '/suscripciones',
           name: 'subscriptions',
           builder: (context, state) {
             setPageTitle('TravelGuard · Suscripciones');
             return const SubscriptionsScreen();
+          },
+        ),
+        // HU-23: consultar, cambiar o cancelar la suscripción.
+        GoRoute(
+          path: '/mi-suscripcion',
+          name: 'mySubscription',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Mi suscripción');
+            return const MySubscriptionScreen();
           },
         ),
         // TG-291: resultado del pago con tarjeta.
@@ -202,7 +311,15 @@ class AppRouter {
       case AuthStatus.unauthenticated:
         return loggingIn ? null : '/login';
       case AuthStatus.authenticated:
-        return loggingIn ? '/' : null;
+        if (loggingIn) return '/';
+        final location = state.matchedLocation;
+        final inPanel = location == '/comercio' || location.startsWith('/comercio/');
+        // El inicio del comercio vive en `/comercio`; un turista no
+        // tiene panel de negocio. Mientras el perfil aún se resuelve
+        // (ambos `null`) no se redirige.
+        if (_auth.comercio != null && location == '/') return '/comercio';
+        if (_auth.comercio == null && _auth.tourist != null && inPanel) return '/';
+        return null;
     }
   }
 }

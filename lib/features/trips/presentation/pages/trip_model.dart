@@ -97,6 +97,16 @@ class Trip {
     return (getTotalSpent() / maxBudget * 100);
   }
 
+  /// El viaje ya terminó (su fecha fin es anterior a hoy). Un viaje
+  /// terminado queda de solo lectura: no se le agregan gastos ni se
+  /// edita su presupuesto.
+  bool get isFinished {
+    final end = parseDdMmYyyy(endDate);
+    if (end == null) return false;
+    final now = DateTime.now();
+    return end.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
   /// Presupuesto disponible por día / por persona (mejora "gestor de
   /// presupuesto"): calculado sobre lo que aún queda libre, no sobre el
   /// total, para que sea útil una vez el viaje ya tiene gastos.

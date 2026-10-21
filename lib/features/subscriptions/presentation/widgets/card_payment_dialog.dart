@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/pressable.dart';
 import '../../data/models/suscripcion_model.dart';
 import '../../data/models/tarjeta_model.dart';
 import '../../data/subscription_repository.dart';
@@ -90,27 +93,10 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
     }
   }
 
-  InputDecoration _decoration(String label, {String? hint, Widget? suffix}) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      suffixIcon: suffix,
-      filled: true,
-      fillColor: AppColors.paperDeep,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        borderSide: const BorderSide(color: AppColors.error),
-      ),
-    );
-  }
+  /// El relleno, radio y bordes los da el tema global
+  /// (`AppTheme.light().inputDecorationTheme`).
+  InputDecoration _decoration(String label, {String? hint, Widget? suffix}) =>
+      InputDecoration(labelText: label, hintText: hint, suffixIcon: suffix);
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +104,6 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
     final marca = _marca;
 
     return Dialog(
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.cardLg)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 460),
         child: SingleChildScrollView(
@@ -132,11 +116,8 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text(l10n.cardPaymentTitle, style: AppText.display(24))),
-                    IconButton(
-                      onPressed: _isPaying ? null : () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
+                    Expanded(child: Text(l10n.cardPaymentTitle, style: AppText.display(28))),
+                    _CloseButton(onTap: _isPaying ? null : () => Navigator.pop(context)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -182,8 +163,18 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
                   enabled: !_isPaying,
                   textCapitalization: TextCapitalization.characters,
                   autofillHints: const [AutofillHints.creditCardName],
+                  // Solo letras: un titular no lleva números ni símbolos.
+                  inputFormatters: [
+                    AppInputFormatters.personName,
+                    AppInputFormatters.maxLength(60),
+                  ],
                   decoration: _decoration(l10n.cardPaymentHolderLabel, hint: l10n.cardPaymentHolderHint),
-                  validator: (v) => (v ?? '').trim().length < 3 ? l10n.cardPaymentHolderInvalid : null,
+                  validator: (v) {
+                    if ((v ?? '').trim().length < 3) return l10n.cardPaymentHolderInvalid;
+                    return Validators.personName(context, v, max: 60) == null
+                        ? null
+                        : l10n.valCardHolder;
+                  },
                 ),
                 const SizedBox(height: 14),
 
@@ -244,9 +235,15 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
                         controller: _documento,
                         enabled: !_isPaying,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(12),
+                        ],
                         decoration: _decoration(l10n.cardPaymentDocNumberLabel),
-                        validator: (v) => (v ?? '').length < 5 ? l10n.cardPaymentDocInvalid : null,
+                        validator: (v) {
+                          final length = (v ?? '').length;
+                          return length < 5 || length > 12 ? l10n.valDocLength : null;
+                        },
                       ),
                     ),
                   ],
@@ -254,34 +251,18 @@ class _CardPaymentDialogState extends State<CardPaymentDialog> {
 
                 if (_error != null) ...[
                   const SizedBox(height: 14),
-                  Text(_error!, style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.error)),
+                  Text(_error!, style: AppText.ui(12, color: AppColors.error)),
                 ],
                 const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isPaying ? null : _pay,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ink,
-                      foregroundColor: AppColors.paper,
-                      disabledBackgroundColor: AppColors.ink.withValues(alpha: 0.5),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-                    ),
-                    icon: _isPaying
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.paper),
-                          )
-                        : const Icon(Icons.lock_outline, size: 18),
-                    label: Text(
-                      _isPaying
-                          ? l10n.cardPaymentProcessing
-                          : l10n.cardPaymentPayButton(precioCobro(context, widget.plan.precioCop, conReferencia: false)),
-                      style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.paper),
-                    ),
-                  ),
+                InkButton(
+                  label: _isPaying
+                      ? l10n.cardPaymentProcessing
+                      : l10n.cardPaymentPayButton(precioCobro(context, widget.plan.precioCop, conReferencia: false)),
+                  icon: Icons.lock_outline,
+                  trailingArrow: true,
+                  expand: true,
+                  loading: _isPaying,
+                  onPressed: _pay,
                 ),
                 const SizedBox(height: 10),
                 Center(
@@ -349,5 +330,29 @@ class _ExpiryFormatter extends TextInputFormatter {
         ? '${digits.substring(0, 2)}/${digits.substring(2)}'
         : digits;
     return TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
+  }
+}
+
+/// Botón cerrar del modal (34×34, radio 12, borde `line`).
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: MaterialLocalizations.of(context).closeButtonTooltip,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: const Icon(Icons.close, size: 18, color: AppColors.ink),
+      ),
+    );
   }
 }

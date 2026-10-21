@@ -10,6 +10,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../widgets/over_budget_dialog.dart';
 import '../../../../widgets/budget_bar.dart';
 import '../../../../widgets/filter_chips_row.dart';
 import '../../../../widgets/step_progress.dart';
@@ -21,6 +23,7 @@ import '../../utils/budget_calculator.dart';
 import '../widgets/category_field_row.dart';
 import 'trip_detail_screen.dart';
 import 'trip_model.dart';
+import '../../../../widgets/paper_top_bar.dart';
 
 /// Abre el wizard de "Crear viaje" en la ruta `/crear` (Fase 5: URL real
 /// para el modal, back del navegador funcional y atajo `N`/`Esc`). Sigue
@@ -107,11 +110,6 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   // UI, que sí cambia con el idioma).
   static const _lodgingTypes = ['Hotel', 'Hostel', 'Airbnb', 'Casa alquilada', 'Otro'];
 
-  // ⚠️ Igual que `_tripTypes`: se comparan por igualdad de string contra
-  // `_mapTransporte`/`_unmapTransporte` en `trip_repository.dart`. NO
-  // traducir.
-  static const _transportTypes = ['Carro', 'Transporte público', 'Uber', 'Vuelo'];
-
   int _step = 0;
 
   // Controladores de texto
@@ -134,8 +132,6 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   // Valores seleccionados
   String _tripType = 'Vacaciones';
   String _lodgingType = 'Hotel';
-  String _startTransport = 'Vuelo';
-  String _duringTransport = 'Transporte público';
 
   // Servicios incluidos
   bool _includeBreakfast = false;
@@ -169,13 +165,72 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     _advancePaymentController = TextEditingController();
     _lodgingCostController = TextEditingController();
     _emergencyMoneyController = TextEditingController();
+    // "Comidas" y "Traslados" las agrega `_syncServiceRows` según los
+    // servicios que NO incluya el hospedaje (por eso ya no hay una fila
+    // fija de "Restaurantes").
     _categoryRows.addAll([
       CategoryFieldRow(nombre: 'Tours con guía'),
-      CategoryFieldRow(nombre: 'Restaurantes'),
       CategoryFieldRow(nombre: 'Discotecas'),
       CategoryFieldRow(nombre: 'Souvenirs'),
       CategoryFieldRow(nombre: 'Actividades pagas'),
     ]);
+  }
+
+  bool _serviceRowsSynced = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Necesita `context.l10n`, que no está disponible en `initState`.
+    if (!_serviceRowsSynced) {
+      _serviceRowsSynced = true;
+      _syncServiceRows();
+    }
+  }
+
+  /// Servicios incluidos → gastos adicionales: lo que el hospedaje ya
+  /// cubre no se presupuesta; lo que no cubre aparece como fila en
+  /// "Gastos adicionales" (paso 3) para ponerle monto. Se conserva el
+  /// monto que ya se hubiera escrito en la fila.
+  void _syncServiceRows() {
+    final l10n = context.l10n;
+    final missingMeals = [
+      if (!_includeBreakfast) l10n.createTripServiceBreakfast,
+      if (!_includeLunch) l10n.createTripServiceLunch,
+      if (!_includeDinner) l10n.createTripServiceDinner,
+    ];
+    _setAutoRow(
+      'comidas',
+      missingMeals.isEmpty
+          ? null
+          : l10n.createTripAutoMealsRow(missingMeals.join(', ').toLowerCase()),
+      position: 0,
+    );
+    _setAutoRow(
+      'traslado',
+      _includeTransfer ? null : l10n.createTripAutoTransfersRow,
+      position: _categoryRows.indexWhere((r) => r.autoKey == 'comidas') + 1,
+    );
+  }
+
+  void _setAutoRow(String key, String? name, {required int position}) {
+    final index = _categoryRows.indexWhere((r) => r.autoKey == key);
+    if (name == null) {
+      if (index != -1) _categoryRows.removeAt(index).dispose();
+      return;
+    }
+    if (index == -1) {
+      _categoryRows.insert(position, CategoryFieldRow(nombre: name, autoKey: key));
+    } else {
+      _categoryRows[index].nombreController.text = name;
+    }
+  }
+
+  void _toggleService(void Function() change) {
+    setState(() {
+      change();
+      _syncServiceRows();
+    });
   }
 
   void _addCategoryRow() {
@@ -217,8 +272,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   static final List<TextInputFormatter> _digitsOnlyFormatters = [
     FilteringTextInputFormatter.digitsOnly,
   ];
+  /// Todos los montos con punto de miles (`1.500.000`), igual que el
+  /// presupuesto máximo: antes `1.500` en estos campos se leía como 1,5.
   static final List<TextInputFormatter> _moneyFormatters = [
-    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+    ThousandsInputFormatter(),
+  ];
+  static final List<TextInputFormatter> _titleFormatters = [
+    AppInputFormatters.safeText,
+    AppInputFormatters.maxLength(150),
   ];
 
   Future<void> _pickDate({
@@ -296,14 +357,18 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     if (_nameController.text.trim().isEmpty || _destinationController.text.trim().isEmpty) {
       return context.l10n.createTripErrorNameDestinationRequired;
     }
+    final nameError = _textError();
+    if (nameError != null) return nameError;
     final startDate = _parseDate(_startDateController.text);
     final endDate = _parseDate(_endDateController.text);
     if (startDate == null || endDate == null) return context.l10n.createTripErrorInvalidDates;
-    if (!endDate.isAfter(startDate)) {
-      return context.l10n.createTripErrorEndDateAfterStart;
+    // Un viaje de un solo día es válido (la base exige fin >= inicio).
+    if (endDate.isBefore(startDate)) {
+      return context.l10n.valEndBeforeStart;
     }
     final persons = int.tryParse(_personsController.text.trim());
     if (persons == null || persons <= 0) return context.l10n.createTripErrorMinOnePerson;
+    if (persons > 50) return context.l10n.valPersonsRange;
     return null;
   }
 
@@ -342,7 +407,17 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     final datosCompletos = !_hasIncompleteOptionalFields();
     if (!datosCompletos) {
       final continuar = await _confirmPartialData();
-      if (continuar != true) return;
+      if (continuar != true || !mounted) return;
+    }
+
+    // Lo planeado supera el presupuesto: se avisa y se pide confirmar.
+    final planned = _parsedOrZero(_advancePaymentController) +
+        _parsedOrZero(_lodgingCostController) +
+        _parsedOrZero(_emergencyMoneyController) +
+        _categoryRows.fold<double>(0, (sum, row) => sum + row.monto);
+    if (planned > _maxBudget) {
+      final confirmed = await confirmOverBudget(context, planned - _maxBudget);
+      if (!confirmed || !mounted) return;
     }
 
     await _saveTrip(datosCompletos: datosCompletos);
@@ -361,13 +436,20 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       return context.l10n.createTripErrorRequiredFields;
     }
 
+    final textError = _textError();
+    if (textError != null) return textError;
+
     final persons = int.tryParse(_personsController.text.trim());
     if (persons == null || persons <= 0) {
       return context.l10n.createTripErrorMinOnePerson;
     }
+    if (persons > 50) return context.l10n.valPersonsRange;
 
     if (_maxBudget <= 0) {
       return context.l10n.createTripErrorBudgetMustBePositive;
+    }
+    if (_parsedOrZero(_advancePaymentController) > _maxBudget) {
+      return context.l10n.valAdvanceOverBudget;
     }
 
     final startDate = _parseDate(_startDateController.text);
@@ -375,24 +457,39 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     if (startDate == null || endDate == null) {
       return context.l10n.createTripErrorInvalidDatesEntered;
     }
-    if (!endDate.isAfter(startDate)) {
-      return context.l10n.createTripErrorEndDateAfterStartFull;
+    if (endDate.isBefore(startDate)) {
+      return context.l10n.valEndBeforeStart;
     }
 
     if (_lodgingCostController.text.trim().isNotEmpty) {
-      final lodgingCost = double.tryParse(_lodgingCostController.text.trim());
+      final lodgingCost = parseThousands(_lodgingCostController.text);
       if (lodgingCost == null || lodgingCost <= 0) {
         return context.l10n.createTripErrorLodgingCostMustBePositive;
       }
     }
 
     if (_emergencyMoneyController.text.trim().isNotEmpty) {
-      final emergencyMoney = double.tryParse(_emergencyMoneyController.text.trim());
-      if (emergencyMoney == null || emergencyMoney <= 0) {
+      // 0 es válido: el viaje puede no tener fondo de emergencias.
+      final emergencyMoney = parseThousands(_emergencyMoneyController.text);
+      if (emergencyMoney == null || emergencyMoney < 0) {
         return context.l10n.createTripErrorEmergencyAmountMustBePositive;
       }
     }
 
+    return null;
+  }
+
+  /// Nombre, destino y nombres de categorías: al menos una letra, sin
+  /// símbolos como `< > [ ]`, dentro del largo de la columna.
+  String? _textError() {
+    final name = Validators.title(context, _nameController.text, max: 150);
+    if (name != null) return '${context.l10n.createTripNameLabel}: $name';
+    final destination = Validators.title(context, _destinationController.text, max: 150);
+    if (destination != null) return '${context.l10n.createTripDestinationLabel}: $destination';
+    for (final row in _categoryRows) {
+      final error = Validators.title(context, row.nombreController.text, isRequired: false, max: 80);
+      if (error != null) return '${context.l10n.createTripCategoryLabel}: $error';
+    }
     return null;
   }
 
@@ -408,13 +505,22 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   /// "Dinero emergencias" queda fuera a propósito: no es obligatorio
   /// tener un fondo de emergencia definido para crear el viaje, así que
   /// dejarlo vacío no debe disparar el aviso de "datos incompletos".
-  bool _hasIncompleteOptionalFields() {
-    final sinServiciosIncluidos =
-        !_includeBreakfast && !_includeLunch && !_includeDinner && !_includeTransfer;
-    return _advancePaymentController.text.trim().isEmpty ||
-        _lodgingCostController.text.trim().isEmpty ||
-        sinServiciosIncluidos ||
-        _categoryRows.any((row) => row.montoController.text.trim().isEmpty);
+  bool _hasIncompleteOptionalFields() => _missingOptionalFields().isNotEmpty;
+
+  /// Escenario 8 de HU-05: qué campos opcionales quedaron vacíos, por
+  /// nombre, para decirle al usuario exactamente qué le falta. "Dinero
+  /// de emergencias" no cuenta: no es obligatorio tener ese fondo. Un
+  /// `0` escrito sí cuenta como lleno.
+  List<String> _missingOptionalFields() {
+    final l10n = context.l10n;
+    return [
+      if (_lodgingCostController.text.trim().isEmpty) l10n.createTripLodgingCostLabel,
+      if (_advancePaymentController.text.trim().isEmpty) l10n.createTripAdvancePaymentLabel,
+      for (final row in _categoryRows)
+        if (row.montoController.text.trim().isEmpty &&
+            row.nombreController.text.trim().isNotEmpty)
+          row.nombreController.text.trim(),
+    ];
   }
 
   Future<bool?> _confirmPartialData() {
@@ -422,9 +528,26 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.createTripIncompleteDataDialogTitle),
-        content: Text(context.l10n.createTripIncompleteDataDialogContent),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.l10n.createTripIncompleteFieldsIntro),
+            const SizedBox(height: 10),
+            for (final field in _missingOptionalFields())
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('•  $field', style: AppText.ui(14, weight: FontWeight.w600)),
+              ),
+            const SizedBox(height: 10),
+            Text(
+              context.l10n.createTripIncompleteFieldsOutro,
+              style: AppText.ui(13, color: AppColors.textMuted),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.createTripCancelButton)),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.createTripIncompleteFillButton)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(context.l10n.createTripConfirmCreateButton),
@@ -454,23 +577,25 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       persons: int.parse(_personsController.text.trim()),
       tripType: _tripType,
       maxBudget: _maxBudget,
-      advancePayment: double.tryParse(_advancePaymentController.text) ?? 0,
+      advancePayment: _parsedOrZero(_advancePaymentController),
       lodgingType: _lodgingType,
-      lodgingCost: double.tryParse(_lodgingCostController.text) ?? 0,
+      lodgingCost: _parsedOrZero(_lodgingCostController),
       includedServices: [
         if (_includeBreakfast) 'Desayuno',
         if (_includeLunch) 'Almuerzo',
         if (_includeDinner) 'Cena',
         if (_includeTransfer) 'Traslado',
       ],
-      startTransport: _startTransport,
-      duringTransport: _duringTransport,
+      // La sección de transporte se quitó del wizard (no afectaba el
+      // presupuesto): se guarda sin transporte.
+      startTransport: '',
+      duringTransport: '',
       categories: [
         for (final row in _categoryRows)
           if (row.nombreController.text.trim().isNotEmpty)
             TripBudgetCategory(nombre: row.nombreController.text.trim(), monto: row.monto),
       ],
-      emergencyMoney: double.tryParse(_emergencyMoneyController.text) ?? 0,
+      emergencyMoney: _parsedOrZero(_emergencyMoneyController),
       datosCompletos: datosCompletos,
     );
 
@@ -558,15 +683,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   }
 
   double _parsedOrZero(TextEditingController controller) =>
-      double.tryParse(controller.text.trim()) ?? 0;
+      (parseThousands(controller.text) ?? 0).toDouble();
 
   /// `_maxBudgetController` muestra el monto con puntos de miles (p.ej.
   /// "5.000.000") para que se vea como plata — a diferencia de los
   /// demás campos de dinero del wizard, que sí admiten decimales y por
   /// tanto usan el punto como separador decimal. Este getter es el
   /// único lugar donde se debe leer su valor numérico real.
-  double get _maxBudget =>
-      double.tryParse(_maxBudgetController.text.replaceAll('.', '')) ?? 0;
+  double get _maxBudget => (parseThousands(_maxBudgetController.text) ?? 0).toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -806,32 +930,32 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
   // ─── Móvil: pantalla completa con CTA fija ───
 
   Widget _buildMobileScaffold(BuildContext context) {
+    // Con el teclado abierto el título y la barra "Continuar" ocupaban
+    // todo el alto libre y el campo que se editaba quedaba tapado: se
+    // ocultan mientras se escribe (vuelven al cerrar el teclado).
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _isLoading ? null : (_step > 0 ? _goBack : _handleCancel),
-        ),
-        title: Text(
-          context.l10n.createTripStepIndicator(_step + 1, _stepCount),
-          style: AppText.label(11, color: Colors.white),
-        ),
+      appBar: PaperTopBar(
+        eyebrow: context.l10n.createTripStepIndicator(_step + 1, _stepCount),
+        onBack: () {
+          if (_isLoading) return;
+          _step > 0 ? _goBack() : _handleCancel();
+        },
       ),
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              padding: EdgeInsets.fromLTRB(24, keyboardOpen ? 8 : 20, 24, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_stepTitle(context, _step).$1, style: AppText.display(30)),
-                  Text(_stepTitle(context, _step).$2, style: AppText.displayItalic(30)),
-                  const SizedBox(height: 16),
+                  if (!keyboardOpen) ...[
+                    Text(_stepTitle(context, _step).$1, style: AppText.display(30)),
+                    Text(_stepTitle(context, _step).$2, style: AppText.displayItalic(30)),
+                    const SizedBox(height: 16),
+                  ],
                   StepProgress(step: _step, total: _stepCount),
                 ],
               ),
@@ -842,6 +966,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                 child: _buildStepContent(),
               ),
             ),
+            if (!keyboardOpen)
             Container(
               margin: const EdgeInsets.fromLTRB(20, 12, 20, 22),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -904,25 +1029,33 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _labeledField(
-                label: context.l10n.createTripNameLabel,
-                controller: _nameController,
-                hint: context.l10n.createTripNameHint,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _labeledField(
-                label: context.l10n.createTripDestinationLabel,
-                controller: _destinationController,
-                hint: context.l10n.createTripDestinationHint,
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final name = _labeledField(
+              label: context.l10n.createTripNameLabel,
+              controller: _nameController,
+              hint: context.l10n.createTripNameHint,
+              inputFormatters: _titleFormatters,
+            );
+            final destination = _labeledField(
+              label: context.l10n.createTripDestinationLabel,
+              controller: _destinationController,
+              hint: context.l10n.createTripDestinationHint,
+              inputFormatters: _titleFormatters,
+            );
+            // En teléfono, lado a lado cortaban el ejemplo ("Ej: Viaje a Cart…").
+            if (constraints.maxWidth < 520) {
+              return Column(children: [name, const SizedBox(height: 16), destination]);
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: name),
+                const SizedBox(width: 16),
+                Expanded(child: destination),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
         Row(
@@ -975,7 +1108,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                 label: context.l10n.createTripLodgingCostLabel,
                 controller: _lodgingCostController,
                 hint: context.l10n.createTripLodgingCostHint,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.number,
                 inputFormatters: _moneyFormatters,
                 triggerRebuild: true,
               ),
@@ -986,7 +1119,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
                 label: context.l10n.createTripAdvancePaymentLabel,
                 controller: _advancePaymentController,
                 hint: context.l10n.createTripAdvancePaymentHint,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.number,
                 inputFormatters: _moneyFormatters,
                 triggerRebuild: true,
               ),
@@ -1003,11 +1136,16 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
             // Los labels se traducen libremente — el valor guardado en
             // `includedServices` (ver `_saveTrip`) sigue siendo el
             // string fijo en español que compara `trip_repository.dart`.
-            _toggleChip(context.l10n.createTripServiceBreakfast, _includeBreakfast, (v) => setState(() => _includeBreakfast = v)),
-            _toggleChip(context.l10n.createTripServiceLunch, _includeLunch, (v) => setState(() => _includeLunch = v)),
-            _toggleChip(context.l10n.createTripServiceDinner, _includeDinner, (v) => setState(() => _includeDinner = v)),
-            _toggleChip(context.l10n.createTripServiceTransfer, _includeTransfer, (v) => setState(() => _includeTransfer = v)),
+            _toggleChip(context.l10n.createTripServiceBreakfast, _includeBreakfast, (v) => _toggleService(() => _includeBreakfast = v)),
+            _toggleChip(context.l10n.createTripServiceLunch, _includeLunch, (v) => _toggleService(() => _includeLunch = v)),
+            _toggleChip(context.l10n.createTripServiceDinner, _includeDinner, (v) => _toggleService(() => _includeDinner = v)),
+            _toggleChip(context.l10n.createTripServiceTransfer, _includeTransfer, (v) => _toggleService(() => _includeTransfer = v)),
           ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          context.l10n.createTripServicesHint,
+          style: AppText.ui(12, color: AppColors.textMuted),
         ),
       ],
     );
@@ -1017,22 +1155,6 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.l10n.createTripStartTransportLabel, style: AppText.label(10)),
-        const SizedBox(height: 10),
-        FilterChipsRow(
-          items: _transportTypes,
-          selected: _transportTypes.indexOf(_startTransport),
-          onSelect: (i) => setState(() => _startTransport = _transportTypes[i]),
-        ),
-        const SizedBox(height: 20),
-        Text(context.l10n.createTripDuringTransportLabel, style: AppText.label(10)),
-        const SizedBox(height: 10),
-        FilterChipsRow(
-          items: _transportTypes,
-          selected: _transportTypes.indexOf(_duringTransport),
-          onSelect: (i) => setState(() => _duringTransport = _transportTypes[i]),
-        ),
-        const SizedBox(height: 26),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1063,7 +1185,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           label: context.l10n.createTripEmergencyMoneyLabel,
           controller: _emergencyMoneyController,
           hint: context.l10n.createTripEmergencyMoneyHint,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.number,
           inputFormatters: _moneyFormatters,
           triggerRebuild: true,
         ),
@@ -1145,7 +1267,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           TextField(
             controller: _personsController,
             keyboardType: TextInputType.number,
-            inputFormatters: _digitsOnlyFormatters,
+            inputFormatters: [..._digitsOnlyFormatters, AppInputFormatters.maxLength(2)],
             onChanged: (_) => setState(() {}),
             style: AppText.display(18),
             decoration: const InputDecoration(
@@ -1206,7 +1328,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
         TextField(
           controller: _maxBudgetController,
           keyboardType: TextInputType.number,
-          inputFormatters: [_ThousandsInputFormatter()],
+          inputFormatters: [ThousandsInputFormatter()],
           style: AppText.display(32, color: AppColors.inkSoft),
           decoration: InputDecoration(
             isDense: true,
@@ -1251,7 +1373,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(flex: 5, child: _labeledField(label: context.l10n.createTripCategoryLabel, controller: row.nombreController, hint: context.l10n.createTripCategoryHint)),
+        Expanded(flex: 5, child: _labeledField(label: context.l10n.createTripCategoryLabel, controller: row.nombreController, hint: context.l10n.createTripCategoryHint, inputFormatters: [AppInputFormatters.safeText, AppInputFormatters.maxLength(80)])),
         const SizedBox(width: 10),
         Expanded(
           flex: 4,
@@ -1259,7 +1381,7 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
             label: context.l10n.createTripAmountLabel,
             controller: row.montoController,
             hint: context.l10n.createTripCategoryAmountHint,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.number,
             inputFormatters: _moneyFormatters,
             triggerRebuild: true,
           ),
@@ -1276,6 +1398,14 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
 
   /// Resumen de presupuesto en vivo: se recalcula con cada cambio en los
   /// campos de dinero gracias a `triggerRebuild: true` en `_labeledField`.
+  /// Servicios que ya cubre el hospedaje (no se presupuestan).
+  List<String> get _coveredServices => [
+        if (_includeBreakfast) context.l10n.createTripServiceBreakfast,
+        if (_includeLunch) context.l10n.createTripServiceLunch,
+        if (_includeDinner) context.l10n.createTripServiceDinner,
+        if (_includeTransfer) context.l10n.createTripServiceTransfer,
+      ];
+
   Widget _buildBudgetSummaryCard() {
     final maxBudget = _maxBudget;
     final categoriesTotal = _categoryRows.fold(0.0, (sum, row) => sum + row.monto);
@@ -1323,6 +1453,17 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
           BudgetBar(progress: percentage, fill: overBudget ? AppColors.error : AppColors.inkSoft),
           const SizedBox(height: 12),
           _summaryRow(context.l10n.createTripEstimatedLabel, context.formatMoney(estimatedSpent)),
+          Text(
+            context.l10n.createTripEstimatedHint,
+            style: AppText.ui(11, color: AppColors.textMuted),
+          ),
+          if (_coveredServices.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.createTripCoveredByLodging(_coveredServices.join(', ')),
+              style: AppText.ui(12, color: AppColors.inkSoft, weight: FontWeight.w600),
+            ),
+          ],
           const SizedBox(height: 4),
           _summaryRow(
             overBudget ? context.l10n.createTripOverBudgetLabel : context.l10n.createTripAvailableLabel,
@@ -1438,26 +1579,6 @@ String _groupThousands(String digits) {
     buffer.write(digits[i]);
   }
   return buffer.toString();
-}
-
-/// Formatea el campo de presupuesto máximo con puntos de miles mientras
-/// se escribe. El cursor siempre queda al final del texto — es lo
-/// esperado para un monto (se escribe de corrido, no se edita en medio)
-/// y evita el cálculo de offset cuando insertar un punto desplaza los
-/// dígitos que ya estaban.
-class _ThousandsInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
-    final formatted = _groupThousands(digits);
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
 }
 
 /// Banner de error del wizard — pintado fuera del `BackdropFilter` (ver

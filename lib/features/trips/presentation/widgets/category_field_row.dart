@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/validators.dart';
 import '../../data/models/trip_budget_category.dart';
 
 /// Fila editable de categoría de presupuesto (nombre + monto +
@@ -13,13 +14,14 @@ class CategoryFieldRow {
     String nombre = '',
     String monto = '',
     this.categoriaGastoId,
+    this.autoKey,
   })  : nombreController = TextEditingController(text: nombre),
         montoController = TextEditingController(text: monto);
 
   factory CategoryFieldRow.fromCategory(TripBudgetCategory category) {
     return CategoryFieldRow(
       nombre: category.nombre,
-      monto: category.monto > 0 ? category.monto.toStringAsFixed(0) : '',
+      monto: category.monto > 0 ? groupThousands(category.monto.round()) : '',
       categoriaGastoId: category.categoriaGastoId,
     );
   }
@@ -33,7 +35,13 @@ class CategoryFieldRow {
   /// texto con la lista fija de categorías de gasto).
   int? categoriaGastoId;
 
-  double get monto => double.tryParse(montoController.text.trim()) ?? 0;
+  /// Fila agregada sola por un servicio NO incluido en el hospedaje
+  /// ('comidas' / 'traslado'): la app la crea, renombra o quita cuando
+  /// cambian los chips de "Servicios incluidos". `null` = fila normal.
+  final String? autoKey;
+
+  /// El monto se escribe con punto de miles (`ThousandsInputFormatter`).
+  double get monto => (parseThousands(montoController.text) ?? 0).toDouble();
 
   TripBudgetCategory? toCategory() {
     final nombre = nombreController.text.trim();

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,12 +10,16 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shell/app_shell.dart';
 import '../../../widgets/filter_chips_row.dart';
 import '../../../widgets/hover_card.dart';
+import '../../../widgets/ink_header.dart';
 import '../../../widgets/map_panel.dart';
 import '../../../widgets/place_card.dart';
+import '../../../widgets/pressable.dart';
+import '../../../widgets/stagger_in.dart';
 import '../../trips/presentation/pages/create_trip_screen.dart';
 import '../data/location_service.dart';
 import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
+import '../data/places_realtime.dart';
 import 'widgets/category_label.dart';
 import 'widgets/place_details_sheet.dart';
 
@@ -37,10 +44,44 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
   int _selectedCategoryIndex = 0;
   MapPlace? _selectedPlace;
 
+  // TG-289: si un comercio cambia sus datos, la lista y el mapa se
+  // actualizan solos, sin volver a mostrar "cargando".
+  StreamSubscription<PlacesChange>? _realtimeSub;
+  final _realtimeDebouncer = Debouncer();
+
   @override
   void initState() {
     super.initState();
     _load();
+    _realtimeSub = PlacesRealtime.instance.changes.listen(
+      (_) => _realtimeDebouncer(_reloadSilently),
+    );
+  }
+
+  @override
+  void dispose() {
+    _realtimeSub?.cancel();
+    _realtimeDebouncer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reloadSilently() async {
+    try {
+      final places = await _repository.fetchNearbyPlaces();
+      if (!mounted) return;
+      final selected = _selectedPlace;
+      setState(() {
+        _places = places;
+        _selectedPlace = selected == null
+            ? (places.isNotEmpty ? places.first : null)
+            : places.cast<MapPlace?>().firstWhere(
+                  (p) => p!.type == selected.type && p.id == selected.id,
+                  orElse: () => places.isNotEmpty ? places.first : null,
+                );
+      });
+    } catch (e, st) {
+      debugPrint('ComerciosCercanosScreen._reloadSilently error: $e\n$st');
+    }
   }
 
   /// Antes un solo `Future.wait` combinaba comercios + ubicación: si
@@ -165,6 +206,9 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
       case AppSection.mapa:
         context.go('/mapa');
         break;
+      case AppSection.actividades:
+        context.go('/actividades');
+        break;
       case AppSection.promociones:
         context.go('/promociones');
         break;
@@ -203,8 +247,10 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
         LayoutBuilder(
           builder: (context, constraints) {
             final grid = _buildPlacesGrid(places);
+            final user = _userPosition;
             final map = MapPanel(
               places: places,
+              userLocation: user == null ? null : LatLng(user.latitude, user.longitude),
               selected: _selectedPlace,
               height: 640,
               onSelectPlace: (place) => setState(() => _selectedPlace = place),
@@ -367,113 +413,119 @@ class _ComerciosCercanosScreenState extends State<ComerciosCercanosScreen> {
   }
 
   // ─── Móvil ───
-  // No forma parte del alcance de esta pasada de escritorio; mantiene
-  // la estructura anterior funcionando.
+  // Anatomía móvil del handoff (› Comercios cercanos): cabecera `ink`
+  // con `bottomRight: 44`, chips con scroll horizontal, tarjetas
+  // destacadas y la píldora flotante "Ver en el mapa".
 
   Widget _buildMobile(BuildContext context) {
-    final comercios = _filteredPlaces;
+    final places = _filteredPlaces;
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: Text(context.l10n.comerciosCercanosTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/')),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.ink))
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: AppColors.ink,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+      body: Stack(
+        children: [
+          ListView(
+            padding: const EdgeInsets.only(bottom: 110),
+            children: [
+              InkHeader(
+                eyebrow: context.l10n.comerciosCercanosPlacesCountLabel(places.length),
+                title: context.l10n.comerciosCercanosHeaderTitle1.trim(),
+                titleAccent: context.l10n.comerciosCercanosHeaderTitle2,
+                subtitle: _userPosition != null
+                    ? context.l10n.comerciosCercanosHeaderSubtitle
+                    : context.l10n.comerciosCercanosLocationUnavailable,
+                onBack: () => context.go('/'),
+              ),
+              const SizedBox(height: 18),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FilterChipsRow(
+                  items: [for (final c in _categories) localizedCategoryOrAll(context, c)],
+                  selected: _selectedCategoryIndex,
+                  onSelect: (i) => setState(() => _selectedCategoryIndex = i),
+                  forceScrollable: true,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _isLoading || _loadError != null || places.isEmpty
+                    ? _buildPlacesGrid(places)
+                    : Column(
                         children: [
-                          const Icon(Icons.location_on_outlined, color: Colors.white70, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            _userPosition != null
-                                ? context.l10n.comerciosCercanosNearYourLocation
-                                : context.l10n.comerciosCercanosLocationUnavailable,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                          ),
+                          for (var i = 0; i < places.length; i++) ...[
+                            StaggerIn(
+                              index: i,
+                              child: PlaceCard(
+                                variant: PlaceCardVariant.featured,
+                                name: places[i].nombre,
+                                imageUrl: places[i].fotoUrl,
+                                categoryLabel:
+                                    localizedCategoryLabel(context, places[i].categoria).toUpperCase(),
+                                distanceLabel: _formatDistance(_distanceMeters(places[i])),
+                                address: places[i].direccion,
+                                tags: [
+                                  PlaceCardTag(context.l10n.comerciosCercanosTagVerified, emphasis: true),
+                                  if (_isOpenNow(places[i]) == true)
+                                    PlaceCardTag(context.l10n.comerciosCercanosTagOpenNow),
+                                ],
+                                onTap: () => _openPlaceDetails(places[i]),
+                              ),
+                            ),
+                            if (i != places.length - 1) const SizedBox(height: 16),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.comerciosCercanosPlacesFoundCount(comercios.length),
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _categories.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final label = _categories[index];
-                      final isSelected = index == _selectedCategoryIndex;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryIndex = index),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.ink : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isSelected ? AppColors.ink : AppColors.hair, width: 1.5),
-                          ),
-                          child: Text(
-                            localizedCategoryOrAll(context, label),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : AppColors.ink,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: comercios.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: comercios.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final place = comercios[index];
-                            return PlaceCard(
-                              variant: PlaceCardVariant.featured,
-                              name: place.nombre,
-                              imageUrl: place.fotoUrl,
-                              categoryLabel: localizedCategoryLabel(context, place.categoria).toUpperCase(),
-                              distanceLabel: _formatDistance(_distanceMeters(place)),
-                              address: place.direccion,
-                              tags: [
-                                PlaceCardTag(context.l10n.comerciosCercanosTagVerified, emphasis: true),
-                                if (_isOpenNow(place) == true) PlaceCardTag(context.l10n.comerciosCercanosTagOpenNow),
-                              ],
-                              onTap: () => _openPlaceDetails(place),
-                            );
-                          },
-                        ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 22,
+            child: SafeArea(
+              top: false,
+              child: Center(child: _MapPill(onTap: () => context.go('/mapa'))),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Píldora flotante del handoff: `ink` radio 22, punto `mint` 8 px.
+class _MapPill extends StatelessWidget {
+  const _MapPill({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: AppShadow.inkButton,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(color: AppColors.mint, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              context.l10n.homeClientViewMapButton,
+              style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.paper),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

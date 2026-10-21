@@ -25,6 +25,20 @@ abstract final class AppColors {
   static const errorWash = Color(0xFFF8E7E4); // fondo de alerta de error
   static const warning = Color(0xFFA86A12); // advertencia (HU-11, ≥75%)
   static const warningWash = Color(0xFFFBF0DC); // fondo de advertencia
+  // Marcador "Tú estás aquí" sobre el mapa oscuro: ámbar, un tono que
+  // ninguna categoría de lugar usa, para que nunca se confunda.
+  static const userLocation = Color(0xFFFFB627);
+
+  // Estado de las actividades del comercio (badge fondo / texto) — ver
+  // `PROMPT_COMERCIO.md` Fase 3.
+  static const statusPublished = Color(0xFFE9F0E8);
+  static const statusPublishedText = Color(0xFF1C7A6B);
+  static const statusDraft = Color(0xFFF1EEE5);
+  static const statusDraftText = Color(0xFF4C6461);
+  static const statusPaused = Color(0xFFF3E6D6);
+  static const statusPausedText = Color(0xFF8A5A2B);
+  // Punto de estado "Pausada" sobre ink (vista previa del modal).
+  static const statusPausedDot = Color(0xFFE0B07A);
 }
 
 abstract final class AppRadius {
@@ -64,6 +78,15 @@ abstract final class AppShadow {
       blurRadius: 40,
       spreadRadius: -26,
       offset: Offset(0, 20),
+    ),
+  ];
+  /// Sombra fuerte de los modales (caja sobre el overlay `ink`).
+  static const List<BoxShadow> modal = [
+    BoxShadow(
+      color: Color(0xB3092A2E),
+      blurRadius: 80,
+      spreadRadius: -40,
+      offset: Offset(0, 40),
     ),
   ];
   static const List<BoxShadow> inkButton = [

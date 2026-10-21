@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,12 +9,17 @@ import '../data/location_service.dart';
 import '../data/models/category_visuals.dart';
 import '../data/models/map_place.dart';
 import '../data/places_map_repository.dart';
+import '../data/places_realtime.dart';
 import 'widgets/category_label.dart';
 import 'widgets/place_details_sheet.dart';
 import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shell/app_shell.dart';
+import '../../../widgets/filter_chips_row.dart';
+import '../../../widgets/load_error_box.dart';
 import '../../../widgets/map_style.dart';
+import '../../../widgets/paper_top_bar.dart';
+import '../../../widgets/user_location_marker.dart';
 import '../../trips/presentation/pages/create_trip_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -26,7 +30,6 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  static const Color _primary = AppColors.ink;
   static const String _userMarkerId = 'mi_ubicacion';
 
   // Medellín: centro de respaldo cuando todavía no se pudo obtener la
@@ -41,6 +44,9 @@ class _MapScreenState extends State<MapScreen> {
   StreamSubscription<Position>? _positionSub;
 
   bool _isLoadingPlaces = true;
+  /// Falló la carga de lugares y no hay ninguno que mostrar: sin esto el
+  /// mapa quedaba vacío como si no hubiera lugares.
+  bool _placesError = false;
   bool _isLoadingLocation = true;
   List<MapPlace> _places = [];
   LatLng? _userLatLng;
@@ -57,27 +63,69 @@ class _MapScreenState extends State<MapScreen> {
 
   bool get _isLoading => _isLoadingPlaces || _isLoadingLocation;
 
+  // TG-289: los cambios de los comercios llegan en tiempo real.
+  StreamSubscription<PlacesChange>? _realtimeSub;
+  final _realtimeDebouncer = Debouncer();
+
   @override
   void initState() {
     super.initState();
     _loadPlaces();
+    _realtimeSub = PlacesRealtime.instance.changes.listen(
+      (_) => _realtimeDebouncer(_loadPlaces),
+    );
     _loadLocationAndStartWatching();
-    _buildUserIcon();
+  }
+
+  String? _userIconLabel;
+
+  /// El ícono lleva texto traducido: se arma aquí (en `initState` todavía
+  /// no se puede leer `Localizations`) y se rehace si cambia el idioma.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final label = context.l10n.mapScreenUserHereLabel;
+    if (label != _userIconLabel) {
+      _userIconLabel = label;
+      _buildUserIcon(label);
+    }
   }
 
   @override
   void dispose() {
+    _realtimeSub?.cancel();
+    _realtimeDebouncer.dispose();
     _positionSub?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadPlaces() async {
-    final places = await _placesRepository.fetchNearbyPlaces();
-    if (!mounted) return;
+  void _retryPlaces() {
     setState(() {
-      _places = places;
-      _isLoadingPlaces = false;
+      _placesError = false;
+      _isLoadingPlaces = true;
     });
+    _loadPlaces();
+  }
+
+  Future<void> _loadPlaces() async {
+    try {
+      final places = await _placesRepository.fetchNearbyPlaces();
+      if (!mounted) return;
+      setState(() {
+        _places = places;
+        _isLoadingPlaces = false;
+        _placesError = false;
+      });
+    } catch (e, st) {
+      debugPrint('MapScreen._loadPlaces error: $e\n$st');
+      if (mounted) {
+        setState(() {
+          _isLoadingPlaces = false;
+          // Una recarga en segundo plano que falla no borra lo que ya se ve.
+          _placesError = _places.isEmpty;
+        });
+      }
+    }
   }
 
   /// TG-145/146/147/155: obtiene el primer fix, centra la cámara ahí
@@ -128,92 +176,13 @@ class _MapScreenState extends State<MapScreen> {
     if (_userLatLng != null) _followUserIfNeeded(_userLatLng!);
   }
 
-  /// Ícono propio para el turista (TG-145/155: "indicador distinto"):
-  /// un círculo pequeño del color de la marca con halo blanco, y debajo
-  /// una etiqueta fija "Tú estás aquí" (no hace falta tocar el marcador
-  /// para saber cuál es el turista).
-  Future<void> _buildUserIcon() async {
-    const double dpr = 2.5; // nitidez en pantallas de alta densidad.
-    const double circleDiameter = 26 * dpr;
-    const double margin = 6 * dpr;
-    const double gap = 4 * dpr;
-    final label = context.l10n.mapScreenUserHereLabel;
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10 * dpr,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    const pillPaddingH = 9.0 * dpr;
-    const pillPaddingV = 4.0 * dpr;
-    final pillWidth = textPainter.width + pillPaddingH * 2;
-    final pillHeight = textPainter.height + pillPaddingV * 2;
-
-    final totalWidth = (circleDiameter > pillWidth ? circleDiameter : pillWidth) +
-        margin * 2;
-    final totalHeight = circleDiameter + gap + pillHeight + margin * 2;
-    final circleCenter = Offset(totalWidth / 2, margin + circleDiameter / 2);
-
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(
-      recorder,
-      Rect.fromLTWH(0, 0, totalWidth, totalHeight),
-    );
-
-    // Halo + círculo del turista.
-    canvas.drawCircle(
-      circleCenter,
-      circleDiameter / 2,
-      Paint()
-        ..color = Colors.black.withOpacity(0.18)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-    );
-    canvas.drawCircle(
-      circleCenter,
-      circleDiameter / 2 - 3 * dpr,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawCircle(
-      circleCenter,
-      circleDiameter / 2 - 7 * dpr,
-      Paint()..color = _primary,
-    );
-
-    // Etiqueta "Tú estás aquí" debajo del círculo.
-    final pillRect = Rect.fromCenter(
-      center: Offset(
-        totalWidth / 2,
-        margin + circleDiameter + gap + pillHeight / 2,
-      ),
-      width: pillWidth,
-      height: pillHeight,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(pillRect, Radius.circular(pillHeight / 2)),
-      Paint()..color = _primary,
-    );
-    textPainter.paint(
-      canvas,
-      Offset(pillRect.left + pillPaddingH, pillRect.top + pillPaddingV),
-    );
-
-    final picture = recorder.endRecording();
-    final image =
-        await picture.toImage(totalWidth.toInt(), totalHeight.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (bytes == null || !mounted) return;
+  /// Ícono propio del turista (TG-145/155): ver [UserLocationIcon].
+  Future<void> _buildUserIcon(String label) async {
+    final icon = await UserLocationIcon.build(label);
+    if (icon == null || !mounted) return;
     setState(() {
-      _userIcon = BitmapDescriptor.bytes(bytes.buffer.asUint8List());
-      // El ancla apunta al centro del círculo (la coordenada GPS real),
-      // no al centro de todo el ícono (que incluye la etiqueta debajo).
-      _userIconAnchor = Offset(0.5, circleCenter.dy / totalHeight);
+      _userIcon = icon.icon;
+      _userIconAnchor = icon.anchor;
     });
   }
 
@@ -269,16 +238,15 @@ class _MapScreenState extends State<MapScreen> {
       );
     }).toSet();
 
-    // Marcador distintivo del turista (TG-145/155): ícono propio
-    // dibujado a mano (círculo de marca + halo), no un pin genérico, que
+    // Marcador distintivo del turista (TG-145/155): punto ámbar con halo
+    // y etiqueta (ver [UserLocationIcon]), no un pin genérico, que
     // se mueve en tiempo real con cada actualización de posición.
     if (_userLatLng != null) {
       markers.add(
         Marker(
           markerId: const MarkerId(_userMarkerId),
           position: _userLatLng!,
-          icon: _userIcon ??
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+          icon: _userIcon ?? UserLocationIcon.fallback,
           anchor: _userIcon == null ? const Offset(0.5, 0.5) : _userIconAnchor,
           zIndexInt: 1,
         ),
@@ -384,6 +352,9 @@ class _MapScreenState extends State<MapScreen> {
         break;
       case AppSection.mapa:
         break; // ya estamos aquí.
+      case AppSection.actividades:
+        context.go('/actividades');
+        break;
       case AppSection.promociones:
         context.go('/promociones');
         break;
@@ -509,6 +480,16 @@ class _MapScreenState extends State<MapScreen> {
                   child: CircularProgressIndicator(color: AppColors.mint),
                 ),
               ),
+            if (_placesError)
+              Positioned(
+                top: 16,
+                left: 16,
+                right: 16,
+                child: LoadErrorBox(
+                  message: context.l10n.valLoadMapError,
+                  onRetry: _retryPlaces,
+                ),
+              ),
             Positioned(
               right: 18,
               bottom: 18,
@@ -528,155 +509,67 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   // ─── Móvil ───
-  // Estructura original (AppBar + filtros + banner + mapa) — no forma
-  // parte del alcance de esta pasada de escritorio, se mantiene
-  // funcional tal como estaba.
+  // Mapa a pantalla completa con el estilo petróleo de escritorio y un
+  // panel de papel arriba (atrás, contador mono, título display y chips),
+  // con una sola esquina grande como las cabeceras del handoff.
 
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: _primary,
-        elevation: 0,
-        flexibleSpace: const DecoratedBox(decoration: BoxDecoration(color: AppColors.ink)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.go('/'),
-        ),
-        title: Text(
-          context.l10n.mapScreenTitle,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Column(
+      backgroundColor: AppColors.paper,
+      body: Stack(
         children: [
-          _buildCategoryFilters(),
-          if (_locationFailure != null) _buildLocationBanner(),
-          Expanded(
-            child: Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _userLatLng ?? _fallbackCenter,
-                    zoom: 14,
-                  ),
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                    // El mapa se creó después de tener ya la primera
-                    // posición: hay que centrar ahora (initialCameraPosition
-                    // solo aplica en la creación misma del widget).
-                    if (_userLatLng != null) {
-                      _followUserIfNeeded(_userLatLng!);
-                    }
-                  },
-                  onCameraMoveStarted: () {
-                    if (_ignoreNextCameraMove) {
-                      _ignoreNextCameraMove = false;
-                    } else if (_isFollowingUser) {
-                      setState(() => _isFollowingUser = false);
-                    }
-                  },
-                  markers: _markers,
-                  // El indicador nativo de "mi ubicación" queda apagado
-                  // a propósito: usamos nuestro propio marcador (más
-                  // arriba) para tener un ícono distinto y un botón de
-                  // "seguir" con la lógica de pausa/reanudar.
-                  myLocationEnabled: false,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
-                ),
-                // TG-156: spinner SUPERPUESTO sobre el mapa, no en vez
-                // de él — el mapa se ve de inmediato con el centro de
-                // respaldo mientras se resuelven ubicación + lugares.
-                if (_isLoading)
-                  Container(
-                    color: Colors.black.withOpacity(0.15),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: _primary),
-                    ),
-                  ),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: FloatingActionButton(
-                    heroTag: 'seguir_ubicacion',
-                    backgroundColor:
-                        _isFollowingUser ? Colors.white : _primary,
-                    onPressed: _userLatLng == null
-                        ? () => _handleLocationBannerAction(
-                              _locationFailure ??
-                                  LocationFailureReason.permissionDenied,
-                            )
-                        : _resumeFollowingUser,
-                    child: Icon(
-                      Icons.my_location,
-                      color: _isFollowingUser ? _primary : Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilters() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              _isLoadingPlaces
-                  ? context.l10n.mapScreenSearchingNearbyPlaces
-                  : context.l10n.mapScreenPlacesFoundCount(_filteredPlaces.length),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final categoria = _categories[index];
-                final selected = categoria == _selectedCategory;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = categoria),
-                  child: Container(
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: selected ? _primary : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: selected ? _primary : AppColors.hair,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Text(
-                      localizedCategoryOrAll(context, categoria),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? Colors.white : _primary,
-                      ),
-                    ),
-                  ),
-                );
+          Positioned.fill(
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _userLatLng ?? _fallbackCenter,
+                zoom: 14,
+              ),
+              style: mapInkStyle,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                // El mapa se creó después de tener ya la primera
+                // posición: hay que centrar ahora (initialCameraPosition
+                // solo aplica en la creación misma del widget).
+                if (_userLatLng != null) _followUserIfNeeded(_userLatLng!);
               },
+              onCameraMoveStarted: () {
+                if (_ignoreNextCameraMove) {
+                  _ignoreNextCameraMove = false;
+                } else if (_isFollowingUser) {
+                  setState(() => _isFollowingUser = false);
+                }
+              },
+              markers: _markers,
+              // El indicador nativo de "mi ubicación" queda apagado a
+              // propósito: usamos nuestro propio marcador y un botón de
+              // "seguir" con la lógica de pausa/reanudar.
+              myLocationEnabled: false,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+            ),
+          ),
+          // TG-156: spinner SUPERPUESTO sobre el mapa, no en vez de él.
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: AppColors.ink.withValues(alpha: 0.15),
+                child: const Center(child: CircularProgressIndicator(color: AppColors.mint)),
+              ),
+            ),
+          Positioned(top: 0, left: 0, right: 0, child: _buildMobileTopPanel()),
+          Positioned(
+            right: 18,
+            bottom: 18,
+            child: SafeArea(
+              top: false,
+              child: _RecenterButton(
+                following: _isFollowingUser,
+                onTap: _userLatLng == null
+                    ? () => _handleLocationBannerAction(
+                          _locationFailure ?? LocationFailureReason.permissionDenied,
+                        )
+                    : _resumeFollowingUser,
+              ),
             ),
           ),
         ],
@@ -684,28 +577,62 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildLocationBanner() {
-    final reason = _locationFailure!;
+  Widget _buildMobileTopPanel() {
     return Container(
-      width: double.infinity,
-      color: const Color(0xFFFFF3E0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded,
-              color: Color(0xFFF9A825), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _locationMessage(reason),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        borderRadius: AppRadius.headerDetail,
+        boxShadow: AppShadow.raised,
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  PaperBackButton(onTap: () => context.go('/')),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          (_isLoadingPlaces
+                                  ? context.l10n.mapScreenSearchingNearbyPlaces
+                                  : context.l10n.mapScreenPlacesFoundCount(_filteredPlaces.length))
+                              .toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.label(10, color: AppColors.inkSoft),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(context.l10n.mapScreenTitle, style: AppText.display(28)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              FilterChipsRow(
+                items: [for (final c in _categories) localizedCategoryOrAll(context, c)],
+                selected: _categories.indexOf(_selectedCategory).clamp(0, _categories.length - 1),
+                onSelect: (i) => setState(() => _selectedCategory = _categories[i]),
+                forceScrollable: true,
+              ),
+              if (_locationFailure != null) ...[
+                const SizedBox(height: 14),
+                _buildDesktopLocationBanner(),
+              ],
+              if (_placesError) ...[
+                const SizedBox(height: 14),
+                LoadErrorBox(message: context.l10n.valLoadMapError, onRetry: _retryPlaces),
+              ],
+            ],
           ),
-          TextButton(
-            onPressed: () => _handleLocationBannerAction(reason),
-            child: Text(_locationActionLabel(reason)),
-          ),
-        ],
+        ),
       ),
     );
   }

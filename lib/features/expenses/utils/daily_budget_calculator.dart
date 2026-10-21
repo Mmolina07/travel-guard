@@ -2,11 +2,16 @@ import '../../trips/presentation/pages/trip_model.dart';
 import '../../trips/utils/budget_calculator.dart';
 import '../data/models/gasto_model.dart';
 
-/// Umbral a partir del cual se advierte que el día va justo (HU-11):
-/// por debajo de esto no se muestra ninguna alerta.
+/// Umbrales de HU-11: por debajo de [dailyBudgetWarningPct] no se
+/// muestra ninguna alerta; al 75% va la amarilla (CA1), al 85% el aviso
+/// de lo que queda (CA7) y al 100% la roja (CA2).
 const double dailyBudgetWarningPct = 75;
+const double dailyBudgetNearLimitPct = 85;
+const double dailyBudgetLimitPct = 100;
 
-enum DailyBudgetLevel { ok, warning, exceeded }
+/// Ordenados de menor a mayor: comparar por `index` dice si se cruzó un
+/// umbral nuevo.
+enum DailyBudgetLevel { ok, warning, nearLimit, exceeded }
 
 /// Estado del presupuesto de un día puntual del viaje (HU-11, TG-276).
 class DailyBudgetStatus {
@@ -31,7 +36,8 @@ class DailyBudgetStatus {
   }
 
   DailyBudgetLevel get level {
-    if (percentage >= 100) return DailyBudgetLevel.exceeded;
+    if (percentage >= dailyBudgetLimitPct) return DailyBudgetLevel.exceeded;
+    if (percentage >= dailyBudgetNearLimitPct) return DailyBudgetLevel.nearLimit;
     if (percentage >= dailyBudgetWarningPct) return DailyBudgetLevel.warning;
     return DailyBudgetLevel.ok;
   }

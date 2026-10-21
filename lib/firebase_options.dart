@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDJx57aY94VspZV2MsvvIjgbLvBHirMNmU',
-    appId: '1:223103352776:android:24b7e1a49b5b022fc3cafd',
+    appId: '1:223103352776:android:d36c78687efbecf0c3cafd',
     messagingSenderId: '223103352776',
     projectId: 'travelguard-5a487',
     storageBucket: 'travelguard-5a487.firebasestorage.app',
@@ -60,12 +60,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBo3SElvT7WXFR2SDj6109j9pkM9hs13SA',
-    appId: '1:223103352776:ios:14e45f6a587e612ac3cafd',
+    appId: '1:223103352776:ios:c67942022580c835c3cafd',
     messagingSenderId: '223103352776',
     projectId: 'travelguard-5a487',
     storageBucket: 'travelguard-5a487.firebasestorage.app',
-    iosClientId: '223103352776-94bvmto983j4n7u46ce2v9aavvbf3dp0.apps.googleusercontent.com',
-    iosBundleId: 'com.example.travelguard',
+    iosClientId: '223103352776-iihuhpjsnh76vk4k8pipgtah4orun0g8.apps.googleusercontent.com',
+    iosBundleId: 'com.travelguard.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

@@ -58,4 +58,56 @@ class GeocodingService {
       return null;
     }
   }
+
+  /// Dirección legible de un punto del mapa (geocodificación inversa):
+  /// "Calle 10 # 43-12, Laureles, Medellín". `barrio` trae el barrio o
+  /// sector cuando Nominatim lo conoce. `null` si falla la consulta.
+  Future<({String direccion, String? barrio})?> reverseGeocode(LatLng point) async {
+    final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse').replace(
+      queryParameters: {
+        'lat': point.latitude.toString(),
+        'lon': point.longitude.toString(),
+        'format': 'json',
+        'addressdetails': '1',
+        'accept-language': 'es',
+        'zoom': '18',
+      },
+    );
+
+    try {
+      final response = await _client.get(
+        uri,
+        headers: const {'User-Agent': 'TravelGuardApp/1.0'},
+      );
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final address = data['address'] as Map<String, dynamic>?;
+      if (address == null) {
+        final display = data['display_name'] as String?;
+        return display == null ? null : (direccion: display, barrio: null);
+      }
+      String? pick(List<String> keys) {
+        for (final k in keys) {
+          final v = address[k] as String?;
+          if (v != null && v.trim().isNotEmpty) return v.trim();
+        }
+        return null;
+      }
+
+      final road = pick(['road', 'pedestrian', 'footway', 'path']);
+      final number = pick(['house_number']);
+      final barrio = pick(['neighbourhood', 'suburb', 'quarter', 'city_district']);
+      final city = pick(['city', 'town', 'village', 'municipality']);
+      final street = [road, number].whereType<String>().join(' # ');
+      final parts = [street, barrio, city].where((p) => p != null && p.isNotEmpty);
+      final direccion = parts.join(', ');
+      if (direccion.isEmpty) {
+        final display = data['display_name'] as String?;
+        return display == null ? null : (direccion: display, barrio: barrio);
+      }
+      return (direccion: direccion, barrio: barrio);
+    } catch (_) {
+      return null;
+    }
+  }
 }

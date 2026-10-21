@@ -15,12 +15,16 @@ class FloatingNavBar extends StatelessWidget {
     required this.onSelect,
     required this.onCreate,
     this.fabHeroTag = 'create-trip',
+    this.fabSemanticLabel,
   });
 
   final int index;
   final ValueChanged<int> onSelect;
   final VoidCallback onCreate;
   final Object fabHeroTag;
+
+  /// Qué hace el "+" (lectores de pantalla); por defecto "crear viaje".
+  final String? fabSemanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,7 @@ class FloatingNavBar extends StatelessWidget {
           ),
           Pressable(
             onTap: onCreate,
-            semanticLabel: context.l10n.floatingNavBarCreateTripSemanticLabel,
+            semanticLabel: fabSemanticLabel ?? context.l10n.floatingNavBarCreateTripSemanticLabel,
             child: Hero(
               tag: fabHeroTag,
               child: Container(

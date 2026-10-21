@@ -13,6 +13,9 @@ import '../../data/models/suscripcion_model.dart';
 import '../../providers/subscription_provider.dart';
 import '../widgets/card_payment_dialog.dart';
 import '../widgets/precio_cobro.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/ink_header.dart';
+import '../../../../widgets/segmented_pill.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
   const SubscriptionsScreen({super.key});
@@ -22,8 +25,7 @@ class SubscriptionsScreen extends StatefulWidget {
 }
 
 class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
-  late bool _isAnnual;
-  late String _selectedPlan;
+  bool _isAnnual = false;
 
   PlanSuscripcion get _plan =>
       _isAnnual ? PlanSuscripcion.anual : PlanSuscripcion.mensual;
@@ -38,198 +40,110 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _isAnnual = false;
-    _selectedPlan = 'turista'; // Plan seleccionado por defecto
-  }
-
-  @override
   Widget build(BuildContext context) {
     context.watch<CurrencyProvider>();
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final l10n = context.l10n;
     final priceCop = _plan.precioCop;
     final formattedPrice = precioCobro(context, priceCop, conReferencia: false);
-    final period = _isAnnual
-        ? context.l10n.subscriptionsPeriodYear
-        : context.l10n.subscriptionsPeriodMonth;
+    final period = _isAnnual ? l10n.subscriptionsPeriodYear : l10n.subscriptionsPeriodMonth;
 
-    final content = Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1000),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // ========== HEADER ==========
-            Text(
-              context.l10n.subscriptionsHeaderTitle,
-              style: AppText.display(28),
-              textAlign: TextAlign.center,
+    Widget body({required bool desktop}) {
+      final planCard = _PlanCard(
+        name: l10n.subscriptionsPlanTouristName,
+        subtitle: l10n.subscriptionsPlanTouristSubtitle,
+        price: formattedPrice,
+        period: period,
+        features: _benefits(context),
+        onSubscribe: () => _showSubscriptionDialog(context, l10n.subscriptionsPlanTouristName, priceCop),
+      );
+      final faq = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.subscriptionsFaqTitle, style: AppText.display(26)),
+          const SizedBox(height: 18),
+          _FAQItem(
+            question: l10n.subscriptionsFaqChangePlanQuestion,
+            answer: l10n.subscriptionsFaqChangePlanAnswer,
+          ),
+          const SizedBox(height: 12),
+          _FAQItem(
+            question: l10n.subscriptionsFaqFreeTrialQuestion,
+            answer: l10n.subscriptionsFaqFreeTrialAnswer,
+          ),
+          const SizedBox(height: 12),
+          _FAQItem(
+            question: l10n.subscriptionsFaqPaymentMethodsQuestion,
+            answer: l10n.subscriptionsFaqPaymentMethodsAnswer,
+          ),
+          const SizedBox(height: 22),
+          Text(
+            l10n.subscriptionsFooterNote.toUpperCase(),
+            style: AppText.label(10, color: AppColors.textLabel),
+          ),
+        ],
+      );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildActivePlanBanner(),
+          SizedBox(
+            width: 340,
+            child: SegmentedPill(
+              labels: [l10n.subscriptionsBillingMonthly, l10n.subscriptionsBillingAnnual],
+              index: _isAnnual ? 1 : 0,
+              onChanged: (i) => setState(() => _isAnnual = i == 1),
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.l10n.subscriptionsHeaderSubtitle,
-              style: AppText.ui(15, color: AppColors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            _buildActivePlanBanner(),
-
-            // ========== TOGGLE: MENSUAL / ANUAL ==========
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.wash,
-                borderRadius: BorderRadius.circular(AppRadius.card),
-              ),
-              padding: const EdgeInsets.all(6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _BillingToggle(
-                    label: context.l10n.subscriptionsBillingMonthly,
-                    isSelected: !_isAnnual,
-                    onTap: () {
-                      setState(() {
-                        _isAnnual = false;
-                      });
-                    },
-                  ),
-                  _BillingToggle(
-                    label: context.l10n.subscriptionsBillingAnnual,
-                    isSelected: _isAnnual,
-                    onTap: () {
-                      setState(() {
-                        _isAnnual = true;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // ========== PLANES ==========
-            isMobile
-                ? Column(
-                    children: [
-                      _PlanCard(
-                        name: context.l10n.subscriptionsPlanTouristName,
-                        subtitle: context.l10n.subscriptionsPlanTouristSubtitle,
-                        price: formattedPrice,
-                        period: period,
-                        color: AppColors.mint,
-                        features: _benefits(context),
-                        isSelected: _selectedPlan == 'turista',
-                        onTap: () {
-                          setState(() {
-                            _selectedPlan = 'turista';
-                          });
-                          _showSubscriptionDialog(
-                            context,
-                            context.l10n.subscriptionsPlanTouristName,
-                            priceCop,
-                          );
-                        },
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: _PlanCard(
-                          name: context.l10n.subscriptionsPlanTouristName,
-                          subtitle:
-                              context.l10n.subscriptionsPlanTouristSubtitle,
-                          price: formattedPrice,
-                          period: period,
-                          color: AppColors.mint,
-                          features: _benefits(context),
-                          isSelected: _selectedPlan == 'turista',
-                          onTap: () {
-                            setState(() {
-                              _selectedPlan = 'turista';
-                            });
-                            _showSubscriptionDialog(
-                              context,
-                              context.l10n.subscriptionsPlanTouristName,
-                              priceCop,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-            const SizedBox(height: 48),
-
-            // ========== FAQ ==========
-            Column(
+          ),
+          const SizedBox(height: 26),
+          if (desktop)
+            // Escritorio: plan y preguntas en dos columnas 1 : 1.
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.l10n.subscriptionsFaqTitle,
-                  style: AppText.display(20),
-                ),
-                const SizedBox(height: 20),
-                _FAQItem(
-                  question: context.l10n.subscriptionsFaqChangePlanQuestion,
-                  answer: context.l10n.subscriptionsFaqChangePlanAnswer,
-                ),
-                const SizedBox(height: 12),
-                _FAQItem(
-                  question: context.l10n.subscriptionsFaqFreeTrialQuestion,
-                  answer: context.l10n.subscriptionsFaqFreeTrialAnswer,
-                ),
-                const SizedBox(height: 12),
-                _FAQItem(
-                  question: context.l10n.subscriptionsFaqPaymentMethodsQuestion,
-                  answer: context.l10n.subscriptionsFaqPaymentMethodsAnswer,
-                ),
+                Expanded(child: planCard),
+                const SizedBox(width: 22),
+                Expanded(child: faq),
               ],
-            ),
-            const SizedBox(height: 40),
-
-            // ========== FOOTER ==========
-            Center(
-              child: Text(
-                context.l10n.subscriptionsFooterNote,
-                style: AppText.label(
-                  10,
-                  weight: FontWeight.w600,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+            )
+          else ...[
+            planCard,
+            const SizedBox(height: 34),
+            faq,
           ],
-        ),
-      ),
+        ],
+      );
+    }
+
+    final header = InkHeader(
+      eyebrow: l10n.subscriptionsAppBarTitle,
+      title: l10n.subscriptionsHeroTitle,
+      titleAccent: l10n.subscriptionsHeroAccent,
+      subtitle: l10n.subscriptionsHeaderSubtitle,
+      asCard: true,
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < AppBreakpoints.mobile) {
           return Scaffold(
-            backgroundColor: AppColors.paper,
-            appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios),
-                // Se llega con `go` desde la barra lateral: puede no
-                // haber nada en la pila a qué volver.
-                onPressed: () =>
-                    context.canPop() ? context.pop() : context.go('/'),
-              ),
-              title: Text(
-                context.l10n.subscriptionsAppBarTitle,
-                style: AppText.ui(18, weight: FontWeight.w600),
-              ),
-              backgroundColor: AppColors.paper,
-              elevation: 0,
-              foregroundColor: AppColors.ink,
-              centerTitle: true,
-            ),
             body: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: content,
+              child: Column(
+                children: [
+                  InkHeader(
+                    eyebrow: l10n.subscriptionsAppBarTitle,
+                    title: l10n.subscriptionsHeroTitle,
+                    titleAccent: l10n.subscriptionsHeroAccent,
+                    subtitle: l10n.subscriptionsHeaderSubtitle,
+                    // Se llega con `go` desde la barra lateral: puede no
+                    // haber nada en la pila a qué volver.
+                    onBack: () => context.canPop() ? context.pop() : context.go('/'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 26, 20, 44),
+                    child: body(desktop: false),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -239,7 +153,13 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
           section: AppSection.suscripciones,
           onNavigate: _handleSideNav,
           onCreateTrip: () => showCreateTripDialog(context),
-          child: content,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              header,
+              body(desktop: constraints.maxWidth >= 1100),
+            ],
+          ),
         );
       },
     );
@@ -257,6 +177,9 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       case AppSection.mapa:
         context.go('/mapa');
         break;
+      case AppSection.actividades:
+        context.go('/actividades');
+        break;
       case AppSection.promociones:
         context.go('/promociones');
         break;
@@ -270,34 +193,56 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   /// `supabase/functions/_shared/mercadopago.ts`).
   Widget _buildActivePlanBanner() {
     final suscripcion = context.watch<SubscriptionProvider>().suscripcion;
-    if (suscripcion == null || !suscripcion.isActive)
+    if (suscripcion == null || !suscripcion.isActive) {
       return const SizedBox.shrink();
+    }
     final fecha = DateFormat.yMMMd(
       Localizations.localeOf(context).toString(),
     ).format(suscripcion.fechaFin);
     return Container(
-      margin: const EdgeInsets.only(bottom: 32),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: AppColors.wash,
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.verified_rounded, color: AppColors.mint),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Text(
-              context.l10n.subscriptionsActivePlanBanner(fecha),
-              style: AppText.ui(
-                14,
-                weight: FontWeight.w600,
-                color: AppColors.paper,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final message = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.verified_rounded, color: AppColors.inkSoft),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  context.l10n.subscriptionsActivePlanBanner(fecha),
+                  style: AppText.ui(14, weight: FontWeight.w600),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+          final button = InkButton(
+            label: context.l10n.mySubscriptionManageButton,
+            variant: InkButtonVariant.secondary,
+            onPressed: () => context.go('/mi-suscripcion'),
+          );
+          // En teléfono el botón al lado dejaba el texto en una columna de
+          // una palabra por línea; ahí va debajo.
+          if (constraints.maxWidth < 520) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [message, const SizedBox(height: 12), button],
+            );
+          }
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(child: message),
+              const SizedBox(width: 16),
+              button,
+            ],
+          );
+        },
       ),
     );
   }
@@ -330,14 +275,10 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     final price = precioCobro(context, priceCop);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-        ),
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           context.l10n.subscriptionsDialogPlanTitle(planName),
-          style: AppText.display(18),
+          style: AppText.display(28),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -345,40 +286,29 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
           children: [
             Text(
               context.l10n.subscriptionsDialogPriceLabel(price),
-              style: AppText.ui(
-                16,
-                weight: FontWeight.w600,
-                color: AppColors.inkSoft,
-              ),
+              style: AppText.ui(16, weight: FontWeight.w600, color: AppColors.inkSoft),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               context.l10n.subscriptionsDialogBody,
               style: AppText.ui(13, color: AppColors.textMuted),
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              context.l10n.subscriptionsDialogCancelButton,
-              style: AppText.ui(14, color: AppColors.ink),
-            ),
+          InkButton(
+            label: context.l10n.subscriptionsDialogCancelButton,
+            variant: InkButtonVariant.secondary,
+            onPressed: () => Navigator.pop(dialogContext),
           ),
-          TextButton(
+          InkButton(
+            label: context.l10n.subscriptionsDialogContinueButton,
+            trailingArrow: true,
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               _openCardPayment();
             },
-            child: Text(
-              context.l10n.subscriptionsDialogContinueButton,
-              style: AppText.ui(
-                14,
-                color: AppColors.inkSoft,
-                weight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
@@ -386,170 +316,92 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   }
 }
 
-// ========== WIDGET: TOGGLE DE FACTURACIÓN ==========
-class _BillingToggle extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _BillingToggle({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          boxShadow: isSelected ? AppShadow.card : [],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Text(
-          label,
-          style: AppText.ui(
-            13,
-            weight: FontWeight.w600,
-            color: isSelected ? AppColors.inkSoft : AppColors.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ========== WIDGET: TARJETA DE PLAN ==========
+/// Tarjeta del plan en `ink` (radio 28, sombra `raised`): es el único
+/// fondo donde el handoff permite el acento `mint`.
 class _PlanCard extends StatelessWidget {
   final String name;
   final String subtitle;
   final String price;
   final String period;
-  final Color color;
   final List<String> features;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback onSubscribe;
 
   const _PlanCard({
     required this.name,
     required this.subtitle,
     required this.price,
     required this.period,
-    required this.color,
     required this.features,
-    required this.isSelected,
-    required this.onTap,
+    required this.onSubscribe,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-            color: isSelected ? color : AppColors.line,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected ? AppShadow.raised : AppShadow.card,
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: AppText.display(22, color: color)),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: AppText.ui(12, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(AppRadius.cardLg),
+        boxShadow: AppShadow.raised,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.mint,
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                if (isSelected)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(
-                      Icons.check,
-                      color: AppColors.surface,
-                      size: 16,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Precio
-            Row(
-              textBaseline: TextBaseline.alphabetic,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              children: [
-                Text(price, style: AppText.display(32, color: color)),
-                const SizedBox(width: 8),
-                Text(period, style: AppText.ui(14, color: AppColors.textMuted)),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Botón
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isSelected ? color : AppColors.wash,
-                  foregroundColor: isSelected ? AppColors.surface : color,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.control),
-                  ),
-                  elevation: 0,
-                ),
+                child: const Icon(Icons.workspace_premium_outlined, color: AppColors.ink, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
-                  isSelected
-                      ? context.l10n.subscriptionsPlanSelectedButton
-                      : context.l10n.subscriptionsPlanSelectButton,
-                  style: AppText.ui(13, weight: FontWeight.w600),
+                  name.toUpperCase(),
+                  style: AppText.label(11, color: AppColors.mint, weight: FontWeight.w700),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(subtitle, style: AppText.display(26, color: AppColors.paper)),
+          const SizedBox(height: 22),
+          Row(
+            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            children: [
+              Flexible(child: Text(price, style: AppText.display(44, color: AppColors.paper))),
+              const SizedBox(width: 8),
+              Text(period, style: AppText.ui(14, color: AppColors.textOnInk)),
+            ],
+          ),
+          const SizedBox(height: 22),
+          for (final feature in features)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.check_circle_outline, color: AppColors.mint, size: 18),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(feature, style: AppText.ui(14, color: AppColors.paper))),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-
-            // Características
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: features.map((feature) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: color, size: 18),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(feature, style: AppText.ui(13))),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+          const SizedBox(height: 14),
+          InkButton(
+            label: context.l10n.subscriptionsSubscribeButton,
+            variant: InkButtonVariant.mint,
+            trailingArrow: true,
+            expand: true,
+            onPressed: onSubscribe,
+          ),
+        ],
       ),
     );
   }

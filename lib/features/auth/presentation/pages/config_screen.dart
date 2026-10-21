@@ -3,11 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/app_auth_provider.dart';
+import '../../../expenses/presentation/widgets/notifications_demo_panel.dart';
+import '../../../expenses/providers/notification_prefs_provider.dart';
+import '../../../../core/notifications/browser_notifications.dart';
+import '../../../../widgets/filter_chips_row.dart';
+import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/l10n/language_provider.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/money_formatter.dart';
+import '../../../../widgets/paper_top_bar.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -17,15 +23,6 @@ class ConfigScreen extends StatefulWidget {
 }
 
 class _ConfigScreenState extends State<ConfigScreen> {
-  late bool _notificationsEnabled;
-
-  @override
-  void initState() {
-    super.initState();
-    // TODO: Obtener valor real de SharedPreferences o Provider
-    _notificationsEnabled = true;
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
@@ -35,19 +32,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: Text(
-          context.l10n.configScreenTitle,
-          style: AppText.ui(18, weight: FontWeight.w600),
-        ),
-        backgroundColor: AppColors.paper,
-        elevation: 0,
-        foregroundColor: AppColors.ink,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => context.go('/'),
-        ),
+      appBar: PaperTopBar(
+        eyebrow: 'TravelGuard',
+        title: context.l10n.configScreenTitle,
+        onBack: () => context.go('/'),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -59,8 +47,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
               children: [
                 // ========== SECCIÓN: IDIOMA Y REGIÓN ==========
                 Text(
-                  context.l10n.configSectionLanguageRegion,
-                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                  context.l10n.configSectionLanguageRegion.toUpperCase(),
+                  style: AppText.label(11),
                 ),
                 const SizedBox(height: 12),
 
@@ -71,54 +59,94 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   value: _getLanguageName(languageCode),
                   onTap: () => _showLanguageBottomSheet(context),
                 ),
-                const SizedBox(height: 12),
+                // Moneda y tasa: solo para el turista (el comercio
+                // siempre ve sus precios en pesos).
+                if (currencyProvider.puedeCambiarMoneda) ...[
+                  const SizedBox(height: 12),
 
-                // Selector de Moneda
-                _SettingCard(
-                  icon: Icons.currency_exchange,
-                  label: context.l10n.configCurrencyLabel,
-                  value: selectedCurrency,
-                  onTap: () => _showCurrencyBottomSheet(context),
-                ),
-                const SizedBox(height: 12),
-
-                // Tasa de cambio manual (sin API, la define el usuario)
-                _SettingCard(
-                  icon: Icons.sync_alt,
-                  label: context.l10n.configExchangeRateLabel,
-                  value: context.l10n.configExchangeRatePreview(
-                    formatCOP(currencyProvider.rateFor('USD')),
+                  // Selector de Moneda
+                  _SettingCard(
+                    icon: Icons.currency_exchange,
+                    label: context.l10n.configCurrencyLabel,
+                    value: selectedCurrency,
+                    onTap: () => _showCurrencyBottomSheet(context),
                   ),
-                  onTap: () => _showExchangeRateDialog(context),
-                ),
+                  const SizedBox(height: 12),
+
+                  // Tasa de cambio: se actualiza sola a diario, solo lectura.
+                  // Muestra la de la moneda elegida (con COP, la del dólar).
+                  Builder(
+                    builder: (context) {
+                      final rateCode = currencyProvider.currency == 'COP'
+                          ? 'USD'
+                          : currencyProvider.currency;
+                      return _SettingCard(
+                        icon: Icons.sync_alt,
+                        label: context.l10n.configExchangeRateLabel,
+                        value: context.l10n.configExchangeRatePreview(
+                          rateCode,
+                          formatCOP(currencyProvider.rateFor(rateCode)),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 32),
 
                 // ========== SECCIÓN: NOTIFICACIONES ==========
                 Text(
-                  context.l10n.configSectionNotifications,
-                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                  context.l10n.configSectionNotifications.toUpperCase(),
+                  style: AppText.label(11),
                 ),
                 const SizedBox(height: 12),
 
-                // Toggle Notificaciones
+                // HU-11 CA4: "Mostrar alertas" — apagado, no sale ninguna
+                // alerta ni recordatorio, pero los gastos se registran igual.
                 _SettingToggle(
                   icon: Icons.notifications_outlined,
                   label: context.l10n.configNotificationsToggleLabel,
-                  value: _notificationsEnabled,
-                  onChanged: (value) {
-                    setState(() {
-                      _notificationsEnabled = value;
-                    });
-                    // TODO: Guardar en SharedPreferences o Provider
-                  },
+                  subtitle: context.l10n.configNotificationsToggleSubtitle,
+                  value: context
+                      .watch<NotificationPrefsProvider>()
+                      .alertsEnabled,
+                  onChanged: (value) => context
+                      .read<NotificationPrefsProvider>()
+                      .setAlertsEnabled(value),
                 ),
+                // Complemento: las mismas alertas como notificación del
+                // sistema (solo en web, con permiso del navegador).
+                if (BrowserNotifications.permission !=
+                    BrowserNotificationPermission.unsupported) ...[
+                  const SizedBox(height: 12),
+                  _SettingToggle(
+                    icon: Icons.desktop_windows_outlined,
+                    label: context.l10n.configBrowserNotificationsLabel,
+                    subtitle: context.l10n.configBrowserNotificationsSubtitle,
+                    value:
+                        context
+                            .watch<NotificationPrefsProvider>()
+                            .browserNotifications &&
+                        BrowserNotifications.permission ==
+                            BrowserNotificationPermission.granted,
+                    onChanged: _toggleBrowserNotifications,
+                  ),
+                ],
+
+                // HU-11 CA5/CA6/CA9: recordatorios (solo turistas).
+                if (auth.usuario?.tipoUsuario == 'turista') ...[
+                  const SizedBox(height: 22),
+                  _buildRemindersSection(context),
+                  // Muestra cada aviso al instante (pruebas y demos).
+                  const SizedBox(height: 12),
+                  const NotificationsDemoPanel(),
+                ],
                 const SizedBox(height: 32),
 
                 // ========== SECCIÓN: CUENTA ==========
                 if (auth.usuario?.tipoUsuario == 'turista') ...[
                   Text(
-                    context.l10n.configSectionAccount,
-                    style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                    context.l10n.configSectionAccount.toUpperCase(),
+                    style: AppText.label(11),
                   ),
                   const SizedBox(height: 12),
 
@@ -128,13 +156,21 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     label: context.l10n.subscriptionsAppBarTitle,
                     onTap: () => context.push('/suscripciones'),
                   ),
+                  const SizedBox(height: 12),
+
+                  // HU-23: consultar, cambiar o cancelar la suscripción
+                  _ActionButton(
+                    icon: Icons.manage_accounts_outlined,
+                    label: context.l10n.mySubscriptionTitle,
+                    onTap: () => context.push('/mi-suscripcion'),
+                  ),
                   const SizedBox(height: 32),
                 ],
 
                 // ========== SECCIÓN: SEGURIDAD ==========
                 Text(
-                  context.l10n.configSectionSecurity,
-                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                  context.l10n.configSectionSecurity.toUpperCase(),
+                  style: AppText.label(11),
                 ),
                 const SizedBox(height: 12),
 
@@ -161,8 +197,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
                 // ========== SECCIÓN: RESTABLECER ==========
                 Text(
-                  context.l10n.configSectionReset,
-                  style: AppText.ui(14, weight: FontWeight.w600, color: AppColors.textLabel),
+                  context.l10n.configSectionReset.toUpperCase(),
+                  style: AppText.label(11),
                 ),
                 const SizedBox(height: 12),
 
@@ -189,6 +225,128 @@ class _ConfigScreenState extends State<ConfigScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRemindersSection(BuildContext context) {
+    final l10n = context.l10n;
+    final prefs = context.watch<NotificationPrefsProvider>();
+    final isPremium = context.watch<SubscriptionProvider>().isPremium;
+    final options = NotificationPrefsProvider.reminderHourOptions;
+    // Con "Mostrar alertas" apagado no sale ningún recordatorio (CA4).
+    return AnimatedOpacity(
+      opacity: prefs.alertsEnabled ? 1 : 0.5,
+      duration: AppMotion.pressIn,
+      child: IgnorePointer(
+        ignoring: !prefs.alertsEnabled,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.configRemindersTitle.toUpperCase(),
+              style: AppText.label(10, color: AppColors.textLabel),
+            ),
+            if (!isPremium) ...[
+              const SizedBox(height: 6),
+              Text(
+                l10n.configRemindersPremiumHint,
+                style: AppText.ui(12, color: AppColors.textMuted),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: AppColors.line),
+                boxShadow: AppShadow.card,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.configReminderHoursLabel,
+                    style: AppText.ui(15, weight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.configReminderHoursHint,
+                    style: AppText.ui(12, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  FilterChipsRow(
+                    items: [
+                      for (final h in options)
+                        l10n.configReminderHoursOption(h),
+                    ],
+                    selected: options.indexOf(prefs.reminderHours),
+                    onSelect: (i) => context
+                        .read<NotificationPrefsProvider>()
+                        .setReminderHours(options[i]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _SettingToggle(
+              icon: Icons.receipt_long_outlined,
+              label: l10n.configDailySummaryLabel,
+              subtitle: l10n.configDailySummarySubtitle,
+              value: prefs.dailySummary,
+              onChanged: (v) =>
+                  context.read<NotificationPrefsProvider>().setDailySummary(v),
+            ),
+            const SizedBox(height: 12),
+            _SettingToggle(
+              icon: Icons.flight_takeoff_rounded,
+              label: l10n.configTripReminderLabel,
+              subtitle: l10n.configTripReminderSubtitle,
+              value: prefs.tripReminder,
+              onChanged: (v) =>
+                  context.read<NotificationPrefsProvider>().setTripReminder(v),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Pide el permiso del navegador dentro del mismo toque (si no, el
+  /// navegador lo ignora) y manda una notificación de prueba.
+  Future<void> _toggleBrowserNotifications(bool value) async {
+    final prefs = context.read<NotificationPrefsProvider>();
+    if (!value) {
+      await prefs.setBrowserNotifications(false);
+      return;
+    }
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    var permission = BrowserNotifications.permission;
+    if (permission == BrowserNotificationPermission.notAsked) {
+      permission = await BrowserNotifications.requestPermission();
+    }
+    if (!mounted) return;
+    if (permission != BrowserNotificationPermission.granted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            permission == BrowserNotificationPermission.unsupported
+                ? l10n.configBrowserNotificationsUnsupported
+                : l10n.configBrowserNotificationsDenied,
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() {});
+      return;
+    }
+    await prefs.setBrowserNotifications(true);
+    BrowserNotifications.show(
+      title: l10n.configBrowserNotificationsTestTitle,
+      body: l10n.configBrowserNotificationsTestBody,
+      tag: 'hu11_test',
     );
   }
 
@@ -239,7 +397,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Campo: Contraseña actual
                 Text(
                   context.l10n.configCurrentPasswordLabel,
-                  style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
+                  style: AppText.ui(
+                    13,
+                    weight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -259,11 +421,17 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
-                      borderSide: const BorderSide(color: AppColors.inkSoft, width: 2),
+                      borderSide: const BorderSide(
+                        color: AppColors.inkSoft,
+                        width: 2,
+                      ),
                     ),
                     filled: true,
                     fillColor: AppColors.paper,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                   style: AppText.ui(13),
                 ),
@@ -272,7 +440,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Campo: Nueva contraseña
                 Text(
                   context.l10n.configNewPasswordLabel,
-                  style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
+                  style: AppText.ui(
+                    13,
+                    weight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -292,11 +464,17 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
-                      borderSide: const BorderSide(color: AppColors.inkSoft, width: 2),
+                      borderSide: const BorderSide(
+                        color: AppColors.inkSoft,
+                        width: 2,
+                      ),
                     ),
                     filled: true,
                     fillColor: AppColors.paper,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                   style: AppText.ui(13),
                 ),
@@ -305,7 +483,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 // Campo: Confirmar contraseña
                 Text(
                   context.l10n.commonConfirmPasswordLabel,
-                  style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
+                  style: AppText.ui(
+                    13,
+                    weight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -325,11 +507,17 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.control),
-                      borderSide: const BorderSide(color: AppColors.inkSoft, width: 2),
+                      borderSide: const BorderSide(
+                        color: AppColors.inkSoft,
+                        width: 2,
+                      ),
                     ),
                     filled: true,
                     fillColor: AppColors.paper,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                   style: AppText.ui(13),
                 ),
@@ -389,7 +577,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                         });
                         return;
                       }
-                      if (newPasswordController.text != confirmPasswordController.text) {
+                      if (newPasswordController.text !=
+                          confirmPasswordController.text) {
                         setDialogState(() {
                           errorMessage = context.l10n.commonPasswordsMismatch;
                         });
@@ -426,7 +615,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
                         }
                       } catch (e) {
                         setDialogState(() {
-                          errorMessage = context.l10n.configErrorChangePassword(e.toString());
+                          errorMessage = context.l10n.configErrorChangePassword(
+                            e.toString(),
+                          );
                           isLoading = false;
                         });
                       }
@@ -437,13 +628,16 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(AppColors.inkSoft),
+                        valueColor: AlwaysStoppedAnimation(AppColors.inkSoft),
                       ),
                     )
                   : Text(
                       context.l10n.configSaveButton,
-                      style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
+                      style: AppText.ui(
+                        14,
+                        color: AppColors.inkSoft,
+                        weight: FontWeight.w600,
+                      ),
                     ),
             ),
           ],
@@ -573,111 +767,6 @@ class _ConfigScreenState extends State<ConfigScreen> {
     );
   }
 
-  void _showExchangeRateDialog(BuildContext context) {
-    final currencyProvider = context.read<CurrencyProvider>();
-    final usdController = TextEditingController(
-      text: currencyProvider.rateFor('USD').toStringAsFixed(0),
-    );
-    final eurController = TextEditingController(
-      text: currencyProvider.rateFor('EUR').toStringAsFixed(0),
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-        ),
-        title: Text(
-          context.l10n.configExchangeRateDialogTitle,
-          style: AppText.display(18),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.configExchangeRateDialogHint,
-                style: AppText.ui(12, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.l10n.configExchangeRateUsdLabel,
-                style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: usdController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  prefixText: '\$ ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.control),
-                    borderSide: const BorderSide(color: AppColors.line),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                style: AppText.ui(13),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.l10n.configExchangeRateEurLabel,
-                style: AppText.ui(13, weight: FontWeight.w600, color: AppColors.ink),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: eurController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  prefixText: '\$ ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.control),
-                    borderSide: const BorderSide(color: AppColors.line),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                style: AppText.ui(13),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              context.l10n.configCancelButton,
-              style: AppText.ui(14, color: AppColors.ink),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final usdRate = double.tryParse(usdController.text.trim());
-              final eurRate = double.tryParse(eurController.text.trim());
-              if (usdRate == null || usdRate <= 0 || eurRate == null || eurRate <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.configExchangeRateInvalid)),
-                );
-                return;
-              }
-              currencyProvider.setRate('USD', usdRate);
-              currencyProvider.setRate('EUR', eurRate);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10n.configExchangeRateSavedSnackbar)),
-              );
-            },
-            child: Text(
-              context.l10n.configSaveButton,
-              style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showResetDefaultsDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -706,16 +795,22 @@ class _ConfigScreenState extends State<ConfigScreen> {
             onPressed: () {
               context.read<LanguageProvider>().resetToDefault();
               context.read<CurrencyProvider>().resetToDefault();
-              setState(() => _notificationsEnabled = true);
+              context.read<NotificationPrefsProvider>().resetToDefault();
 
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10n.configResetDefaultsSnackbar)),
+                SnackBar(
+                  content: Text(context.l10n.configResetDefaultsSnackbar),
+                ),
               );
             },
             child: Text(
               context.l10n.configResetDefaultsConfirmButton,
-              style: AppText.ui(14, color: AppColors.inkSoft, weight: FontWeight.w600),
+              style: AppText.ui(
+                14,
+                color: AppColors.inkSoft,
+                weight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -783,13 +878,15 @@ class _SettingCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final VoidCallback onTap;
+
+  /// null = solo lectura (sin tap ni chevron).
+  final VoidCallback? onTap;
 
   const _SettingCard({
     required this.icon,
     required this.label,
     required this.value,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -825,17 +922,12 @@ class _SettingCard extends StatelessWidget {
                     style: AppText.ui(12, color: AppColors.textLabel),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: AppText.ui(15, weight: FontWeight.w600),
-                  ),
+                  Text(value, style: AppText.ui(15, weight: FontWeight.w600)),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textMuted,
-            ),
+            if (onTap != null)
+              Icon(Icons.chevron_right, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -847,12 +939,14 @@ class _SettingCard extends StatelessWidget {
 class _SettingToggle extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   const _SettingToggle({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
@@ -880,17 +974,19 @@ class _SettingToggle extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              label,
-              style: AppText.ui(15, weight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppText.ui(15, weight: FontWeight.w600)),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: AppText.ui(12, color: AppColors.textMuted),
+                  ),
+              ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.inkSoft,
-            inactiveTrackColor: AppColors.line,
-          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );
@@ -945,11 +1041,7 @@ class _LanguageOption extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.inkSoft,
-                size: 24,
-              ),
+              Icon(Icons.check_circle, color: AppColors.inkSoft, size: 24),
           ],
         ),
       ),
@@ -1005,11 +1097,7 @@ class _CurrencyOption extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.inkSoft,
-                size: 24,
-              ),
+              Icon(Icons.check_circle, color: AppColors.inkSoft, size: 24),
           ],
         ),
       ),
@@ -1043,13 +1131,11 @@ class _ActionButtonState extends State<_ActionButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: AppMotion.pressIn,
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: AppMotion.press),
-    );
+    _controller = AnimationController(duration: AppMotion.pressIn, vsync: this);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: AppMotion.press));
   }
 
   @override
@@ -1073,10 +1159,8 @@ class _ActionButtonState extends State<_ActionButton>
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        widget.isDestructive ? Colors.red[600]! : AppColors.inkSoft;
-    final bgColor =
-        widget.isDestructive ? Colors.red[50]! : AppColors.wash;
+    final color = widget.isDestructive ? AppColors.error : AppColors.inkSoft;
+    final bgColor = widget.isDestructive ? AppColors.errorWash : AppColors.wash;
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -1096,9 +1180,13 @@ class _ActionButtonState extends State<_ActionButton>
             children: [
               Icon(widget.icon, color: color, size: 20),
               const SizedBox(width: 12),
-              Text(
-                widget.label,
-                style: AppText.ui(15, weight: FontWeight.w600, color: color),
+              // Expanded: en teléfono "Planes y suscripciones premium" se
+              // salía 32 px por la derecha.
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: AppText.ui(15, weight: FontWeight.w600, color: color),
+                ),
               ),
             ],
           ),

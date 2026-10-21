@@ -37,7 +37,26 @@ class PlacesMapRepository {
     return [...comercios, ...lugares];
   }
 
-  Future<List<Actividad>> fetchActividadesDelLugar(MapPlace place) async {
+  /// HU-20 / TG-289: datos actuales de un comercio (para refrescar su
+  /// ficha cuando cambia). `null` si ya no tiene ubicación o no existe.
+  Future<MapPlace?> fetchComercioPlace(int comercioId) async {
+    final row = await _client
+        .from('comercios')
+        .select('*, categorias_comercio(nombre)')
+        .eq('usuario_id', comercioId)
+        .not('latitud', 'is', null)
+        .not('longitud', 'is', null)
+        .maybeSingle();
+    return row == null ? null : MapPlace.fromComercioRow(row);
+  }
+
+  /// Actividades activas de un lugar para su ficha. Sin [incluirPremium]
+  /// (turista sin suscripción) se omiten las exclusivas Premium y las
+  /// promociones.
+  Future<List<Actividad>> fetchActividadesDelLugar(
+    MapPlace place, {
+    bool incluirPremium = true,
+  }) async {
     final columna = place.type == MapPlaceType.comercio
         ? 'comercio_id'
         : 'lugar_interes_id';
@@ -50,6 +69,7 @@ class PlacesMapRepository {
 
     return (rows as List)
         .map((row) => Actividad.fromRow(row as Map<String, dynamic>))
+        .where((a) => incluirPremium || !a.soloPremium)
         .toList();
   }
 
@@ -72,6 +92,36 @@ class PlacesMapRepository {
       final map = row as Map<String, dynamic>;
       final comercio = map['comercios'] as Map<String, dynamic>?;
       return Promocion(
+        actividad: Actividad.fromRow(map),
+        comercioNombre: comercio?['nombre_comercio'] as String?,
+        comercioDireccion: comercio?['direccion'] as String?,
+      );
+    }).toList();
+  }
+
+  /// Sección "Actividades" del turista: todo lo que los comercios tienen
+  /// publicado (`activo = true`, que solo se pone en estado "Publicada")
+  /// y vigente, más recientes primero. Las de categoría "Promoción" no
+  /// salen aquí: son exclusivas de Premium y viven en `/promociones`.
+  Future<List<ActividadConComercio>> fetchActividadesPublicadas() async {
+    final hoy = DateTime.now();
+    final hoyIso =
+        '${hoy.year.toString().padLeft(4, '0')}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
+    final rows = await _client
+        .from('actividades')
+        .select('*, comercios(nombre_comercio, direccion)')
+        .eq('activo', true)
+        .or('fecha_fin.is.null,fecha_fin.gte.$hoyIso')
+        .order('created_at', ascending: false);
+
+    return (rows as List)
+        .map((row) => row as Map<String, dynamic>)
+        // Se filtra aquí (y no con `neq` en la consulta) porque `neq`
+        // en SQL también descartaría las actividades sin categoría.
+        .where((map) => map['categoria'] != Actividad.categoriaPromocion)
+        .map((map) {
+      final comercio = map['comercios'] as Map<String, dynamic>?;
+      return ActividadConComercio(
         actividad: Actividad.fromRow(map),
         comercioNombre: comercio?['nombre_comercio'] as String?,
         comercioDireccion: comercio?['direccion'] as String?,
@@ -106,6 +156,7 @@ class PlacesMapRepository {
     required String estado,
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    bool soloPremium = false,
   }) async {
     final row = await _client
         .from('actividades')
@@ -119,6 +170,8 @@ class PlacesMapRepository {
           'activo': estado == 'activa',
           'fecha_inicio': fechaInicio != null ? _toIsoDate(fechaInicio) : null,
           'fecha_fin': fechaFin != null ? _toIsoDate(fechaFin) : null,
+          // Una promoción siempre es exclusiva Premium.
+          'solo_premium': soloPremium || categoria == Actividad.categoriaPromocion,
         })
         .select()
         .single();
@@ -136,6 +189,7 @@ class PlacesMapRepository {
       'fecha_inicio':
           actividad.fechaInicio != null ? _toIsoDate(actividad.fechaInicio!) : null,
       'fecha_fin': actividad.fechaFin != null ? _toIsoDate(actividad.fechaFin!) : null,
+      'solo_premium': actividad.soloPremium || actividad.esPromocion,
     }).eq('id', actividad.id);
   }
 

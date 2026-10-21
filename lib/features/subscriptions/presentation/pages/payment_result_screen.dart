@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../widgets/ink_button.dart';
 import '../../data/models/suscripcion_model.dart';
 import '../../data/subscription_repository.dart';
 import '../../providers/subscription_provider.dart';
@@ -83,11 +84,11 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
             child: Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.fromLTRB(34, 32, 34, 32),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.cardLg),
-                boxShadow: AppShadow.card,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: AppShadow.raised,
               ),
               child: AnimatedSwitcher(
                 duration: AppMotion.toggle,
@@ -105,7 +106,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
       key: const ValueKey('loading'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(color: AppColors.ink),
+        const CircularProgressIndicator(color: AppColors.inkSoft),
         const SizedBox(height: 20),
         Text(context.l10n.paymentResultChecking, style: AppText.ui(14, color: AppColors.textMuted)),
       ],
@@ -159,9 +160,17 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
       key: ValueKey(estado),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 56, color: color),
-        const SizedBox(height: 16),
-        Text(title, style: AppText.display(26), textAlign: TextAlign.center),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: estado == EstadoPago.aprobado ? AppColors.ink : AppColors.paperDeep,
+            borderRadius: BorderRadius.circular(AppRadius.dateField),
+          ),
+          child: Icon(icon, size: 30, color: estado == EstadoPago.aprobado ? AppColors.mint : color),
+        ),
+        const SizedBox(height: 18),
+        Text(title, style: AppText.display(32), textAlign: TextAlign.center),
         const SizedBox(height: 10),
         Text(body, style: AppText.ui(14, color: AppColors.textMuted), textAlign: TextAlign.center),
         if (resultado != null && !_failed) ...[
@@ -170,7 +179,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.paperDeep,
-              borderRadius: BorderRadius.circular(AppRadius.control),
+              borderRadius: BorderRadius.circular(AppRadius.dateField),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -181,7 +190,10 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
                       : l10n.paymentResultPlanMonthly,
                   style: AppText.ui(13, weight: FontWeight.w600),
                 ),
-                Text(precioCobro(context, resultado.monto, conReferencia: false), style: AppText.ui(13, weight: FontWeight.w700)),
+                Text(
+                  precioCobro(context, resultado.monto, conReferencia: false),
+                  style: AppText.label(12, color: AppColors.inkSoft, weight: FontWeight.w700),
+                ),
               ],
             ),
           ),
@@ -189,25 +201,22 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
           Text(l10n.paymentResultReference(resultado.pagoId), style: AppText.label(10)),
         ],
         const SizedBox(height: 28),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => estado == EstadoPago.aprobado ? context.go('/') : context.go('/suscripciones'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.ink,
-              foregroundColor: AppColors.paper,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-            ),
-            child: Text(
-              estado == EstadoPago.aprobado ? l10n.paymentResultGoHome : l10n.paymentResultBackToPlans,
-              style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.paper),
-            ),
-          ),
+        InkButton(
+          label: estado == EstadoPago.aprobado ? l10n.mySubscriptionGoTo : l10n.paymentResultBackToPlans,
+          trailingArrow: true,
+          expand: true,
+          onPressed: () =>
+              estado == EstadoPago.aprobado ? context.go('/mi-suscripcion') : context.go('/suscripciones'),
         ),
         if (_failed || estado == EstadoPago.enProceso) ...[
-          const SizedBox(height: 8),
-          TextButton(onPressed: _confirm, child: Text(l10n.paymentResultRetry)),
+          const SizedBox(height: 10),
+          InkButton(
+            label: l10n.paymentResultRetry,
+            icon: Icons.refresh_rounded,
+            variant: InkButtonVariant.secondary,
+            expand: true,
+            onPressed: _confirm,
+          ),
         ],
       ],
     );

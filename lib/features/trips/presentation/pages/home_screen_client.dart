@@ -1,6 +1,7 @@
 //pantalla principal del turista, crear viaje
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../pages/create_trip_screen.dart';
 import '../pages/trip_model.dart';
@@ -9,7 +10,9 @@ import '../../../expenses/data/expense_repository.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
 import '../../../expenses/presentation/widgets/add_expense_sheet.dart';
 import '../../../expenses/presentation/widgets/budget_alert_card.dart';
+import '../../../expenses/presentation/widgets/budget_notifications_listener.dart';
 import '../../../expenses/providers/budget_alerts_provider.dart';
+import '../../../expenses/providers/notification_prefs_provider.dart';
 import '../../../expenses/utils/daily_budget_calculator.dart';
 import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../../places_map/data/models/map_place.dart';
@@ -19,12 +22,8 @@ import '../../utils/budget_calculator.dart';
 import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/boarding_pass_card.dart';
-import '../../../../core/widgets/fade_slide_in.dart';
-import '../../../../core/widgets/responsive_center.dart';
-import '../../../../core/widgets/route_pattern_background.dart';
-import '../../../../core/widgets/travel_guard_badge.dart';
 import '../../../../shell/app_shell.dart';
+import '../../../../widgets/load_error_box.dart';
 import '../../../../widgets/floating_nav_bar.dart';
 import '../../../../widgets/hover_card.dart';
 import '../../../../widgets/place_card.dart';
@@ -43,6 +42,11 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   final TripRepository _tripRepository = TripRepository();
   final ExpenseRepository _expenseRepository = ExpenseRepository();
   bool _isLoadingTrips = true;
+  // Errores de carga: se muestran en vez del estado vacío, para que una
+  // falla del servidor no parezca "no tienes viajes".
+  bool _tripsError = false;
+  bool _placesError = false;
+  bool _gastosError = false;
 
   /// Gastos reales (tabla `gastos`, HU-13) por `trip.id` — sin esto,
   /// las tarjetas de viaje y el resumen del sidebar solo contaban lo
@@ -53,21 +57,6 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   List<MapPlace> _nearbyPlaces = [];
   bool _isLoadingPlaces = true;
 
-  List<String> get _monthAbbrs => [
-    context.l10n.homeClientMonthAbbrJan,
-    context.l10n.homeClientMonthAbbrFeb,
-    context.l10n.homeClientMonthAbbrMar,
-    context.l10n.homeClientMonthAbbrApr,
-    context.l10n.homeClientMonthAbbrMay,
-    context.l10n.homeClientMonthAbbrJun,
-    context.l10n.homeClientMonthAbbrJul,
-    context.l10n.homeClientMonthAbbrAug,
-    context.l10n.homeClientMonthAbbrSep,
-    context.l10n.homeClientMonthAbbrOct,
-    context.l10n.homeClientMonthAbbrNov,
-    context.l10n.homeClientMonthAbbrDec,
-  ];
-
   String get userName => context.watch<AppAuthProvider>().displayName;
 
   /// Viaje más próximo por `startDate`; si ninguno tiene fecha futura
@@ -77,20 +66,19 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     if (_trips.isEmpty) return null;
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    final withDates = _trips
-        .map((t) => MapEntry(t, parseDdMmYyyy(t.startDate)))
-        .where((e) => e.value != null)
-        .toList()
-      ..sort((a, b) => a.value!.compareTo(b.value!));
-    final upcoming =
-        withDates.where((e) => !e.value!.isBefore(todayDate)).toList();
+    final withDates =
+        _trips
+            .map((t) => MapEntry(t, parseDdMmYyyy(t.startDate)))
+            .where((e) => e.value != null)
+            .toList()
+          ..sort((a, b) => a.value!.compareTo(b.value!));
+    final upcoming = withDates
+        .where((e) => !e.value!.isBefore(todayDate))
+        .toList();
     if (upcoming.isNotEmpty) return upcoming.first.key;
     if (withDates.isNotEmpty) return withDates.first.key;
     return _trips.first;
   }
-
-  double get _totalBudget =>
-      _trips.fold(0.0, (sum, t) => sum + t.maxBudget);
 
   /// Gastado real de [trip]: lo planeado al crearlo más los gastos
   /// sueltos ya registrados — mismo criterio que usa el detalle del
@@ -125,6 +113,14 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       setState(() => _isLoadingTrips = false);
       return;
     }
+    // Reintento: vuelve a "cargando" (en `initState` ya lo está y ahí
+    // `setState` no se puede llamar).
+    if (_tripsError) {
+      setState(() {
+        _isLoadingTrips = true;
+        _tripsError = false;
+      });
+    }
     try {
       final trips = await _tripRepository.fetchTripsByTurista(turistaId);
       debugPrint(
@@ -142,7 +138,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     } catch (e, st) {
       debugPrint('HomeScreenClient._loadTrips error: $e\n$st');
       if (!mounted) return;
-      setState(() => _isLoadingTrips = false);
+      setState(() {
+        _isLoadingTrips = false;
+        _tripsError = true;
+      });
     }
   }
 
@@ -151,20 +150,33 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   /// caen a `trip.getTotalSpent()` (comportamiento anterior), no vale
   /// la pena bloquear la pantalla por esto.
   Future<void> _loadGastosPorViaje(List<Trip> trips) async {
-    final ids = [for (final t in trips) if (t.id != null) t.id!];
+    final ids = [
+      for (final t in trips)
+        if (t.id != null) t.id!,
+    ];
     if (ids.isEmpty) return;
     try {
       final totals = await _expenseRepository.fetchTotalGastosPorViaje(ids);
       if (!mounted) return;
-      setState(() => _gastosPorViaje = totals);
+      setState(() {
+        _gastosPorViaje = totals;
+        _gastosError = false;
+      });
     } catch (e, st) {
       debugPrint('HomeScreenClient._loadGastosPorViaje error: $e\n$st');
+      if (mounted) setState(() => _gastosError = true);
     }
   }
 
   /// Para la tarjeta "Cerca de ti" — mismos datos reales de HU-07 que
   /// usa Comercios, no un lugar de relleno.
   Future<void> _loadNearbyPlaces() async {
+    if (_placesError) {
+      setState(() {
+        _isLoadingPlaces = true;
+        _placesError = false;
+      });
+    }
     try {
       final places = await _placesRepository.fetchNearbyPlaces();
       if (!mounted) return;
@@ -175,7 +187,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     } catch (e, st) {
       debugPrint('HomeScreenClient._loadNearbyPlaces error: $e\n$st');
       if (!mounted) return;
-      setState(() => _isLoadingPlaces = false);
+      setState(() {
+        _isLoadingPlaces = false;
+        _placesError = true;
+      });
     }
   }
 
@@ -223,19 +238,25 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   /// Acceso rápido a "añadir gasto" desde Inicio, sin pasar por el
   /// detalle del viaje: el enfoque de la app es justo registrar gastos
-  /// seguido, así que si solo hay un viaje activo no tiene sentido
-  /// pedir que se elija — se abre directo el formulario.
+  /// seguido, así que si solo hay un viaje abierto no tiene sentido
+  /// pedir que se elija — se abre directo el formulario. Los viajes ya
+  /// terminados no se ofrecen (son de solo lectura).
   Future<void> _quickAddExpense() async {
     if (_trips.isEmpty) {
       _showSnack(context.l10n.homeClientCreateTripFirstSnackbar);
       return;
     }
-    final trip = _trips.length == 1 ? _trips.first : await _pickTripForExpense();
+    final open = _trips.where((t) => !t.isFinished).toList();
+    if (open.isEmpty) {
+      _showSnack(context.l10n.homeClientNoOpenTripsSnackbar);
+      return;
+    }
+    final trip = open.length == 1 ? open.first : await _pickTripForExpense(open);
     if (trip == null || !mounted) return;
     await _addExpenseToTrip(trip);
   }
 
-  Future<Trip?> _pickTripForExpense() {
+  Future<Trip?> _pickTripForExpense(List<Trip> trips) {
     // `isScrollControlled` + el `Flexible`/`SingleChildScrollView` de
     // adentro: sin esto, con varios viajes la lista se salía del alto
     // fijo que Flutter le da a un bottom sheet normal (RenderFlex
@@ -254,7 +275,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(context.l10n.homeClientPickTripTitle, style: AppText.display(22)),
+              Text(
+                context.l10n.homeClientPickTripTitle,
+                style: AppText.display(22),
+              ),
               const SizedBox(height: 4),
               Text(
                 context.l10n.homeClientPickTripSubtitle,
@@ -265,15 +289,15 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      for (var i = 0; i < _trips.length; i++) ...[
+                      for (var i = 0; i < trips.length; i++) ...[
                         TripCard(
-                          trip: _trips[i],
-                          spent: _spentFor(_trips[i]),
+                          trip: trips[i],
+                          spent: _spentFor(trips[i]),
                           thumbWidth: 56,
                           thumbHeight: 64,
-                          onTap: () => Navigator.pop(sheetContext, _trips[i]),
+                          onTap: () => Navigator.pop(sheetContext, trips[i]),
                         ),
-                        if (i != _trips.length - 1) const SizedBox(height: 10),
+                        if (i != trips.length - 1) const SizedBox(height: 10),
                       ],
                     ],
                   ),
@@ -287,6 +311,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   }
 
   Future<void> _addExpenseToTrip(Trip trip) async {
+    if (trip.isFinished) {
+      _showSnack(context.l10n.tripFinishedReadOnlyNotice);
+      return;
+    }
     if (trip.id == null) {
       _showSnack(context.l10n.homeClientTripNotSavedSnackbar);
       return;
@@ -296,7 +324,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     try {
       categorias = await _expenseRepository.fetchCategorias();
     } catch (e, st) {
-      debugPrint('HomeScreenClient._addExpenseToTrip fetchCategorias error: $e\n$st');
+      debugPrint(
+        'HomeScreenClient._addExpenseToTrip fetchCategorias error: $e\n$st',
+      );
       if (!mounted) return;
       _showSnack(context.l10n.homeClientCategoriesLoadErrorSnackbar);
       return;
@@ -317,7 +347,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         final gastos = await _expenseRepository.fetchGastosDelViaje(trip.id!);
         dailyBudget = DailyBudgetCalculator(trip: trip, gastos: gastos);
       } catch (e, st) {
-        debugPrint('HomeScreenClient._addExpenseToTrip fetchGastosDelViaje error: $e\n$st');
+        debugPrint(
+          'HomeScreenClient._addExpenseToTrip fetchGastosDelViaje error: $e\n$st',
+        );
       }
     }
     if (!mounted) return;
@@ -335,7 +367,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     if (result == null || !mounted) return;
 
     try {
-      await _expenseRepository.createGasto(
+      final gasto = await _expenseRepository.createGasto(
         viajeId: trip.id!,
         categoriaId: result.categoria.id,
         monto: result.monto,
@@ -344,8 +376,21 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       );
       if (!mounted) return;
       setState(() {
-        _gastosPorViaje[trip.id!] = (_gastosPorViaje[trip.id!] ?? 0) + result.monto;
+        _gastosPorViaje[trip.id!] =
+            (_gastosPorViaje[trip.id!] ?? 0) + result.monto;
       });
+      // HU-11: aviso inmediato con el % al que llegó el día del gasto.
+      final calc = dailyBudget;
+      if (calc != null) {
+        notifyExpenseBudget(
+          context,
+          trip: trip,
+          day: DailyBudgetCalculator(
+            trip: trip,
+            gastos: [...calc.gastos, gasto],
+          ).statusFor(result.fecha),
+        );
+      }
       context.read<BudgetAlertsProvider>().refresh();
       _showSnack(
         context.l10n.homeClientExpenseAddedSnackbar(
@@ -356,16 +401,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         color: AppColors.ink,
       );
     } catch (e, st) {
-      debugPrint('HomeScreenClient._addExpenseToTrip createGasto error: $e\n$st');
+      debugPrint(
+        'HomeScreenClient._addExpenseToTrip createGasto error: $e\n$st',
+      );
       if (!mounted) return;
       _showSnack(context.l10n.homeClientExpenseSaveErrorSnackbar);
     }
   }
 
   void _showSnack(String message, {Color color = AppColors.error}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   void _handleSideNav(AppSection section) {
@@ -378,6 +425,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         break;
       case AppSection.mapa:
         _openMap();
+        break;
+      case AppSection.actividades:
+        context.go('/actividades');
         break;
       case AppSection.promociones:
         context.go('/promociones');
@@ -425,7 +475,11 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   Widget _buildDailyBudgetAlerts() {
     // Premium (HU-24): a los demás no se les insiste aquí en Inicio; la
     // invitación sale en el detalle del viaje.
-    if (!context.watch<SubscriptionProvider>().isPremium) return const SizedBox.shrink();
+    if (!context.watch<SubscriptionProvider>().isPremium)
+      return const SizedBox.shrink();
+    // HU-11 CA4: con "Mostrar alertas" apagado, Inicio no advierte nada.
+    if (!context.watch<NotificationPrefsProvider>().alertsEnabled)
+      return const SizedBox.shrink();
     final alerts = context
         .watch<BudgetAlertsProvider>()
         .activeTrips
@@ -440,8 +494,13 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
-                onTap: () => context.go('/viajes/${alert.trip.id}', extra: alert.trip),
-                child: BudgetAlertCard(status: alert.today, tripName: alert.trip.name, compact: true),
+                onTap: () =>
+                    context.go('/viajes/${alert.trip.id}', extra: alert.trip),
+                child: BudgetAlertCard(
+                  status: alert.today,
+                  tripName: alert.trip.name,
+                  compact: true,
+                ),
               ),
             ),
           ),
@@ -472,7 +531,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(context.l10n.homeClientGreeting(_firstName(userName)), style: AppText.display(42)),
+              Text(
+                context.l10n.homeClientGreeting(_firstName(userName)),
+                style: AppText.display(42),
+              ),
               Text(
                 context.l10n.homeClientActiveTripsCount(_trips.length),
                 style: AppText.displayItalic(42),
@@ -511,7 +573,7 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
               const SizedBox(width: 14),
               Expanded(
                 flex: mapaFlex,
-                child: StaggerIn(index: 1, child: _MapaCard(onTap: _openMap)),
+                child: StaggerIn(index: 1, child: _MapaCard(onTap: _openMap, placesCount: _nearbyPlaces.length)),
               ),
             ],
           ),
@@ -525,7 +587,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 flex: crearFlex,
                 child: StaggerIn(
                   index: 2,
-                  child: _ProximoGastoCard(trip: _nextTrip, onTap: _quickAddExpense),
+                  child: _ProximoGastoCard(
+                    trip: _nextTrip,
+                    onTap: _quickAddExpense,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -567,12 +632,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(context.l10n.homeClientMyTripsTitle, style: AppText.display(26)),
+            Text(
+              context.l10n.homeClientMyTripsTitle,
+              style: AppText.display(26),
+            ),
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {},
-                child: Text(context.l10n.homeClientViewAllLabel, style: AppText.label(11, color: AppColors.inkSoft)),
+                child: Text(
+                  context.l10n.homeClientViewAllLabel,
+                  style: AppText.label(11, color: AppColors.inkSoft),
+                ),
               ),
             ),
           ],
@@ -581,13 +652,27 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         if (_isLoadingTrips)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 40),
-            child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.ink),
+            ),
+          )
+        else if (_tripsError)
+          LoadErrorBox(
+            message: context.l10n.valLoadTripsError,
+            onRetry: _loadTrips,
           )
         else if (_trips.isEmpty)
           _buildEmptyTrips()
         else
           Column(
             children: [
+              if (_gastosError) ...[
+                LoadErrorBox(
+                  message: context.l10n.valLoadGastosError,
+                  onRetry: () => _loadGastosPorViaje(_trips),
+                ),
+                const SizedBox(height: 12),
+              ],
               for (var i = 0; i < _trips.length; i++) ...[
                 StaggerIn(
                   index: i,
@@ -628,10 +713,18 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             children: [
               Text(
                 context.l10n.homeClientCreateTripLabel,
-                style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft),
+                style: AppText.ui(
+                  14,
+                  weight: FontWeight.w700,
+                  color: AppColors.inkSoft,
+                ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.arrow_forward, size: 16, color: AppColors.inkSoft),
+              const Icon(
+                Icons.arrow_forward,
+                size: 16,
+                color: AppColors.inkSoft,
+              ),
             ],
           ),
         ],
@@ -649,7 +742,14 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         if (_isLoadingPlaces)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 40),
-            child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.ink),
+            ),
+          )
+        else if (_placesError)
+          LoadErrorBox(
+            message: context.l10n.valLoadPlacesError,
+            onRetry: _loadNearbyPlaces,
           )
         else if (featured == null)
           Container(
@@ -670,7 +770,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             imageUrl: featured.fotoUrl,
             categoryLabel: featured.categoria.toUpperCase(),
             address: featured.direccion,
-            tags: [PlaceCardTag(context.l10n.homeClientVerifiedTag, emphasis: true)],
+            tags: [
+              PlaceCardTag(context.l10n.homeClientVerifiedTag, emphasis: true),
+            ],
             onTap: _openComercios,
           ),
         const SizedBox(height: 16),
@@ -684,7 +786,23 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 borderRadius: BorderRadius.circular(AppRadius.button),
               ),
             ),
-            child: Text(context.l10n.homeClientViewPlacesButton(_nearbyPlaces.length)),
+            child: Text(
+              context.l10n.homeClientViewPlacesButton(_nearbyPlaces.length),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: () => context.go('/actividades'),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.line),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.button),
+              ),
+            ),
+            child: Text(context.l10n.homeClientViewActivitiesButton),
           ),
         ),
       ],
@@ -700,370 +818,140 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     if (start != null) {
       final days = start.difference(DateTime.now()).inDays;
       if (days > 0) {
-        return context.l10n.homeClientContextLineDays(next.destination, days, pct);
+        return context.l10n.homeClientContextLineDays(
+          next.destination,
+          days,
+          pct,
+        );
       }
     }
     return context.l10n.homeClientContextLineNoDays(next.destination, pct);
   }
 
   // ─── Móvil ───
-  // Estructura mobile-first del README original (hero + tarjetas +
-  // nav flotante); no forma parte del alcance de esta pasada de
-  // escritorio, se mantiene funcional tal como estaba.
+  // Anatomía móvil del handoff ("Papel Petróleo" › Home): saludo
+  // editorial, retícula asimétrica Mapa / Crear viaje, lista de
+  // `TripCard` y nav flotante. Reusa los mismos bloques que escritorio.
 
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildHeroAppBar(),
-          SliverToBoxAdapter(
-            child: ResponsiveCenter(
-              maxWidth: 760,
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStatsStrip(),
-                  const SizedBox(height: 24),
-                  _buildDailyBudgetAlerts(),
-                  FadeSlideIn(
-                    child: _buildFeatureCard(
-                      icon: Icons.luggage_outlined,
-                      title: context.l10n.homeClientCreateTripCardTitle,
-                      description: context.l10n.homeClientCreateTripCardDescription,
-                      buttonText: context.l10n.homeClientCreateTripButtonPlus,
-                      onButtonPressed: _createTrip,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 80),
-                    child: _buildMapCard(),
-                  ),
-                  const SizedBox(height: 36),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        context.l10n.homeClientMyTripsTitle,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      TextButton(onPressed: () {}, child: Text(context.l10n.homeClientViewAllMobileLabel)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 156,
-                    child: _isLoadingTrips
-                        ? const Center(
-                            child: CircularProgressIndicator(color: AppColors.ink),
-                          )
-                        : _trips.isEmpty
-                        ? _buildMobileEmptyTrips()
-                        : ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _trips.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 14),
-                            itemBuilder: (context, index) {
-                              final trip = _trips[index];
-                              return FadeSlideIn(
-                                delay: Duration(milliseconds: 70 * index),
-                                offset: const Offset(0.12, 0),
-                                child: _buildMobileTripCard(
-                                  trip: trip,
-                                  onViewDetails: () => _openTripDetail(trip),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
+      backgroundColor: AppColors.paper,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+          children: [
+            _buildMobileGreeting(),
+            _buildDailyBudgetAlerts(),
+            _buildMobileActionGrid(),
+            const SizedBox(height: 12),
+            StaggerIn(
+              index: 2,
+              child: _ProximoGastoCard(trip: _nextTrip, onTap: _quickAddExpense),
             ),
-          ),
-        ],
+            const SizedBox(height: 34),
+            _buildMisViajesColumn(),
+            const SizedBox(height: 34),
+            _buildCercaDeTiColumn(),
+          ],
+        ),
       ),
+      // El "+" central registra un gasto (el formulario ofrece "Escanear
+      // recibo" en Android); crear viaje está en la tarjeta "Crear un viaje".
       bottomNavigationBar: FloatingNavBar(
         index: 0,
         onSelect: _handleMobileNavSelect,
-        onCreate: _createTrip,
+        onCreate: _quickAddExpense,
+        fabHeroTag: 'add-expense',
+        fabSemanticLabel: context.l10n.floatingNavBarAddExpenseSemanticLabel,
       ),
     );
   }
 
-  Widget _buildHeroAppBar() {
-    return SliverAppBar(
-      expandedHeight: 220,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.ink,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: AppColors.ink),
-            const RoutePatternBackground(opacity: 0.12),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const TravelGuardBadge(size: 42, animate: false),
-                        InkWell(
-                          onTap: () => _confirmSignOut(context),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.logout, size: 16, color: Colors.white),
-                                const SizedBox(width: 6),
-                                Text(
-                                  context.l10n.homeClientSignOutButton,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      context.l10n.homeClientMobileGreeting(userName),
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      context.l10n.homeClientMobileHeroSubtitle,
-                      style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none, color: Colors.white),
-          onPressed: () {},
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsStrip() {
-    final next = _nextTrip;
-    return Row(
-      children: [
-        Expanded(
-          child: _StatChip(
-            icon: Icons.luggage_outlined,
-            label: context.l10n.homeClientStatActiveTripsLabel,
-            value: '${_trips.length}',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatChip(
-            icon: Icons.flight_takeoff,
-            label: context.l10n.homeClientStatNextTripLabel,
-            value: next?.destination ?? '—',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatChip(
-            icon: Icons.savings_outlined,
-            label: context.l10n.homeClientStatTotalBudgetLabel,
-            value: _trips.isEmpty ? '—' : context.formatMoney(_totalBudget),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMobileEmptyTrips() {
-    return Center(
+  /// Fecha en mono + avatar `ink` (menú de cuenta) y título display 42
+  /// con la segunda línea en itálica `inkSoft`.
+  Widget _buildMobileGreeting() {
+    final locale = Localizations.localeOf(context).toString();
+    final today = DateFormat('EEEE d · MMM', locale).format(DateTime.now());
+    final name = _firstName(userName);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 26, 6, 22),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.luggage_outlined, size: 44, color: Color(0xFFB0D9E8)),
-          const SizedBox(height: 10),
-          Text(
-            context.l10n.homeClientNoTripsTitle,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            context.l10n.homeClientNoTripsSubtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required String description,
-    required String buttonText,
-    required VoidCallback onButtonPressed,
-  }) {
-    return BoardingPassCard(
-      leading: Icon(icon, size: 30, color: AppColors.ink),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textMuted, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(onPressed: onButtonPressed, child: Text(buttonText)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMapCard() {
-    return BoardingPassCard(
-      leading: const Icon(Icons.location_on_outlined, size: 30, color: AppColors.ink),
-      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.homeClientMapCardTitle,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.ink),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  context.l10n.homeClientMapCardDescription,
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textMuted, height: 1.4),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(onPressed: _openMap, child: Text(context.l10n.homeClientViewMapButton)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-          const _MiniMapPreview(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileTripCard({required Trip trip, required VoidCallback onViewDetails}) {
-    final startDate = parseDdMmYyyy(trip.startDate);
-    return SizedBox(
-      width: 220,
-      child: BoardingPassCard(
-        padding: const EdgeInsets.all(14),
-        leadingWidth: 56,
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              startDate != null ? '${startDate.day}' : '•',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.ink),
-            ),
-            if (startDate != null)
-              Text(_monthAbbrs[startDate.month - 1], style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-          ],
-        ),
-        child: InkWell(
-          onTap: onViewDetails,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                trip.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.ink),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '${trip.startDate} - ${trip.endDate}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ),
+              Text(today.toUpperCase(), style: AppText.label(11)),
+              PopupMenuButton<String>(
+                tooltip: context.l10n.configScreenTitle,
+                position: PopupMenuPosition.under,
+                onSelected: (value) {
+                  if (value == 'config') {
+                    context.go('/configuracion');
+                  } else {
+                    _confirmSignOut(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'config', child: Text(context.l10n.configScreenTitle)),
+                  PopupMenuItem(value: 'logout', child: Text(context.l10n.homeClientSignOutButton)),
                 ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textMuted),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      trip.destination,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.ink,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                  child: Text(
+                    name.isEmpty ? '·' : name[0].toUpperCase(),
+                    style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.mint),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 26),
+          Text(context.l10n.homeClientGreeting(name), style: AppText.display(42)),
+          Text(
+            context.l10n.homeClientActiveTripsCount(_trips.length),
+            style: AppText.displayItalic(42),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Retícula asimétrica 100 : 135 del handoff (Mapa `wash` / Crear `ink`).
+  Widget _buildMobileActionGrid() {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 100,
+            child: StaggerIn(index: 0, child: _MapaCard(onTap: _openMap, placesCount: _nearbyPlaces.length, compact: true)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 135,
+            child: StaggerIn(index: 1, child: _CrearViajeCard(onTap: _createTrip, compact: true)),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _CrearViajeCard extends StatelessWidget {
-  const _CrearViajeCard({required this.onTap});
+  const _CrearViajeCard({required this.onTap, this.compact = false});
 
   final VoidCallback onTap;
+
+  /// Móvil: alto total 150 con padding 18 (retícula del handoff).
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -1073,12 +961,15 @@ class _CrearViajeCard extends StatelessWidget {
       radius: 28,
       baseShadow: AppShadow.raised,
       hoverShadow: AppShadow.raised,
-      padding: const EdgeInsets.all(24),
-      child: SizedBox(
-        height: 116,
+      padding: EdgeInsets.all(compact ? 18 : 24),
+      // Móvil: alto mínimo en vez de fijo — con la letra del sistema un
+      // poco más grande, "Crear un viaje" se desbordaba 9 px.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: compact ? 114 : 116, maxHeight: compact ? double.infinity : 116),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
           children: [
             Container(
               width: 34,
@@ -1090,10 +981,14 @@ class _CrearViajeCard extends StatelessWidget {
               ),
               child: const Icon(Icons.add, color: AppColors.ink, size: 20),
             ),
+            if (compact) const SizedBox(height: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.l10n.homeClientCreateTripCardTitle, style: AppText.display(26, color: AppColors.paper)),
+                Text(
+                  context.l10n.homeClientCreateTripCardTitle,
+                  style: AppText.display(26, color: AppColors.paper),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   context.l10n.homeClientCreateTripCardSubtitle,
@@ -1109,9 +1004,15 @@ class _CrearViajeCard extends StatelessWidget {
 }
 
 class _MapaCard extends StatelessWidget {
-  const _MapaCard({required this.onTap});
+  const _MapaCard({required this.onTap, required this.placesCount, this.compact = false});
 
   final VoidCallback onTap;
+
+  /// Lugares cargados para "Cerca de ti" (antes el texto decía "14" fijo).
+  final int placesCount;
+
+  /// Móvil: alto total 150 con padding 18 (retícula del handoff).
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -1119,12 +1020,15 @@ class _MapaCard extends StatelessWidget {
       onTap: onTap,
       color: AppColors.wash,
       radius: 28,
-      padding: const EdgeInsets.all(24),
-      child: SizedBox(
-        height: 116,
+      padding: EdgeInsets.all(compact ? 18 : 24),
+      // Móvil: alto mínimo en vez de fijo — con la letra del sistema un
+      // poco más grande, "Crear un viaje" se desbordaba 9 px.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: compact ? 114 : 116, maxHeight: compact ? double.infinity : 116),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
           children: [
             Container(
               width: 34,
@@ -1134,14 +1038,25 @@ class _MapaCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.ink, width: 2),
               ),
-              child: const Icon(Icons.location_on_outlined, color: AppColors.ink, size: 18),
+              child: const Icon(
+                Icons.location_on_outlined,
+                color: AppColors.ink,
+                size: 18,
+              ),
             ),
+            if (compact) const SizedBox(height: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.l10n.homeClientMapCardTitle, style: AppText.display(22)),
+                Text(
+                  context.l10n.homeClientMapCardTitle,
+                  style: AppText.display(22),
+                ),
                 const SizedBox(height: 4),
-                Text(context.l10n.homeClientMapCardPlacesCount, style: AppText.ui(12, color: AppColors.textMuted)),
+                Text(
+                  context.l10n.homeClientMapCardPlacesCount(placesCount),
+                  style: AppText.ui(12, color: AppColors.textMuted),
+                ),
               ],
             ),
           ],
@@ -1178,7 +1093,10 @@ class _ProximoGastoCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(context.l10n.homeClientNextExpenseLabel, style: AppText.label(10)),
+                Text(
+                  context.l10n.homeClientNextExpenseLabel,
+                  style: AppText.label(10),
+                ),
                 Container(
                   width: 26,
                   height: 26,
@@ -1196,12 +1114,17 @@ class _ProximoGastoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    trip!.lodgingType.isNotEmpty ? trip!.lodgingType : context.l10n.homeClientLodgingFallback,
+                    trip!.lodgingType.isNotEmpty
+                        ? trip!.lodgingType
+                        : context.l10n.homeClientLodgingFallback,
                     style: AppText.display(24),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    context.l10n.homeClientLodgingPaymentDue(trip!.startDate, context.formatMoney(trip!.lodgingCost)),
+                    context.l10n.homeClientLodgingPaymentDue(
+                      trip!.startDate,
+                      context.formatMoney(trip!.lodgingCost),
+                    ),
                     style: AppText.ui(12, color: AppColors.textMuted),
                   ),
                 ],
@@ -1218,64 +1141,3 @@ class _ProximoGastoCard extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.icon, required this.label, required this.value});
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.ink.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.ink.withValues(alpha: 0.14)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: AppColors.ink),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.ink),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Vista decorativa simplificada de un mapa — solo para la versión
-/// móvil (README); en escritorio ese espacio lo cubre `MapPanel`.
-class _MiniMapPreview extends StatelessWidget {
-  const _MiniMapPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: const Color(0xFFC8E6F5)),
-      child: const Stack(
-        children: [
-          Positioned(left: 16, top: 14, child: Icon(Icons.location_on, color: AppColors.ink, size: 22)),
-          Positioned(right: 18, bottom: 16, child: Icon(Icons.shield, color: AppColors.ink, size: 18)),
-          Positioned(left: 34, bottom: 24, child: Icon(Icons.restaurant, color: AppColors.ink, size: 16)),
-        ],
-      ),
-    );
-  }
-}

@@ -12,6 +12,7 @@ import '../../subscriptions/providers/subscription_provider.dart';
 import '../../trips/presentation/pages/create_trip_screen.dart';
 import '../data/models/actividad_model.dart';
 import '../data/places_map_repository.dart';
+import '../../../widgets/paper_top_bar.dart';
 
 /// `/promociones` — HU-24. La vista entera pasa por [PremiumGate]
 /// (TG-298): un turista sin suscripción vigente ve la invitación a
@@ -48,6 +49,9 @@ class _PromocionesScreenState extends State<PromocionesScreen> {
       case AppSection.mapa:
         context.go('/mapa');
         break;
+      case AppSection.actividades:
+        context.go('/actividades');
+        break;
       case AppSection.promociones:
         break; // ya estamos aquí.
       case AppSection.suscripciones:
@@ -67,13 +71,7 @@ class _PromocionesScreenState extends State<PromocionesScreen> {
         if (constraints.maxWidth < AppBreakpoints.mobile) {
           return Scaffold(
             backgroundColor: AppColors.paper,
-            appBar: AppBar(
-              title: Text(context.l10n.promosTitle),
-              backgroundColor: AppColors.paper,
-              foregroundColor: AppColors.ink,
-              elevation: 0,
-              leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/')),
-            ),
+            appBar: PaperTopBar(onBack: () => context.go('/')),
             body: SingleChildScrollView(padding: const EdgeInsets.all(20), child: _buildContent()),
           );
         }
@@ -117,10 +115,17 @@ class _PromocionesScreenState extends State<PromocionesScreen> {
               }
               final promos = snapshot.data ?? const [];
               if (promos.isEmpty) return _buildMessage(Icons.local_offer_outlined, l10n.promosEmpty);
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [for (final p in promos) _PromoCard(promo: p)],
+              // En teléfono la tarjeta de 320 dejaba un hueco a la derecha:
+              // ahí ocupa todo el ancho disponible.
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final cardWidth = constraints.maxWidth < 2 * 320 + 16 ? constraints.maxWidth : 320.0;
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [for (final p in promos) _PromoCard(promo: p, width: cardWidth)],
+                  );
+                },
               );
             },
           ),
@@ -146,16 +151,17 @@ class _PromocionesScreenState extends State<PromocionesScreen> {
 }
 
 class _PromoCard extends StatelessWidget {
-  const _PromoCard({required this.promo});
+  const _PromoCard({required this.promo, this.width = 320});
 
   final Promocion promo;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
     final a = promo.actividad;
     final fin = a.fechaFin;
     return Container(
-      width: 320,
+      width: width,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
