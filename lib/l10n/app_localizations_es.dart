@@ -410,6 +410,98 @@ class AppLocalizationsEs extends AppLocalizations {
   String get addExpensePaidTripMoneyOff => 'Salió del bolsillo personal';
 
   @override
+  String get addExpensePaymentSourceLabel => '¿Con qué dinero pagas?';
+
+  @override
+  String get addExpenseSourceTrip => 'Dinero del viaje';
+
+  @override
+  String get addExpenseSourcePocket => 'Mi bolsillo';
+
+  @override
+  String addExpenseSourceBalance(String amount) {
+    return 'Disponible: $amount';
+  }
+
+  @override
+  String get addExpenseSourceNoPocket => 'Aún sin bolsillo';
+
+  @override
+  String get addExpensePocketMissing =>
+      'Aún no tienes bolsillo en este viaje. Créalo desde \"Mi bolsillo\".';
+
+  @override
+  String addExpensePocketInsufficient(String balance) {
+    return 'Tu bolsillo solo tiene $balance disponible.';
+  }
+
+  @override
+  String get pocketButtonLabel => 'Mi bolsillo';
+
+  @override
+  String get pocketScreenTitle => 'Mi bolsillo personal';
+
+  @override
+  String get pocketPrivateNote => 'Solo tú puedes ver este bolsillo.';
+
+  @override
+  String get pocketEmptyTitle => 'Aún no tienes bolsillo en este viaje';
+
+  @override
+  String get pocketEmptyDescription =>
+      'Crea tu bolsillo para guardar dinero propio y pagar gastos del viaje desde él.';
+
+  @override
+  String get pocketCreateButton => 'Crear mi bolsillo';
+
+  @override
+  String get pocketBalanceLabel => 'SALDO DISPONIBLE';
+
+  @override
+  String get pocketAddedLabel => 'AGREGADO';
+
+  @override
+  String get pocketSpentLabel => 'GASTADO';
+
+  @override
+  String get pocketAddMoneyButton => 'Agregar dinero';
+
+  @override
+  String get pocketAddMoneyTitle => 'Agregar dinero al bolsillo';
+
+  @override
+  String get pocketAmountLabel => 'Monto';
+
+  @override
+  String get pocketNoteLabel => 'Nota (opcional)';
+
+  @override
+  String get pocketNoteHint => 'Ej. Efectivo para compras';
+
+  @override
+  String get pocketAddConfirmButton => 'Agregar';
+
+  @override
+  String get pocketMovementsTitle => 'Movimientos';
+
+  @override
+  String get pocketNoMovements => 'Aún no has agregado dinero.';
+
+  @override
+  String get pocketLoadError => 'No se pudo cargar tu bolsillo.';
+
+  @override
+  String get pocketSaveError => 'No se pudo guardar. Intenta de nuevo.';
+
+  @override
+  String get pocketCreatedSnackbar => 'Bolsillo creado';
+
+  @override
+  String pocketDepositAddedSnackbar(String amount) {
+    return 'Se agregó $amount a tu bolsillo';
+  }
+
+  @override
   String get mapScreenUserHereLabel => 'Tú estás aquí';
 
   @override
@@ -1671,6 +1763,135 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripDetailTabAnalisis => 'Análisis';
+
+  @override
+  String get analysisDailyTitle => 'Comparativa diaria';
+
+  @override
+  String get analysisInvalidTripDates => 'Las fechas del viaje no son válidas.';
+
+  @override
+  String get analysisColDay => 'DÍA';
+
+  @override
+  String get analysisColDailyBudget => 'PRESUPUESTO DIARIO';
+
+  @override
+  String get analysisColActual => 'GASTO REAL';
+
+  @override
+  String get analysisColDifference => 'DIFERENCIA';
+
+  @override
+  String get analysisColPctSpent => '% GASTADO';
+
+  @override
+  String analysisDayLabelDate(int n, String date) {
+    return 'Día $n · $date';
+  }
+
+  @override
+  String analysisDayLabel(int n) {
+    return 'Día $n';
+  }
+
+  @override
+  String get analysisByCategoryTitle => 'Por categoría';
+
+  @override
+  String get analysisNoCategoriesYet =>
+      'Aún no hay categorías ni gastos para comparar.';
+
+  @override
+  String get analysisColCategory => 'CATEGORÍA';
+
+  @override
+  String get analysisColBudgeted => 'PRESUPUESTADO';
+
+  @override
+  String get analysisBudgetedVsActual => 'Presupuestado vs real';
+
+  @override
+  String get analysisLegendBudgeted => 'Presupuestado';
+
+  @override
+  String get analysisLegendActual => 'Real';
+
+  @override
+  String analysisCategorySaved(String category, String amount) {
+    return '$category: Ahorraste $amount en esta categoría';
+  }
+
+  @override
+  String analysisCategoryExceeded(String category, String amount) {
+    return '$category: Excediste por $amount en esta categoría';
+  }
+
+  @override
+  String get analysisTopCategoryTitle => 'Categoría con más gasto';
+
+  @override
+  String get analysisTopCategoryEmpty =>
+      'Registra gastos para ver este análisis.';
+
+  @override
+  String analysisTopCategorySummary(String summary) {
+    return 'Gastaste más en: $summary';
+  }
+
+  @override
+  String get analysisTopPlacesTitle => 'Top 3 establecimientos';
+
+  @override
+  String get analysisTopPlacesEmpty =>
+      'Agrega descripciones a tus gastos para ver dónde gastas más.';
+
+  @override
+  String get analysisPeakHoursTitle => 'Horarios de mayor gasto';
+
+  @override
+  String get analysisPeakHoursEmpty => 'Sin datos de horario todavía.';
+
+  @override
+  String analysisPeakHoursSummary(String ranges) {
+    return 'Más gasto entre: $ranges';
+  }
+
+  @override
+  String get analysisAnd => ' y ';
+
+  @override
+  String get analysisBetweenDaysTitle => 'Comparativa entre días';
+
+  @override
+  String analysisAverageTrailing(String amount) {
+    return 'Promedio $amount';
+  }
+
+  @override
+  String get analysisNoExpensesYet => 'Aún no hay gastos registrados.';
+
+  @override
+  String get analysisDailyAverageLegend => 'Promedio diario';
+
+  @override
+  String get analysisPerPersonTitle => 'Gasto por persona';
+
+  @override
+  String get analysisNoParticipants => 'No hay participantes cargados.';
+
+  @override
+  String get analysisUnassigned => 'Sin asignar';
+
+  @override
+  String analysisTripMoneyAmount(String amount) {
+    return 'Dinero del viaje: $amount';
+  }
+
+  @override
+  String analysisPocketAmount(String amount) {
+    return 'Bolsillo personal: $amount';
+  }
 
   @override
   String get tripDetailBreadcrumbHome => 'INICIO / MIS VIAJES';

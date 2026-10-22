@@ -410,6 +410,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addExpensePaidTripMoneyOff => 'Came from personal pocket';
 
   @override
+  String get addExpensePaymentSourceLabel => 'Which money are you paying with?';
+
+  @override
+  String get addExpenseSourceTrip => 'Trip money';
+
+  @override
+  String get addExpenseSourcePocket => 'My pocket';
+
+  @override
+  String addExpenseSourceBalance(String amount) {
+    return 'Available: $amount';
+  }
+
+  @override
+  String get addExpenseSourceNoPocket => 'No pocket yet';
+
+  @override
+  String get addExpensePocketMissing =>
+      'You don\'t have a pocket for this trip yet. Create it from \"My pocket\".';
+
+  @override
+  String addExpensePocketInsufficient(String balance) {
+    return 'Your pocket only has $balance available.';
+  }
+
+  @override
+  String get pocketButtonLabel => 'My pocket';
+
+  @override
+  String get pocketScreenTitle => 'My personal pocket';
+
+  @override
+  String get pocketPrivateNote => 'Only you can see this pocket.';
+
+  @override
+  String get pocketEmptyTitle => 'You don\'t have a pocket for this trip yet';
+
+  @override
+  String get pocketEmptyDescription =>
+      'Create your pocket to keep your own money and pay trip expenses from it.';
+
+  @override
+  String get pocketCreateButton => 'Create my pocket';
+
+  @override
+  String get pocketBalanceLabel => 'AVAILABLE BALANCE';
+
+  @override
+  String get pocketAddedLabel => 'ADDED';
+
+  @override
+  String get pocketSpentLabel => 'SPENT';
+
+  @override
+  String get pocketAddMoneyButton => 'Add money';
+
+  @override
+  String get pocketAddMoneyTitle => 'Add money to your pocket';
+
+  @override
+  String get pocketAmountLabel => 'Amount';
+
+  @override
+  String get pocketNoteLabel => 'Note (optional)';
+
+  @override
+  String get pocketNoteHint => 'E.g. Cash for shopping';
+
+  @override
+  String get pocketAddConfirmButton => 'Add';
+
+  @override
+  String get pocketMovementsTitle => 'Movements';
+
+  @override
+  String get pocketNoMovements => 'You haven\'t added any money yet.';
+
+  @override
+  String get pocketLoadError => 'Couldn\'t load your pocket.';
+
+  @override
+  String get pocketSaveError => 'Couldn\'t save. Try again.';
+
+  @override
+  String get pocketCreatedSnackbar => 'Pocket created';
+
+  @override
+  String pocketDepositAddedSnackbar(String amount) {
+    return '$amount added to your pocket';
+  }
+
+  @override
   String get mapScreenUserHereLabel => 'You are here';
 
   @override
@@ -1666,6 +1758,134 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailTabAnalisis => 'Analysis';
+
+  @override
+  String get analysisDailyTitle => 'Daily comparison';
+
+  @override
+  String get analysisInvalidTripDates => 'The trip dates are not valid.';
+
+  @override
+  String get analysisColDay => 'DAY';
+
+  @override
+  String get analysisColDailyBudget => 'DAILY BUDGET';
+
+  @override
+  String get analysisColActual => 'ACTUAL SPEND';
+
+  @override
+  String get analysisColDifference => 'DIFFERENCE';
+
+  @override
+  String get analysisColPctSpent => '% SPENT';
+
+  @override
+  String analysisDayLabelDate(int n, String date) {
+    return 'Day $n · $date';
+  }
+
+  @override
+  String analysisDayLabel(int n) {
+    return 'Day $n';
+  }
+
+  @override
+  String get analysisByCategoryTitle => 'By category';
+
+  @override
+  String get analysisNoCategoriesYet =>
+      'There are no categories or expenses to compare yet.';
+
+  @override
+  String get analysisColCategory => 'CATEGORY';
+
+  @override
+  String get analysisColBudgeted => 'BUDGETED';
+
+  @override
+  String get analysisBudgetedVsActual => 'Budgeted vs actual';
+
+  @override
+  String get analysisLegendBudgeted => 'Budgeted';
+
+  @override
+  String get analysisLegendActual => 'Actual';
+
+  @override
+  String analysisCategorySaved(String category, String amount) {
+    return '$category: You saved $amount in this category';
+  }
+
+  @override
+  String analysisCategoryExceeded(String category, String amount) {
+    return '$category: You went over by $amount in this category';
+  }
+
+  @override
+  String get analysisTopCategoryTitle => 'Top spending category';
+
+  @override
+  String get analysisTopCategoryEmpty => 'Log expenses to see this analysis.';
+
+  @override
+  String analysisTopCategorySummary(String summary) {
+    return 'You spent the most on: $summary';
+  }
+
+  @override
+  String get analysisTopPlacesTitle => 'Top 3 places';
+
+  @override
+  String get analysisTopPlacesEmpty =>
+      'Add descriptions to your expenses to see where you spend the most.';
+
+  @override
+  String get analysisPeakHoursTitle => 'Peak spending hours';
+
+  @override
+  String get analysisPeakHoursEmpty => 'No time data yet.';
+
+  @override
+  String analysisPeakHoursSummary(String ranges) {
+    return 'Most spending between: $ranges';
+  }
+
+  @override
+  String get analysisAnd => ' and ';
+
+  @override
+  String get analysisBetweenDaysTitle => 'Day-to-day comparison';
+
+  @override
+  String analysisAverageTrailing(String amount) {
+    return 'Average $amount';
+  }
+
+  @override
+  String get analysisNoExpensesYet => 'No expenses logged yet.';
+
+  @override
+  String get analysisDailyAverageLegend => 'Daily average';
+
+  @override
+  String get analysisPerPersonTitle => 'Spending per person';
+
+  @override
+  String get analysisNoParticipants => 'No participants loaded.';
+
+  @override
+  String get analysisUnassigned => 'Unassigned';
+
+  @override
+  String analysisTripMoneyAmount(String amount) {
+    return 'Trip money: $amount';
+  }
+
+  @override
+  String analysisPocketAmount(String amount) {
+    return 'Personal pocket: $amount';
+  }
 
   @override
   String get tripDetailBreadcrumbHome => 'HOME / MY TRIPS';

@@ -39,6 +39,8 @@ class AddExpenseSheet extends StatefulWidget {
   final DateTime tripEndDate;
   final List<TripCollaborator> miembros;
   final int? currentUserId;
+  final double tripBalance;      // saldo disponible del dinero del viaje
+  final double? pocketBalance;   // saldo de TU bolsillo (null = aún no lo creaste)
 
   /// HU-11 (TG-278): si viene, el formulario advierte en vivo cuando el
   /// monto haría pasar el presupuesto diario de la fecha elegida, y
@@ -53,6 +55,8 @@ class AddExpenseSheet extends StatefulWidget {
     this.dailyBudget,
     this.miembros = const [],
     this.currentUserId,
+    this.tripBalance = 0,
+    this.pocketBalance,
   });
 
   static Future<NewExpenseData?> show(
@@ -63,6 +67,8 @@ class AddExpenseSheet extends StatefulWidget {
     DailyBudgetCalculator? dailyBudget,
     List<TripCollaborator> miembros = const [],
     int? currentUserId,
+    double tripBalance = 0,
+    double? pocketBalance,
   }) {
     return showModalBottomSheet<NewExpenseData>(
       context: context,
@@ -78,6 +84,8 @@ class AddExpenseSheet extends StatefulWidget {
         dailyBudget: dailyBudget,
         miembros: miembros,
         currentUserId: currentUserId,
+        tripBalance: tripBalance,        // ← faltaba
+        pocketBalance: pocketBalance,    // ← faltaba
       ),
     );
   }
@@ -116,12 +124,12 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
         : (widget.miembros.isNotEmpty ? widget.miembros.first.usuarioId : null);
   }
 
-  @override
+    @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
-    super.dispose();
     _placeController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickDate() async {
@@ -156,7 +164,8 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
 
   /// Cómo quedaría el día elegido con el monto escrito (TG-278); `null`
   /// si no hay calculadora o el monto todavía no es válido.
-  DailyBudgetStatus? get _projectedDay {
+    DailyBudgetStatus? get _projectedDay {
+    if (!_pagadoConDineroViaje) return null;   // ← nueva
     final calc = widget.dailyBudget;
     final amount = double.tryParse(_amountController.text.trim());
     if (calc == null || amount == null || amount <= 0) return null;
@@ -206,6 +215,28 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       return;
     }
 
+    if (!_pagadoConDineroViaje) {
+      final balance = widget.pocketBalance;
+      if (balance == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.addExpensePocketMissing),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      if (amount > balance) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.addExpensePocketInsufficient(context.formatMoney(balance))),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+    }
+
     final projected = _projectedDay;
     if (projected != null && projected.level == DailyBudgetLevel.exceeded) {
       if (!await _confirmOverBudget(projected) || !mounted) return;
@@ -226,7 +257,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             ? null
             : _descriptionController.text.trim(),
         establecimiento: place.isEmpty ? null : place,
-        pagadoPorId: _pagadoPorId,
+        pagadoPorId: _pagadoConDineroViaje ? _pagadoPorId : widget.currentUserId,
         pagadoConDineroViaje: _pagadoConDineroViaje,
       ),
     );
@@ -308,7 +339,110 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     return AnimatedSwitcher(duration: AppMotion.toggle, child: content);
   }
 
-    @override
+    Widget _sourceOption({
+    required bool selected,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color subtitleColor = AppColors.textMuted,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected ? _primary.withValues(alpha: 0.08) : const Color(0xFFF5FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? _primary : const Color(0xFFD7E8EF),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: _primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.ui(13, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(subtitle, style: AppText.ui(12, color: subtitleColor)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Selector de fuente de pago: dinero del viaje o bolsillo personal.
+  Widget _buildPaymentSourceSelector() {
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    final pocket = widget.pocketBalance;
+    final pocketSelected = !_pagadoConDineroViaje;
+    final pocketShort = pocketSelected && pocket != null && amount > pocket;
+
+    String? hint;
+    if (pocketSelected && pocket == null) {
+      hint = context.l10n.addExpensePocketMissing;
+    } else if (pocketShort) {
+      hint = context.l10n.addExpensePocketInsufficient(context.formatMoney(pocket));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.l10n.addExpensePaymentSourceLabel,
+          style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _sourceOption(
+              selected: _pagadoConDineroViaje,
+              icon: Icons.luggage_outlined,
+              title: context.l10n.addExpenseSourceTrip,
+              subtitle: context.l10n.addExpenseSourceBalance(context.formatMoney(widget.tripBalance)),
+              onTap: () => setState(() => _pagadoConDineroViaje = true),
+            ),
+            const SizedBox(width: 10),
+            _sourceOption(
+              selected: pocketSelected,
+              icon: Icons.account_balance_wallet_outlined,
+              title: context.l10n.addExpenseSourcePocket,
+              subtitle: pocket == null
+                  ? context.l10n.addExpenseSourceNoPocket
+                  : context.l10n.addExpenseSourceBalance(context.formatMoney(pocket)),
+              subtitleColor: pocketShort ? AppColors.error : AppColors.textMuted,
+              onTap: () => setState(() {
+                _pagadoConDineroViaje = false;
+                _pagadoPorId = widget.currentUserId;
+              }),
+            ),
+          ],
+        ),
+        if (hint != null) ...[
+          const SizedBox(height: 8),
+          Text(hint, style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.error)),
+        ],
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(                      // 4.10
       child: Padding(
@@ -436,7 +570,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             ),
             const SizedBox(height: 16),
 
-            if (widget.miembros.isNotEmpty) ...[
+            _buildPaymentSourceSelector(),
+            const SizedBox(height: 16),
+
+            // "¿Quién pagó?" solo aplica al dinero del viaje; con el bolsillo siempre eres tú.
+            if (_pagadoConDineroViaje && widget.miembros.isNotEmpty) ...[
               DropdownButtonFormField<int>(
                 initialValue: _pagadoPorId,
                 decoration: _fieldDecoration(
@@ -451,22 +589,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
                     .toList(),
                 onChanged: (v) => setState(() => _pagadoPorId = v),
               ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                activeThumbColor: _primary,
-                title: Text(context.l10n.addExpensePaidWithTripMoney,
-                    style: AppText.ui(14, weight: FontWeight.w600)),
-                subtitle: Text(
-                  _pagadoConDineroViaje
-                      ? context.l10n.addExpensePaidTripMoneyOn
-                      : context.l10n.addExpensePaidTripMoneyOff,
-                  style: AppText.ui(12, color: AppColors.textMuted),
-                ),
-                value: _pagadoConDineroViaje,
-                onChanged: (v) => setState(() => _pagadoConDineroViaje = v),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
 
             // ═══════════ AQUÍ TERMINA EL 4.9 ═══════════

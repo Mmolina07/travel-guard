@@ -26,6 +26,8 @@ import '../../presentation/pages/trip_model.dart';
 import '../../utils/budget_calculator.dart';
 import 'create_trip_screen.dart';
 import 'edit_trip_budget_screen.dart';
+import 'personal_pocket_screen.dart';
+import '../../data/models/pocket_repository.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final Trip trip;
@@ -42,6 +44,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   late final TabController _tabController;
   final ExpenseRepository _expenseRepository = ExpenseRepository();
   final TripRepository _tripRepository = TripRepository();
+  final PocketRepository _pocketRepository = PocketRepository();
 
   List<Gasto> _gastos = [];
   List<CategoriaGasto> _categorias = [];
@@ -120,10 +123,18 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   /// actualizando constantemente".
   double get _gastosTotal => _gastos.fold(0.0, (sum, g) => sum + g.monto);
 
+    /// Solo los gastos pagados con el dinero del viaje. Los pagados desde un
+  /// bolsillo personal no restan del presupuesto compartido.
+  double get _gastosDelViajeTotal =>
+      _gastos.where((g) => g.pagadoConDineroViaje).fold(0.0, (sum, g) => sum + g.monto);
+
   /// HU-11: presupuesto diario calculado con los gastos ya cargados —
   /// se reconstruye en cada `build`, así refleja al instante cada gasto
   /// que se agrega o borra en esta pantalla.
-  DailyBudgetCalculator get _dailyBudget => DailyBudgetCalculator(trip: trip, gastos: _gastos);
+    DailyBudgetCalculator get _dailyBudget => DailyBudgetCalculator(
+        trip: trip,
+        gastos: _gastos.where((g) => g.pagadoConDineroViaje).toList(),
+      );
 
   /// Tarjeta del % del presupuesto de hoy — solo mientras el viaje está
   /// en curso y ya cargaron los gastos (si no, mostraría 0% falso).
@@ -287,6 +298,24 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final startDate = _parseTripDate(trip.startDate) ?? DateTime.now();
     final endDate = _parseTripDate(trip.endDate) ?? startDate;
 
+    // NUEVO: saldo de MI bolsillo (null si aún no lo he creado)
+    double? pocketBalance;
+    try {
+      if (_currentUserId != null) {
+        final pocket = await _pocketRepository.fetchMyPocket(
+          tripId: trip.id!,
+          userId: _currentUserId!,
+        );
+        pocketBalance = pocket?.balance;
+      }
+    } catch (e, st) {
+      debugPrint('TripDetailScreen: no se pudo leer el bolsillo: $e\n$st');
+    }
+    if (!mounted) return;
+
+    // NUEVO: saldo del dinero del viaje (solo cuenta lo pagado con dinero del viaje)
+    final tripBalance = trip.maxBudget - (trip.getTotalSpent() + _gastosDelViajeTotal);
+
     final result = await AddExpenseSheet.show(
       context,
       categorias: _categorias,
@@ -295,6 +324,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       dailyBudget: context.read<SubscriptionProvider>().isPremium ? _dailyBudget : null,
       miembros: [if (_owner != null) _owner!, ..._collaborators],
       currentUserId: _currentUserId,
+      tripBalance: tripBalance,      // NUEVO
+      pocketBalance: pocketBalance,  // NUEVO
     );
     if (result == null || !mounted) return;
 
@@ -318,6 +349,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       );
     } catch (e, st) {
       debugPrint('TripDetailScreen._handleAddExpense error: $e\n$st');
+      
       if (!mounted) return;
       _showSnack(context.l10n.tripDetailExpenseSaveErrorSnackbar);
     }
@@ -370,6 +402,24 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     if (updated != null && mounted) {
       setState(() => trip = updated);
     }
+  }
+
+  /// Bolsillo personal del usuario en este viaje (solo lo ve su dueño).
+  Future<void> _openPocket() async {
+    if (trip.id == null || _currentUserId == null) {
+      _showSnack(context.l10n.tripDetailTripNotSavedSnackbar);
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PersonalPocketScreen(
+          tripId: trip.id!,
+          tripName: trip.name,
+          userId: _currentUserId!,
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmDeleteTrip() async {
@@ -451,7 +501,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   @override
   Widget build(BuildContext context) {
     context.watch<CurrencyProvider>();
-    final totalSpent = trip.getTotalSpent() + _gastosTotal;
+    final totalSpent = trip.getTotalSpent() + _gastosDelViajeTotal;   
     final remaining = trip.maxBudget - totalSpent;
 
     return LayoutBuilder(
@@ -557,11 +607,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                       children: [
                         _HeaderButton(label: context.l10n.tripDetailEditButton, translucent: true, onTap: _editBudget),
                         const SizedBox(width: 10),
+                        _HeaderButton(label: context.l10n.pocketButtonLabel, translucent: true, onTap: _openPocket),
+                        const SizedBox(width: 10),
                         _HeaderButton(
                           label: context.l10n.tripDetailAddExpenseButton,
                           translucent: false,
                           onTap: _handleAddExpense,
                         ),
+                        
                         if (_isOwner) ...[
                           const SizedBox(width: 10),
                           _HeaderIconButton(icon: Icons.more_horiz, onTap: _confirmDeleteTrip),
@@ -1508,8 +1561,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final end = parseDdMmYyyy(trip.endDate);
     if (start == null || end == null || end.isBefore(start)) {
       return _SectionCard(
-        title: 'Comparativa diaria',
-        child: Text('Las fechas del viaje no son válidas.', style: AppText.ui(13, color: AppColors.textMuted)),
+        title: context.l10n.analysisDailyTitle,
+        child: Text(context.l10n.analysisInvalidTripDates,
+            style: AppText.ui(13, color: AppColors.textMuted)),
       );
     }
     final breakdown = calculateBudgetBreakdown(
@@ -1525,7 +1579,13 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     TableRow header() => TableRow(
           decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line))),
           children: [
-            for (final h in ['DÍA', 'PRESUPUESTO DIARIO', 'GASTO REAL', 'DIFERENCIA', '% GASTADO'])
+            for (final h in [
+              context.l10n.analysisColDay,
+              context.l10n.analysisColDailyBudget,
+              context.l10n.analysisColActual,
+              context.l10n.analysisColDifference,
+              context.l10n.analysisColPctSpent,
+            ])
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 child: Text(h, style: AppText.label(10, color: AppColors.textLabel)),
@@ -1534,9 +1594,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         );
 
     Widget cell(String text, {Color color = AppColors.ink, FontWeight weight = FontWeight.w500}) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      child: Text(text, style: AppText.ui(13, weight: weight, color: color)),
-    );
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child: Text(text, style: AppText.ui(13, weight: weight, color: color)),
+        );
 
     final rows = <TableRow>[header()];
     for (var i = 0; i < totalDias; i++) {
@@ -1548,17 +1608,20 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       rows.add(TableRow(
         decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line, width: 0.5))),
         children: [
-          cell('Día ${i + 1} · ${DateFormat('dd/MM').format(dia)}', weight: FontWeight.w600),
+          cell(context.l10n.analysisDayLabelDate(i + 1, DateFormat('dd/MM').format(dia)),
+              weight: FontWeight.w600),
           cell(context.formatMoney(presupuestoDiario)),
           cell(context.formatMoney(real), weight: FontWeight.w600),
-          cell('${diff >= 0 ? '+' : '-'}${context.formatMoney(diff.abs())}', color: diffColor, weight: FontWeight.w700),
-          cell('${pct.toStringAsFixed(1)}%', color: pct > 100 ? AppColors.error : AppColors.ink, weight: FontWeight.w600),
+          cell('${diff >= 0 ? '+' : '-'}${context.formatMoney(diff.abs())}',
+              color: diffColor, weight: FontWeight.w700),
+          cell('${pct.toStringAsFixed(1)}%',
+              color: pct > 100 ? AppColors.error : AppColors.ink, weight: FontWeight.w600),
         ],
       ));
     }
 
     return _SectionCard(
-      title: 'Comparativa diaria',
+      title: context.l10n.analysisDailyTitle,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: ConstrainedBox(
@@ -1577,8 +1640,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final filas = _filasCategoria();
     if (filas.isEmpty) {
       return _SectionCard(
-        title: 'Por categoría',
-        child: Text('Aún no hay categorías ni gastos para comparar.',
+        title: context.l10n.analysisByCategoryTitle,
+        child: Text(context.l10n.analysisNoCategoriesYet,
             style: AppText.ui(13, color: AppColors.textMuted)),
       );
     }
@@ -1591,14 +1654,19 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           child: Text(t, style: AppText.label(10, color: AppColors.textLabel)),
         );
     Widget c(String t, {Color color = AppColors.ink, FontWeight w = FontWeight.w500}) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      child: Text(t, style: AppText.ui(13, weight: w, color: color)),
-    );
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child: Text(t, style: AppText.ui(13, weight: w, color: color)),
+        );
 
     final tableRows = <TableRow>[
       TableRow(
         decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line))),
-        children: [h('CATEGORÍA'), h('PRESUPUESTADO'), h('GASTO REAL'), h('DIFERENCIA')],
+        children: [
+          h(context.l10n.analysisColCategory),
+          h(context.l10n.analysisColBudgeted),
+          h(context.l10n.analysisColActual),
+          h(context.l10n.analysisColDifference),
+        ],
       ),
       for (final f in filas)
         TableRow(
@@ -1617,7 +1685,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     ];
 
     return _SectionCard(
-      title: 'Por categoría',
+      title: context.l10n.analysisByCategoryTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1629,12 +1697,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             ),
           ),
           const SizedBox(height: 22),
-          _subTitle('Presupuestado vs real'),
+          _subTitle(context.l10n.analysisBudgetedVsActual),
           Row(
             children: [
-              _legendDot(_budgetBlue, 'Presupuestado'),
+              _legendDot(_budgetBlue, context.l10n.analysisLegendBudgeted),
               const SizedBox(width: 16),
-              _legendDot(_realRed, 'Real'),
+              _legendDot(_realRed, context.l10n.analysisLegendActual),
             ],
           ),
           const SizedBox(height: 12),
@@ -1677,8 +1745,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final ahorro = diff >= 0;
     final color = ahorro ? _savingGreen : AppColors.error;
     final texto = ahorro
-        ? '$nombre: Ahorraste ${context.formatMoney(diff)} en esta categoría'
-        : '$nombre: Excediste por ${context.formatMoney(diff.abs())} en esta categoría';
+        ? context.l10n.analysisCategorySaved(nombre, context.formatMoney(diff))
+        : context.l10n.analysisCategoryExceeded(nombre, context.formatMoney(diff.abs()));
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1690,310 +1758,327 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   // 3a. Categorías con más gasto (%)
-Widget _buildCategoriaMasGastoCard() {
-  final filas = _filasCategoria().where((f) => f.real > 0).toList();
-  final total = filas.fold(0.0, (s, f) => s + f.real);
-  if (total <= 0) {
+  Widget _buildCategoriaMasGastoCard() {
+    final filas = _filasCategoria().where((f) => f.real > 0).toList();
+    final total = filas.fold(0.0, (s, f) => s + f.real);
+    if (total <= 0) {
+      return _SectionCard(
+        title: context.l10n.analysisTopCategoryTitle,
+        child: Text(context.l10n.analysisTopCategoryEmpty,
+            style: AppText.ui(13, color: AppColors.textMuted)),
+      );
+    }
+    final top = filas.take(3).toList();
+    final resumen = top.map((f) => '${f.nombre} (${(f.real / total * 100).round()}%)').join(', ');
     return _SectionCard(
-      title: 'Categoría con más gasto',
-      child: Text('Registra gastos para ver este análisis.', style: AppText.ui(13, color: AppColors.textMuted)),
-    );
-  }
-  final top = filas.take(3).toList();
-  final resumen = top.map((f) => '${f.nombre} (${(f.real / total * 100).round()}%)').join(', ');
-  return _SectionCard(
-    title: 'Categoría con más gasto',
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Gastaste más en: $resumen', style: AppText.ui(14, weight: FontWeight.w600)),
-        const SizedBox(height: 14),
-        for (final f in top)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(f.nombre, style: AppText.ui(13, color: AppColors.textMuted)),
-                    Text('${(f.real / total * 100).toStringAsFixed(1)}%',
-                        style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                _hBar(f.real / total, AppColors.mint),
-              ],
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-// 3b. Top 3 establecimientos
-Widget _buildTopEstablecimientosCard() {
-  final map = <String, double>{};
-  final nombres = <String, String>{};
-  for (final g in _gastos) {
-    final nombre = (g.establecimiento ?? g.descripcion ?? '').trim();
-    if (nombre.isEmpty) continue;
-    final key = nombre.toLowerCase();
-    nombres[key] = nombre;
-    map[key] = (map[key] ?? 0) + g.monto;
-  }
-  final top = (map.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(3).toList();
-
-  return _SectionCard(
-    title: 'Top 3 establecimientos',
-    child: top.isEmpty
-        ? Text('Agrega descripciones a tus gastos para ver dónde gastas más.',
-            style: AppText.ui(13, color: AppColors.textMuted))
-        : Column(
-            children: [
-              for (var i = 0; i < top.length; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(10)),
-                        child: Text('${i + 1}', style: AppText.label(11, color: AppColors.ink)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(nombres[top[i].key]!,
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: AppText.ui(14, weight: FontWeight.w600)),
-                      ),
-                      Text(context.formatMoney(top[i].value),
-                          style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-  );
-}
-
-// 3c. Horarios de mayor gasto (bloques de 2 horas)
-Widget _buildHorariosCard() {
-  final bloques = List<double>.filled(12, 0);
-  for (final g in _gastos) {
-    bloques[g.fecha.hour ~/ 2] += g.monto;
-  }
-  final maxV = bloques.fold(0.0, (a, b) => b > a ? b : a);
-
-  String etiqueta(int i) {
-    String h(int x) => x == 0 ? '12a' : x < 12 ? '${x}a' : x == 12 ? '12p' : '${x - 12}p';
-    return '${h(i * 2)}-${h(i * 2 + 2 == 24 ? 0 : i * 2 + 2)}';
-  }
-
-  final ordenados = List.generate(12, (i) => i)..sort((a, b) => bloques[b].compareTo(bloques[a]));
-  final picos = ordenados.take(2).where((i) => bloques[i] > 0).toSet();
-
-  return _SectionCard(
-    title: 'Horarios de mayor gasto',
-    child: maxV <= 0
-        ? Text('Sin datos de horario todavía.', style: AppText.ui(13, color: AppColors.textMuted))
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 140,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (var i = 0; i < 12; i++)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                height: (bloques[i] / maxV * 100).clamp(bloques[i] > 0 ? 4 : 0, 100).toDouble(),
-                                decoration: BoxDecoration(
-                                  color: picos.contains(i) ? AppColors.ink : AppColors.mint,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(etiqueta(i), style: AppText.label(8), textAlign: TextAlign.center, maxLines: 1),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Más gasto entre: ${picos.map(etiqueta).join(' y ')}',
-                style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft),
-              ),
-            ],
-          ),
-  );
-}
-
-// 3d. Comparativa entre días + promedio
-Widget _buildComparativaEntreDiasCard() {
-  final start = parseDdMmYyyy(trip.startDate);
-  final end = parseDdMmYyyy(trip.endDate);
-  if (start == null || end == null || end.isBefore(start)) return const SizedBox.shrink();
-
-  final porDia = _gastoPorDia();
-  final dias = end.difference(start).inDays + 1;
-  final valores = [
-    for (var i = 0; i < dias; i++) porDia[_dayOnly(start.add(Duration(days: i)))] ?? 0.0,
-  ];
-  final promedio = valores.fold(0.0, (s, v) => s + v) / dias;
-  final maxV = [...valores, promedio].fold(0.0, (a, b) => b > a ? b : a);
-
-  return _SectionCard(
-    title: 'Comparativa entre días',
-    trailing: 'Promedio ${context.formatMoney(promedio)}',
-    child: maxV <= 0
-        ? Text('Aún no hay gastos registrados.', style: AppText.ui(13, color: AppColors.textMuted))
-        : Column(
-            children: [
-              for (var i = 0; i < dias; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 56, child: Text('Día ${i + 1}', style: AppText.ui(13, weight: FontWeight.w600))),
-                      Expanded(
-                        child: Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            _hBar(valores[i] / maxV, valores[i] > promedio ? _realRed : AppColors.inkSoft, height: 12),
-                            // Línea del promedio
-                            Positioned.fill(
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: (promedio / maxV).clamp(0.0, 1.0),
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Container(width: 2, color: AppColors.ink),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        width: 90,
-                        child: Text(context.formatMoney(valores[i]),
-                            textAlign: TextAlign.right,
-                            style: AppText.ui(12, weight: FontWeight.w700, color: AppColors.inkSoft)),
-                      ),
-                    ],
-                  ),
-                ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(width: 2, height: 12, color: AppColors.ink),
-                    const SizedBox(width: 6),
-                    Text('Promedio diario', style: AppText.ui(11, color: AppColors.textMuted)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-  );
-}
-
-// 3e. Gasto por persona (fondo del viaje vs bolsillo personal)
-Widget _buildGastoPorPersonaCard() {
-  final miembros = <TripCollaborator>[if (_owner != null) _owner!, ..._collaborators];
-  if (miembros.isEmpty) {
-    return _SectionCard(
-      title: 'Gasto por persona',
-      child: Text('No hay participantes cargados.', style: AppText.ui(13, color: AppColors.textMuted)),
-    );
-  }
-
-  Widget fila({
-    required String nombre,
-    required double delViaje,
-    required double bolsillo,
-  }) {
-    final total = delViaje + bolsillo;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      title: context.l10n.analysisTopCategoryTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.wash,
-                child: Text(
-                  nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
-                  style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft),
-                ),
+          Text(context.l10n.analysisTopCategorySummary(resumen),
+              style: AppText.ui(14, weight: FontWeight.w600)),
+          const SizedBox(height: 14),
+          for (final f in top)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(f.nombre, style: AppText.ui(13, color: AppColors.textMuted)),
+                      Text('${(f.real / total * 100).toStringAsFixed(1)}%',
+                          style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  _hBar(f.real / total, AppColors.mint),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(child: Text(nombre, style: AppText.ui(14, weight: FontWeight.w600))),
-              Text(context.formatMoney(total),
-                  style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _hBar(total > 0 ? delViaje / total : 0, AppColors.ink, height: 8),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Dinero del viaje: ${context.formatMoney(delViaje)}',
-                  style: AppText.ui(11, color: AppColors.textMuted)),
-              Text('Bolsillo personal: ${context.formatMoney(bolsillo)}',
-                  style: AppText.ui(11, color: AppColors.textMuted)),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
-  double suma(Iterable<Gasto> gs) => gs.fold(0.0, (s, g) => s + g.monto);
+  // 3b. Top 3 establecimientos
+  Widget _buildTopEstablecimientosCard() {
+    final map = <String, double>{};
+    final nombres = <String, String>{};
+    for (final g in _gastos) {
+      final nombre = (g.establecimiento ?? g.descripcion ?? '').trim();
+      if (nombre.isEmpty) continue;
+      final key = nombre.toLowerCase();
+      nombres[key] = nombre;
+      map[key] = (map[key] ?? 0) + g.monto;
+    }
+    final top = (map.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(3).toList();
 
-  final idsMiembros = miembros.map((m) => m.usuarioId).toSet();
-  final sinAsignar = _gastos.where((g) => g.pagadoPorId == null || !idsMiembros.contains(g.pagadoPorId));
+    return _SectionCard(
+      title: context.l10n.analysisTopPlacesTitle,
+      child: top.isEmpty
+          ? Text(context.l10n.analysisTopPlacesEmpty,
+              style: AppText.ui(13, color: AppColors.textMuted))
+          : Column(
+              children: [
+                for (var i = 0; i < top.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(10)),
+                          child: Text('${i + 1}', style: AppText.label(11, color: AppColors.ink)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(nombres[top[i].key]!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.ui(14, weight: FontWeight.w600)),
+                        ),
+                        Text(context.formatMoney(top[i].value),
+                            style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
 
-  return _SectionCard(
-    title: 'Gasto por persona',
-    child: Column(
-      children: [
-        for (final m in miembros)
-          fila(
-            nombre: m.nombreCompleto,
-            delViaje: suma(_gastos.where((g) => g.pagadoPorId == m.usuarioId && g.pagadoConDineroViaje)),
-            bolsillo: suma(_gastos.where((g) => g.pagadoPorId == m.usuarioId && !g.pagadoConDineroViaje)),
-          ),
-        if (sinAsignar.isNotEmpty) ...[
-          const Divider(height: 1, color: AppColors.line),
-          fila(
-            nombre: 'Sin asignar',
-            delViaje: suma(sinAsignar.where((g) => g.pagadoConDineroViaje)),
-            bolsillo: suma(sinAsignar.where((g) => !g.pagadoConDineroViaje)),
-          ),
+  // 3c. Horarios de mayor gasto (bloques de 2 horas)
+  Widget _buildHorariosCard() {
+    final bloques = List<double>.filled(12, 0);
+    for (final g in _gastos) {
+      bloques[g.fecha.hour ~/ 2] += g.monto;
+    }
+    final maxV = bloques.fold(0.0, (a, b) => b > a ? b : a);
+
+    String etiqueta(int i) {
+      String h(int x) => x == 0 ? '12a' : x < 12 ? '${x}a' : x == 12 ? '12p' : '${x - 12}p';
+      return '${h(i * 2)}-${h(i * 2 + 2 == 24 ? 0 : i * 2 + 2)}';
+    }
+
+    final ordenados = List.generate(12, (i) => i)..sort((a, b) => bloques[b].compareTo(bloques[a]));
+    final picos = ordenados.take(2).where((i) => bloques[i] > 0).toSet();
+
+    return _SectionCard(
+      title: context.l10n.analysisPeakHoursTitle,
+      child: maxV <= 0
+          ? Text(context.l10n.analysisPeakHoursEmpty,
+              style: AppText.ui(13, color: AppColors.textMuted))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 140,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < 12; i++)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  height: (bloques[i] / maxV * 100).clamp(bloques[i] > 0 ? 4 : 0, 100).toDouble(),
+                                  decoration: BoxDecoration(
+                                    color: picos.contains(i) ? AppColors.ink : AppColors.mint,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(etiqueta(i),
+                                    style: AppText.label(8), textAlign: TextAlign.center, maxLines: 1),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  context.l10n.analysisPeakHoursSummary(
+                    picos.map(etiqueta).join(context.l10n.analysisAnd),
+                  ),
+                  style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.inkSoft),
+                ),
+              ],
+            ),
+    );
+  }
+
+  // 3d. Comparativa entre días + promedio
+  Widget _buildComparativaEntreDiasCard() {
+    final start = parseDdMmYyyy(trip.startDate);
+    final end = parseDdMmYyyy(trip.endDate);
+    if (start == null || end == null || end.isBefore(start)) return const SizedBox.shrink();
+
+    final porDia = _gastoPorDia();
+    final dias = end.difference(start).inDays + 1;
+    final valores = [
+      for (var i = 0; i < dias; i++) porDia[_dayOnly(start.add(Duration(days: i)))] ?? 0.0,
+    ];
+    final promedio = valores.fold(0.0, (s, v) => s + v) / dias;
+    final maxV = [...valores, promedio].fold(0.0, (a, b) => b > a ? b : a);
+
+    return _SectionCard(
+      title: context.l10n.analysisBetweenDaysTitle,
+      trailing: context.l10n.analysisAverageTrailing(context.formatMoney(promedio)),
+      child: maxV <= 0
+          ? Text(context.l10n.analysisNoExpensesYet,
+              style: AppText.ui(13, color: AppColors.textMuted))
+          : Column(
+              children: [
+                for (var i = 0; i < dias; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 56,
+                          child: Text(context.l10n.analysisDayLabel(i + 1),
+                              style: AppText.ui(13, weight: FontWeight.w600)),
+                        ),
+                        Expanded(
+                          child: Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              _hBar(valores[i] / maxV,
+                                  valores[i] > promedio ? _realRed : AppColors.inkSoft,
+                                  height: 12),
+                              // Línea del promedio
+                              Positioned.fill(
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: (promedio / maxV).clamp(0.0, 1.0),
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Container(width: 2, color: AppColors.ink),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 90,
+                          child: Text(context.formatMoney(valores[i]),
+                              textAlign: TextAlign.right,
+                              style: AppText.ui(12, weight: FontWeight.w700, color: AppColors.inkSoft)),
+                        ),
+                      ],
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 2, height: 12, color: AppColors.ink),
+                      const SizedBox(width: 6),
+                      Text(context.l10n.analysisDailyAverageLegend,
+                          style: AppText.ui(11, color: AppColors.textMuted)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  // 3e. Gasto por persona (fondo del viaje vs bolsillo personal)
+  Widget _buildGastoPorPersonaCard() {
+    final miembros = <TripCollaborator>[if (_owner != null) _owner!, ..._collaborators];
+    if (miembros.isEmpty) {
+      return _SectionCard(
+        title: context.l10n.analysisPerPersonTitle,
+        child: Text(context.l10n.analysisNoParticipants,
+            style: AppText.ui(13, color: AppColors.textMuted)),
+      );
+    }
+
+    Widget fila({
+      required String nombre,
+      required double delViaje,
+      required double bolsillo,
+    }) {
+      final total = delViaje + bolsillo;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.wash,
+                  child: Text(
+                    nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
+                    style: AppText.ui(13, weight: FontWeight.w700, color: AppColors.inkSoft),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Text(nombre, style: AppText.ui(14, weight: FontWeight.w600))),
+                Text(context.formatMoney(total),
+                    style: AppText.ui(14, weight: FontWeight.w700, color: AppColors.inkSoft)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _hBar(total > 0 ? delViaje / total : 0, AppColors.ink, height: 8),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(context.l10n.analysisTripMoneyAmount(context.formatMoney(delViaje)),
+                    style: AppText.ui(11, color: AppColors.textMuted)),
+                Text(context.l10n.analysisPocketAmount(context.formatMoney(bolsillo)),
+                    style: AppText.ui(11, color: AppColors.textMuted)),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    double suma(Iterable<Gasto> gs) => gs.fold(0.0, (s, g) => s + g.monto);
+
+    final idsMiembros = miembros.map((m) => m.usuarioId).toSet();
+    final sinAsignar =
+        _gastos.where((g) => g.pagadoPorId == null || !idsMiembros.contains(g.pagadoPorId));
+
+    return _SectionCard(
+      title: context.l10n.analysisPerPersonTitle,
+      child: Column(
+        children: [
+          for (final m in miembros)
+            fila(
+              nombre: m.nombreCompleto,
+              delViaje: suma(_gastos.where((g) => g.pagadoPorId == m.usuarioId && g.pagadoConDineroViaje)),
+              bolsillo: suma(_gastos.where((g) => g.pagadoPorId == m.usuarioId && !g.pagadoConDineroViaje)),
+            ),
+          if (sinAsignar.isNotEmpty) ...[
+            const Divider(height: 1, color: AppColors.line),
+            fila(
+              nombre: context.l10n.analysisUnassigned,
+              delViaje: suma(sinAsignar.where((g) => g.pagadoConDineroViaje)),
+              bolsillo: suma(sinAsignar.where((g) => !g.pagadoConDineroViaje)),
+            ),
+          ],
         ],
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
   Widget _kv(String label, String value) {
     return Padding(
