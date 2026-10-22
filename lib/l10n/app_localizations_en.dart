@@ -502,6 +502,230 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get estimateScreenTitle => 'Estimate budget';
+
+  @override
+  String get estimateEyebrow => 'BUDGET ESTIMATOR';
+
+  @override
+  String get estimateTitleLine1 => 'How much will';
+
+  @override
+  String get estimateTitleLine2 => 'your trip cost?';
+
+  @override
+  String get estimateIntro =>
+      'Tell us where you\'re going and we\'ll estimate lodging, food and transport.';
+
+  @override
+  String get estimateDestinationLabel => 'DESTINATION';
+
+  @override
+  String get estimateDestinationHint => 'Search for a city';
+
+  @override
+  String get estimateDatesLabel => 'TRIP DATES';
+
+  @override
+  String get estimateDatesPlaceholder => 'Select departure and return';
+
+  @override
+  String get estimateDatePickerHelp => 'Trip dates';
+
+  @override
+  String get estimateDatePickerSave => 'Done';
+
+  @override
+  String estimateDurationSummary(int days, int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '$days day',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights nights',
+      one: '$nights night',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get estimateTravelersLabel => 'TRAVELERS';
+
+  @override
+  String estimateTravelersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count travelers',
+      one: '$count traveler',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get estimateTripTypeLabel => 'TRIP TYPE';
+
+  @override
+  String get estimateStyleEconomyTitle => 'Budget';
+
+  @override
+  String get estimateStyleEconomyCaption => 'Hostels and local food';
+
+  @override
+  String get estimateStyleStandardTitle => 'Standard';
+
+  @override
+  String get estimateStyleStandardCaption => '3-4★ hotels';
+
+  @override
+  String get estimateStyleLuxuryTitle => 'Luxury';
+
+  @override
+  String get estimateStyleLuxuryCaption => '5★ hotels and experiences';
+
+  @override
+  String get estimateErrorDestinationEmpty => 'Type or choose a destination.';
+
+  @override
+  String get estimateErrorDatesEmpty => 'Select your trip dates.';
+
+  @override
+  String get estimateErrorDatesTooShort => 'The trip must be at least 1 night.';
+
+  @override
+  String get estimateErrorDatesTooLong =>
+      'For now we only estimate trips of up to 30 days.';
+
+  @override
+  String get estimateErrorGeneric =>
+      'We couldn\'t calculate the estimate. Please try again.';
+
+  @override
+  String get estimateButton => 'Estimate budget';
+
+  @override
+  String get estimateButtonLoading => 'Estimating…';
+
+  @override
+  String get estimateButtonNew => 'New estimate';
+
+  @override
+  String get estimateLoadingEyebrow => 'CHECKING PRICES';
+
+  @override
+  String get estimateLoadingTitle => 'Building your estimate';
+
+  @override
+  String get estimateLoadingStepLodging => 'Looking up lodging';
+
+  @override
+  String get estimateLoadingStepFlights => 'Checking flights';
+
+  @override
+  String get estimateLoadingStepLocal => 'Calculating food and local transport';
+
+  @override
+  String get estimateResultEyebrow => 'ESTIMATED BUDGET';
+
+  @override
+  String get estimateRangeBadge => 'RANGE ±15%';
+
+  @override
+  String estimateHeroSubtitle(int nights, int travelers, String style) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights NIGHTS',
+      one: '$nights NIGHT',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      travelers,
+      locale: localeName,
+      other: '$travelers TRAVELERS',
+      one: '$travelers TRAVELER',
+    );
+    return '$_temp0 · $_temp1 · $style';
+  }
+
+  @override
+  String get estimateBreakdownTitle => 'Breakdown';
+
+  @override
+  String get estimateLodgingTitle => 'Lodging';
+
+  @override
+  String estimateLodgingCaption(int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights nights',
+      one: '$nights night',
+    );
+    return 'Average per night × $_temp0';
+  }
+
+  @override
+  String get estimateFoodTitle => 'Food';
+
+  @override
+  String estimateFoodCaption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '$days day',
+    );
+    return 'Daily average × $_temp0';
+  }
+
+  @override
+  String get estimateTransportTitle => 'Transport';
+
+  @override
+  String get estimateTransportCaption => 'Flight + local transport';
+
+  @override
+  String get estimateFlightLabel => 'Flight';
+
+  @override
+  String get estimateLocalTransportLabel => 'Local transport';
+
+  @override
+  String get estimateSourcesIntro => 'Estimate based on average prices from';
+
+  @override
+  String get estimateUpdatedLessThanHour => 'Data updated less than 1 hour ago';
+
+  @override
+  String estimateUpdatedHoursAgo(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours hours',
+      one: '1 hour',
+    );
+    return 'Data updated $_temp0 ago';
+  }
+
+  @override
+  String get estimateDisclaimer =>
+      'Prices may vary ±15% depending on current availability.';
+
+  @override
+  String get estimateCardSubtitle => 'Work out what a trip would cost';
+
+  @override
+  String get estimateCardDescription =>
+      'Find out what a trip would cost before planning it.';
+
+  @override
+  String get estimateCardButton => 'Estimate';
+
+  @override
   String get mapScreenUserHereLabel => 'You are here';
 
   @override

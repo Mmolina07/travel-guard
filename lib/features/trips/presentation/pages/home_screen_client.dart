@@ -30,6 +30,7 @@ import '../../../../widgets/hover_card.dart';
 import '../../../../widgets/place_card.dart';
 import '../../../../widgets/stagger_in.dart';
 import '../../../../widgets/trip_card.dart';
+import '../pages/budget_estimate_screen.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({super.key});
@@ -216,6 +217,12 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
   void _openMap() => context.go('/mapa');
 
   void _openComercios() => context.go('/comercios');
+
+  void _openBudgetEstimator() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const BudgetEstimateScreen()),
+    );
+  }
 
   void _openTripDetail(Trip trip) {
     context.go('/viajes/${trip.id}', extra: trip);
@@ -529,7 +536,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(flex: mapaFlex, child: SizedBox()),
+              Expanded(
+                flex: mapaFlex,
+                child: StaggerIn(index: 3, child: _EstimarCard(onTap: _openBudgetEstimator)),
+              ),
             ],
           ),
         ),
@@ -739,6 +749,17 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 80),
                     child: _buildMapCard(),
+                  ),
+                  const SizedBox(height: 16),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 160),
+                    child: _buildFeatureCard(
+                      icon: Icons.calculate_outlined,
+                      title: context.l10n.estimateScreenTitle,
+                      description: context.l10n.estimateCardDescription,
+                      buttonText: context.l10n.estimateCardButton,
+                      onButtonPressed: _openBudgetEstimator,
+                    ),
                   ),
                   const SizedBox(height: 36),
                   Row(
@@ -1142,6 +1163,52 @@ class _MapaCard extends StatelessWidget {
                 Text(context.l10n.homeClientMapCardTitle, style: AppText.display(22)),
                 const SizedBox(height: 4),
                 Text(context.l10n.homeClientMapCardPlacesCount, style: AppText.ui(12, color: AppColors.textMuted)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EstimarCard extends StatelessWidget {
+  const _EstimarCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverCard(
+      onTap: onTap,
+      color: AppColors.mint,
+      radius: 28,
+      padding: const EdgeInsets.all(24),
+      child: SizedBox(
+        height: 116,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ink,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.calculate_outlined, color: AppColors.mint, size: 18),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.l10n.estimateScreenTitle, style: AppText.display(22, color: AppColors.ink)),
+                const SizedBox(height: 4),
+                Text(
+                  context.l10n.estimateCardSubtitle,
+                  style: AppText.ui(12, color: AppColors.ink),
+                ),
               ],
             ),
           ],

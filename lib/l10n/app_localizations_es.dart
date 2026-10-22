@@ -502,6 +502,233 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get estimateScreenTitle => 'Estimar presupuesto';
+
+  @override
+  String get estimateEyebrow => 'ESTIMADOR DE PRESUPUESTO';
+
+  @override
+  String get estimateTitleLine1 => '¿Cuánto costará';
+
+  @override
+  String get estimateTitleLine2 => 'tu viaje?';
+
+  @override
+  String get estimateIntro =>
+      'Cuéntanos a dónde vas y te damos un estimado del alojamiento, la comida y el transporte.';
+
+  @override
+  String get estimateDestinationLabel => 'DESTINO';
+
+  @override
+  String get estimateDestinationHint => 'Busca una ciudad';
+
+  @override
+  String get estimateDatesLabel => 'FECHAS DEL VIAJE';
+
+  @override
+  String get estimateDatesPlaceholder => 'Selecciona ida y vuelta';
+
+  @override
+  String get estimateDatePickerHelp => 'Fechas del viaje';
+
+  @override
+  String get estimateDatePickerSave => 'Listo';
+
+  @override
+  String estimateDurationSummary(int days, int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '$days día',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights noches',
+      one: '$nights noche',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get estimateTravelersLabel => 'VIAJEROS';
+
+  @override
+  String estimateTravelersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count viajeros',
+      one: '$count viajero',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get estimateTripTypeLabel => 'TIPO DE VIAJE';
+
+  @override
+  String get estimateStyleEconomyTitle => 'Económico';
+
+  @override
+  String get estimateStyleEconomyCaption => 'Hostales y comida local';
+
+  @override
+  String get estimateStyleStandardTitle => 'Estándar';
+
+  @override
+  String get estimateStyleStandardCaption => 'Hoteles 3-4★';
+
+  @override
+  String get estimateStyleLuxuryTitle => 'Lujo';
+
+  @override
+  String get estimateStyleLuxuryCaption => 'Hoteles 5★ y experiencias';
+
+  @override
+  String get estimateErrorDestinationEmpty => 'Escribe o elige un destino.';
+
+  @override
+  String get estimateErrorDatesEmpty => 'Selecciona las fechas de tu viaje.';
+
+  @override
+  String get estimateErrorDatesTooShort =>
+      'El viaje debe tener al menos 1 noche.';
+
+  @override
+  String get estimateErrorDatesTooLong =>
+      'Por ahora solo estimamos viajes de hasta 30 días.';
+
+  @override
+  String get estimateErrorGeneric =>
+      'No pudimos calcular la estimación. Intenta de nuevo.';
+
+  @override
+  String get estimateButton => 'Estimar presupuesto';
+
+  @override
+  String get estimateButtonLoading => 'Estimando…';
+
+  @override
+  String get estimateButtonNew => 'Nueva estimación';
+
+  @override
+  String get estimateLoadingEyebrow => 'CONSULTANDO PRECIOS';
+
+  @override
+  String get estimateLoadingTitle => 'Armando tu estimación';
+
+  @override
+  String get estimateLoadingStepLodging => 'Buscando alojamiento';
+
+  @override
+  String get estimateLoadingStepFlights => 'Consultando vuelos';
+
+  @override
+  String get estimateLoadingStepLocal =>
+      'Calculando alimentación y transporte local';
+
+  @override
+  String get estimateResultEyebrow => 'PRESUPUESTO ESTIMADO';
+
+  @override
+  String get estimateRangeBadge => 'RANGO ±15%';
+
+  @override
+  String estimateHeroSubtitle(int nights, int travelers, String style) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights NOCHES',
+      one: '$nights NOCHE',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      travelers,
+      locale: localeName,
+      other: '$travelers VIAJEROS',
+      one: '$travelers VIAJERO',
+    );
+    return '$_temp0 · $_temp1 · $style';
+  }
+
+  @override
+  String get estimateBreakdownTitle => 'Desglose';
+
+  @override
+  String get estimateLodgingTitle => 'Alojamiento';
+
+  @override
+  String estimateLodgingCaption(int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights noches',
+      one: '$nights noche',
+    );
+    return 'Promedio por noche × $_temp0';
+  }
+
+  @override
+  String get estimateFoodTitle => 'Alimentación';
+
+  @override
+  String estimateFoodCaption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '$days día',
+    );
+    return 'Promedio diario × $_temp0';
+  }
+
+  @override
+  String get estimateTransportTitle => 'Transporte';
+
+  @override
+  String get estimateTransportCaption => 'Vuelo + transporte local';
+
+  @override
+  String get estimateFlightLabel => 'Vuelo';
+
+  @override
+  String get estimateLocalTransportLabel => 'Transporte local';
+
+  @override
+  String get estimateSourcesIntro => 'Estimación basada en precios promedio de';
+
+  @override
+  String get estimateUpdatedLessThanHour =>
+      'Datos actualizados hace menos de 1 hora';
+
+  @override
+  String estimateUpdatedHoursAgo(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours horas',
+      one: '1 hora',
+    );
+    return 'Datos actualizados hace $_temp0';
+  }
+
+  @override
+  String get estimateDisclaimer =>
+      'Los precios pueden variar ±15% según disponibilidad actual.';
+
+  @override
+  String get estimateCardSubtitle => 'Calcula el costo de un viaje';
+
+  @override
+  String get estimateCardDescription =>
+      'Descubre cuánto costaría un viaje antes de planearlo.';
+
+  @override
+  String get estimateCardButton => 'Estimar';
+
+  @override
   String get mapScreenUserHereLabel => 'Tú estás aquí';
 
   @override
