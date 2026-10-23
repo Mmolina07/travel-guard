@@ -49,6 +49,8 @@ class AddExpenseSheet extends StatefulWidget {
   final int? currentUserId;
   final double tripBalance; // saldo disponible del dinero del viaje
   final double? pocketBalance; // saldo de TU bolsillo (null = aún no lo creaste)
+  final Map<int, double> categoryLimits;   // categoria_id -> límite del viaje
+  final Map<int, double> spentByCategory;  // categoria_id -> lo ya gastado
 
   /// HU-11 (TG-278): si viene, el formulario advierte en vivo cuando el
   /// monto haría pasar el presupuesto diario de la fecha elegida, y
@@ -65,6 +67,8 @@ class AddExpenseSheet extends StatefulWidget {
     this.currentUserId,
     this.tripBalance = 0,
     this.pocketBalance,
+    this.categoryLimits = const {},
+    this.spentByCategory = const {},
   });
 
   static Future<NewExpenseData?> show(
@@ -77,6 +81,8 @@ class AddExpenseSheet extends StatefulWidget {
     int? currentUserId,
     double tripBalance = 0,
     double? pocketBalance,
+    Map<int, double> categoryLimits = const {},
+    Map<int, double> spentByCategory = const {},
   }) {
     return showModalBottomSheet<NewExpenseData>(
       context: context,
@@ -90,6 +96,8 @@ class AddExpenseSheet extends StatefulWidget {
         currentUserId: currentUserId,
         tripBalance: tripBalance,
         pocketBalance: pocketBalance,
+        categoryLimits: categoryLimits,
+        spentByCategory: spentByCategory,
       ),
     );
   }
@@ -282,6 +290,38 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
     return confirmed == true;
   }
 
+    /// HU-19 CA3: última oportunidad antes de guardar un gasto que llega o
+  /// supera el límite de su categoría. No bloquea: Continuar guarda igual.
+  Future<bool> _confirmLimit({required bool alreadyReached, required double over}) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
+        title: Text(ctx.l10n.limitDialogTitle(_selectedCategoria.nombre)),
+        content: Text(
+          alreadyReached
+              ? ctx.l10n.limitDialogReached
+              : ctx.l10n.limitDialogWillExceed(_selectedCategoria.nombre, ctx.formatMoney(over)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.l10n.configCancelButton),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.ink,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctx.l10n.limitDialogContinue),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
   Future<void> _handleSubmit() async {
     // Monto con punto de miles: `15.000` son quince mil (antes se
     // guardaba como 15).
@@ -319,6 +359,21 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           ),
         );
         return;
+      }
+    }
+
+    // HU-19 CA3: aviso de límite por categoría.
+    final limit = widget.categoryLimits[_selectedCategoria.id];
+    if (limit != null && limit > 0) {
+      final spent = widget.spentByCategory[_selectedCategoria.id] ?? 0.0;
+      final reached = spent >= limit;
+      final willExceed = !reached && spent + amount > limit;
+      if (reached || willExceed) {
+        final ok = await _confirmLimit(
+          alreadyReached: reached,
+          over: spent + amount - limit,
+        );
+        if (!ok || !mounted) return;
       }
     }
 
