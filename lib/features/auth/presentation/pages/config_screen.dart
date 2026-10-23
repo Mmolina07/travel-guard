@@ -307,6 +307,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
               onChanged: (v) =>
                   context.read<NotificationPrefsProvider>().setTripReminder(v),
             ),
+            const SizedBox(height: 12),
+            _SettingToggle(
+              icon: Icons.checklist_rounded,
+              label: l10n.configChecklistReminderLabel,
+              subtitle: l10n.configChecklistReminderSubtitle,
+              value: prefs.checklistReminder,
+              onChanged: (v) =>
+                  context.read<NotificationPrefsProvider>().setChecklistReminder(v),
+            ),
           ],
         ),
       ),

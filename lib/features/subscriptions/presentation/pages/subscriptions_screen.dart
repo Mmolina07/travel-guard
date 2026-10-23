@@ -37,6 +37,8 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     context.l10n.subscriptionsBenefitDailyAlerts,
     context.l10n.subscriptionsBenefitOverspendWarning,
     context.l10n.subscriptionsBenefitReminder,
+    context.l10n.subscriptionsBenefitChecklist,
+    context.l10n.subscriptionsBenefitEstimate,
   ];
 
   @override

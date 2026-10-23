@@ -36,11 +36,20 @@ import 'personal_pocket_screen.dart';
 import '../../data/models/pocket_repository.dart';
 import '../pages/spending_limits_screen.dart';
 import '../../data/limits_repository.dart';
+import '../../data/checklist_repository.dart';
+import '../widgets/trip_checklist_tab.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final Trip trip;
 
-  const TripDetailScreen({super.key, required this.trip});
+  /// Pestaña con la que abre (`?tab=pendientes` en la ruta, p. ej. desde
+  /// el recordatorio de HU-26).
+  final String? initialTab;
+
+  const TripDetailScreen({super.key, required this.trip, this.initialTab});
+
+  /// Índice de la pestaña "Pendientes" (HU-26).
+  static const checklistTabIndex = 1;
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();
@@ -55,6 +64,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   final PocketRepository _pocketRepository = PocketRepository();
   final LimitsRepository _limitsRepository = LimitsRepository();
   Map<int, double> _limites = {};
+
+  // HU-26: resumen de la lista de pendientes (personal) para la tarjeta
+  // del resumen. null = todavía no se sabe.
+  final ChecklistRepository _checklistRepository = ChecklistRepository();
+  int? _checklistPending;
+  int _checklistTotal = 0;
 
   List<Gasto> _gastos = [];
   List<CategoriaGasto> _categorias = [];
@@ -83,12 +98,43 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   void initState() {
     super.initState();
     trip = widget.trip;
-    _tabController = TabController(length: 6, vsync: this)
-      ..addListener(() => setState(() {}));
+    _tabController = TabController(
+      length: 7,
+      vsync: this,
+      initialIndex: widget.initialTab == 'pendientes' ? TripDetailScreen.checklistTabIndex : 0,
+    )..addListener(() => setState(() {}));
     _currentUserId = context.read<AppAuthProvider>().usuario?.id;
     _loadGastos();
     _loadGrupo();
     _loadLimites();
+    _loadChecklistSummary();
+  }
+
+  @override
+  void didUpdateWidget(TripDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Ya estaba en este viaje y llegó el recordatorio de pendientes.
+    if (widget.initialTab == 'pendientes' && oldWidget.initialTab != 'pendientes') {
+      _tabController.animateTo(TripDetailScreen.checklistTabIndex);
+    }
+  }
+
+  Future<void> _loadChecklistSummary() async {
+    final userId = _currentUserId;
+    if (trip.id == null || userId == null) return;
+    try {
+      final items = await _checklistRepository.fetchItems(tripId: trip.id!, userId: userId);
+      if (!mounted) return;
+      final visible = items.where((i) => !i.dismissed);
+      setState(() {
+        _checklistTotal = visible.length;
+        _checklistPending = visible.where((i) => !i.done).length;
+      });
+    } catch (e, st) {
+      // Sin la tarjeta del resumen el viaje se ve igual; la pestaña
+      // muestra su propio error.
+      debugPrint('TripDetailScreen._loadChecklistSummary error: $e\n$st');
+    }
   }
   @override
   void dispose() {
@@ -409,6 +455,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       context,
       MaterialPageRoute(
         builder: (_) => PersonalPocketScreen(
+          trip: trip,
           tripId: trip.id!,
           tripName: trip.name,
           userId: _currentUserId!,
@@ -543,6 +590,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           tabAlignment: TabAlignment.start,
           tabs: [
             Tab(text: context.l10n.tripDetailTabResumen),
+            Tab(text: context.l10n.checklistTabTitle),
             Tab(text: context.l10n.tripDetailTabHospedaje),
             Tab(text: context.l10n.tripDetailTabGastos),
             Tab(text: context.l10n.tripDetailTabGrupo),
@@ -553,10 +601,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         const SizedBox(height: 24),
         switch (_tabController.index) {
           0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
-          1 => _buildHospedajeTab(),
-          2 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
-          3 => _buildGrupoTab(),
-          4 => _buildAnalisisTab(),
+          1 => _buildChecklistTab(),
+          2 => _buildHospedajeTab(),
+          3 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+          4 => _buildGrupoTab(),
+          5 => _buildAnalisisTab(),
           _ => _buildLimitesTab(),
         },
       ],
@@ -734,6 +783,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildTodayBudgetAlert(),
+        if (!trip.isFinished && trip.id != null && _checklistPending != null) ...[
+          _buildChecklistSummaryCard(),
+          const SizedBox(height: 16),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final hospedaje = _buildHospedajeSummaryCard();
@@ -769,6 +822,81 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         ],
         _buildExpenseBreakdownCard(),
       ],
+    );
+  }
+
+  // ─── HU-26: lista de pendientes ───
+
+  Widget _buildChecklistTab() {
+    final userId = _currentUserId;
+    if (trip.id == null || userId == null) {
+      return Text(context.l10n.tripDetailTripNotSavedSnackbar, style: AppText.ui(13, color: AppColors.textMuted));
+    }
+    return TripChecklistTab(
+      key: ValueKey('checklist_${trip.id}'),
+      trip: trip,
+      userId: userId,
+      onSummaryChanged: (pending, total) {
+        if (!mounted || (pending == _checklistPending && total == _checklistTotal)) return;
+        setState(() {
+          _checklistPending = pending;
+          _checklistTotal = total;
+        });
+      },
+    );
+  }
+
+  /// "Te faltan N pendientes" con acceso a la pestaña (HU-26 escenario 7).
+  Widget _buildChecklistSummaryCard() {
+    final l = context.l10n;
+    final pending = _checklistPending ?? 0;
+    final total = _checklistTotal;
+    final done = total - pending;
+    final (icon, text) = total == 0
+        ? (Icons.checklist_rounded, l.checklistSummaryEmpty)
+        : pending == 0
+            ? (Icons.check_circle_rounded, l.checklistAllDone)
+            : (Icons.pending_actions_outlined, l.checklistRemaining(pending));
+    return Pressable(
+      scale: 0.99,
+      onTap: () => _tabController.animateTo(TripDetailScreen.checklistTabIndex),
+      semanticLabel: l.checklistSummaryOpen,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: AppColors.wash,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 20, color: AppColors.inkSoft),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.checklistTitle.toUpperCase(), style: AppText.label(10, color: AppColors.textLabel)),
+                  const SizedBox(height: 2),
+                  Text(text, style: AppText.ui(14, weight: FontWeight.w600)),
+                  if (total > 0) ...[
+                    const SizedBox(height: 8),
+                    BudgetBar(progress: done / total, height: 5, track: AppColors.surface, fill: AppColors.inkSoft),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(l.checklistSummaryOpen.toUpperCase(), style: AppText.label(10.5, color: AppColors.inkSoft, weight: FontWeight.w700)),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.inkSoft),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2142,6 +2270,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       context,
       MaterialPageRoute(
         builder: (_) => SpendingLimitsScreen(
+          trip: trip,
           tripId: trip.id!,
           tripName: trip.name,
           categorias: _categorias,
@@ -2389,6 +2518,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   tabAlignment: TabAlignment.start,
                   tabs: [
                     Tab(text: context.l10n.tripDetailTabResumen),
+                    Tab(text: context.l10n.checklistTabTitle),
                     Tab(text: context.l10n.tripDetailTabHospedaje),
                     Tab(text: context.l10n.tripDetailTabGastos),
                     Tab(text: context.l10n.tripDetailTabGrupo),
@@ -2399,10 +2529,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 const SizedBox(height: 20),
                 switch (_tabController.index) {
                   0 => _buildResumenTab(totalSpent: totalSpent, remaining: remaining),
-                  1 => _buildHospedajeTab(),
-                  2 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
-                  3 => _buildGrupoTab(),
-                  4 => _buildAnalisisTab(),
+                  1 => _buildChecklistTab(),
+                  2 => _buildHospedajeTab(),
+                  3 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
+                  4 => _buildGrupoTab(),
+                  5 => _buildAnalisisTab(),
                   _ => _buildLimitesTab(),
                 },
               ],

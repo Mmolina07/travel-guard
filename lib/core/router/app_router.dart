@@ -16,6 +16,7 @@ import '../../features/places_map/presentation/home_screen_comercio.dart';
 import '../../features/places_map/presentation/map_screen.dart';
 import '../../features/places_map/presentation/promociones_screen.dart';
 import '../../features/trips/data/trip_repository.dart';
+import '../../features/trips/presentation/pages/budget_estimate_screen.dart';
 import '../../features/trips/presentation/pages/create_trip_screen.dart';
 import '../../features/trips/presentation/pages/home_screen_client.dart';
 import '../../features/trips/presentation/pages/trip_detail_screen.dart';
@@ -247,10 +248,12 @@ class AppRouter {
           pageBuilder: (context, state) {
             setPageTitle('TravelGuard · Viaje');
             final extra = state.extra;
+            final tab = state.uri.queryParameters['tab'];
             final child = extra is Trip
-                ? TripDetailScreen(trip: extra)
+                ? TripDetailScreen(trip: extra, initialTab: tab)
                 : _TripDetailLoader(
                     tripId: int.tryParse(state.pathParameters['id'] ?? ''),
+                    initialTab: tab,
                   );
             // Fase 6: reemplaza el `Hero` de tarjeta de la tabla de
             // movimiento del README por fade + 12px — cada pantalla
@@ -283,6 +286,15 @@ class AppRouter {
                 );
               },
             );
+          },
+        ),
+        // HU-18: devuelve el `Trip` si desde ahí se creó un viaje.
+        GoRoute(
+          path: '/estimar',
+          name: 'estimar',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Estimar viaje');
+            return const BudgetEstimateScreen();
           },
         ),
         GoRoute(
@@ -360,9 +372,10 @@ class _RootHome extends StatelessWidget {
 /// navegador) — los demás casos navegan con `extra: trip` y evitan este
 /// viaje de red.
 class _TripDetailLoader extends StatefulWidget {
-  const _TripDetailLoader({required this.tripId});
+  const _TripDetailLoader({required this.tripId, this.initialTab});
 
   final int? tripId;
+  final String? initialTab;
 
   @override
   State<_TripDetailLoader> createState() => _TripDetailLoaderState();
@@ -399,7 +412,7 @@ class _TripDetailLoaderState extends State<_TripDetailLoader> {
         }
         final trip = snapshot.data;
         if (trip == null) return const _TripNotFound();
-        return TripDetailScreen(trip: trip);
+        return TripDetailScreen(trip: trip, initialTab: widget.initialTab);
       },
     );
   }

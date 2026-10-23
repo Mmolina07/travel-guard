@@ -1,5 +1,27 @@
 # Notas de configuración — Auth y persistencia (TG-92, TG-97, TG-102, TG-123, TG-124)
 
+## HU-26: lista de pendientes del viaje
+
+Escenarios y reglas de sugerencia: `docs/hu/hu-26.md`.
+
+1. Corre `docs/db/hu26_pendientes_viaje.sql` en el SQL Editor (crea la tabla
+   `viaje_pendientes`; no toca nada existente y se puede volver a correr).
+
+## HU-18: estimación del presupuesto del viaje
+
+Escenarios y fórmula: `docs/hu/hu-18.md`.
+
+1. Corre `docs/db/hu18_estimacion_presupuesto.sql` en el SQL Editor (solo crea
+   tablas `estimacion_*`, la app solo las lee; se puede volver a correr).
+   Después, `docs/db/hu18_estimacion_ajuste_parametros.sql`.
+   Después, `docs/db/hu18_estimacion_gastos_reales.sql` (función
+   `estimacion_gastos_reales`: solo agregados de viajes terminados, para
+   ajustar la estimación con lo que gastaron turistas reales).
+2. Para actualizar precios: `UPDATE estimacion_costos / estimacion_rutas …`
+   (y `verificado_en`), o cambia los valores del archivo y vuelve a correrlo.
+3. Cada año: agrega las temporadas del año siguiente en
+   `estimacion_temporadas` (Semana Santa y ferias cambian de fecha).
+
 ## Mapa de incidencia delictiva histórica por comuna
 
 Arquitectura, actualización de datos y decisiones: `docs/seguridad/README.md`.

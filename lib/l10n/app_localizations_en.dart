@@ -515,13 +515,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get estimateIntro =>
-      'Tell us where you\'re going and we\'ll estimate lodging, food and transport.';
+      'Tell us where you\'re going, where you\'re leaving from and how you travel: we\'ll estimate lodging, food, transport and extras.';
 
   @override
   String get estimateDestinationLabel => 'DESTINATION';
 
   @override
-  String get estimateDestinationHint => 'Search for a city';
+  String get estimateOriginLabel => 'WHERE ARE YOU LEAVING FROM?';
+
+  @override
+  String get estimateOriginHint => 'Search for your city';
 
   @override
   String get estimateDatesLabel => 'TRIP DATES';
@@ -567,6 +570,37 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get estimateModeLabel => 'HOW ARE YOU TRAVELING?';
+
+  @override
+  String get estimateModePlane => 'Plane';
+
+  @override
+  String get estimateModeBus => 'Bus';
+
+  @override
+  String get estimateModeCar => 'Car';
+
+  @override
+  String estimateModeHours(String hours) {
+    return '~$hours h';
+  }
+
+  @override
+  String get estimateModeUnavailable => 'Not available';
+
+  @override
+  String get estimateModeNotRecommended => 'Not recommended';
+
+  @override
+  String get estimateModePickCities =>
+      'Choose a destination and origin to see how you can get there.';
+
+  @override
+  String get estimateModeApproximate =>
+      'This route is calculated from the distance between the cities, so the result is more approximate.';
+
+  @override
   String get estimateTripTypeLabel => 'TRIP TYPE';
 
   @override
@@ -579,16 +613,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimateStyleStandardTitle => 'Standard';
 
   @override
-  String get estimateStyleStandardCaption => '3-4★ hotels';
+  String get estimateStyleStandardCaption => '3★ hotels';
 
   @override
   String get estimateStyleLuxuryTitle => 'Luxury';
 
   @override
-  String get estimateStyleLuxuryCaption => '5★ hotels and experiences';
+  String get estimateStyleLuxuryCaption => '4-5★ hotels and experiences';
 
   @override
-  String get estimateErrorDestinationEmpty => 'Type or choose a destination.';
+  String get estimateExtrasLabel => 'EXTRAS (OPTIONAL)';
+
+  @override
+  String get estimateExtraTours => 'Tours and activities';
+
+  @override
+  String get estimateExtraNightlife => 'Nightlife';
+
+  @override
+  String get estimateExtraSouvenirs => 'Souvenirs';
+
+  @override
+  String get estimateErrorDestinationEmpty =>
+      'Choose a destination from the list.';
+
+  @override
+  String get estimateErrorOriginEmpty => 'Choose where you\'re leaving from.';
+
+  @override
+  String get estimateErrorOriginSame =>
+      'The origin must be different from the destination.';
+
+  @override
+  String get estimateErrorModeEmpty => 'Choose how you\'ll travel.';
 
   @override
   String get estimateErrorDatesEmpty => 'Select your trip dates.';
@@ -603,6 +660,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get estimateErrorGeneric =>
       'We couldn\'t calculate the estimate. Please try again.';
+
+  @override
+  String get estimateDataError =>
+      'We couldn\'t load the reference prices. Check your connection.';
+
+  @override
+  String get estimateRetry => 'Retry';
 
   @override
   String get estimateButton => 'Estimate budget';
@@ -620,19 +684,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimateLoadingTitle => 'Building your estimate';
 
   @override
-  String get estimateLoadingStepLodging => 'Looking up lodging';
+  String get estimateLoadingStepLodging => 'Loading reference prices';
 
   @override
-  String get estimateLoadingStepFlights => 'Checking flights';
+  String get estimateLoadingStepFlights => 'Calculating transport and seasons';
 
   @override
-  String get estimateLoadingStepLocal => 'Calculating food and local transport';
+  String get estimateLoadingStepLocal =>
+      'Adding food, local transport and extras';
 
   @override
   String get estimateResultEyebrow => 'ESTIMATED BUDGET';
 
   @override
-  String get estimateRangeBadge => 'RANGE ±15%';
+  String estimateRangeBadge(int percent) {
+    return 'RANGE ±$percent%';
+  }
 
   @override
   String estimateHeroSubtitle(int nights, int travelers, String style) {
@@ -652,20 +719,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String estimateHeroFrom(String origin, String mode) {
+    return 'Leaving from $origin by $mode';
+  }
+
+  @override
   String get estimateBreakdownTitle => 'Breakdown';
 
   @override
   String get estimateLodgingTitle => 'Lodging';
 
   @override
-  String estimateLodgingCaption(int nights) {
+  String estimateLodgingCaption(int rooms, int nights) {
     String _temp0 = intl.Intl.pluralLogic(
+      rooms,
+      locale: localeName,
+      other: '$rooms rooms',
+      one: '1 room',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
       nights,
       locale: localeName,
       other: '$nights nights',
       one: '$nights night',
     );
-    return 'Average per night × $_temp0';
+    return '$_temp0 × $_temp1';
   }
 
   @override
@@ -686,34 +764,151 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimateTransportTitle => 'Transport';
 
   @override
-  String get estimateTransportCaption => 'Flight + local transport';
+  String get estimateTransportCaption => 'Round trip + local transport';
 
   @override
-  String get estimateFlightLabel => 'Flight';
+  String estimateIntercityLabel(String mode) {
+    return 'Round trip by $mode';
+  }
+
+  @override
+  String estimateIntercityCarLabel(int vehicles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      vehicles,
+      locale: localeName,
+      other: '$vehicles cars',
+      one: '1 car',
+    );
+    return 'Fuel and tolls ($_temp0)';
+  }
 
   @override
   String get estimateLocalTransportLabel => 'Local transport';
 
   @override
-  String get estimateSourcesIntro => 'Estimate based on average prices from';
+  String get estimateExtrasTitle => 'Extras';
 
   @override
-  String get estimateUpdatedLessThanHour => 'Data updated less than 1 hour ago';
+  String get estimateExtrasCaption => 'What you chose to add';
 
   @override
-  String estimateUpdatedHoursAgo(int hours) {
-    String _temp0 = intl.Intl.pluralLogic(
-      hours,
-      locale: localeName,
-      other: '$hours hours',
-      one: '1 hour',
-    );
-    return 'Data updated $_temp0 ago';
+  String get estimateSourcesIntro => 'Estimate based on:';
+
+  @override
+  String estimateVerifiedOn(String date) {
+    return 'Prices verified on $date';
   }
 
   @override
-  String get estimateDisclaimer =>
-      'Prices may vary ±15% depending on current availability.';
+  String estimateDisclaimer(int percent) {
+    return 'Prices may vary ±$percent% depending on the season and availability.';
+  }
+
+  @override
+  String get estimateDetailTitle => 'Detailed estimate';
+
+  @override
+  String get estimateDetailGateDescription =>
+      'Compare the 3 styles, see how much the season adds and the cost per person and per day.';
+
+  @override
+  String get estimatePerPerson => 'PER PERSON';
+
+  @override
+  String get estimatePerDay => 'PER DAY';
+
+  @override
+  String get estimatePerPersonPerDay => 'PERSON / DAY';
+
+  @override
+  String get estimateSeasonTitle => 'High season';
+
+  @override
+  String estimateSeasonBody(String seasons, String amount) {
+    return 'Your dates fall in $seasons. That adds $amount to the total (already included).';
+  }
+
+  @override
+  String get estimateSeasonNoneTitle => 'Regular season';
+
+  @override
+  String get estimateSeasonNone =>
+      'Your dates aren\'t in high season: a good time to travel.';
+
+  @override
+  String get estimateCompareTitle => 'Compare styles';
+
+  @override
+  String get estimateCompareCurrent => 'YOUR CHOICE';
+
+  @override
+  String get estimateCreateTrip => 'Create trip with this estimate';
+
+  @override
+  String estimateTripName(String destination) {
+    return 'Trip to $destination';
+  }
+
+  @override
+  String estimateRealSeal(int count, String city) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count real TravelGuard trips',
+      one: '1 real TravelGuard trip',
+    );
+    return 'Adjusted with $_temp0 to $city';
+  }
+
+  @override
+  String estimateRealNone(String city) {
+    return 'There aren\'t enough real TravelGuard trips to $city yet: we use reference prices only.';
+  }
+
+  @override
+  String get estimateCoveredLabel => 'ALREADY COVERED';
+
+  @override
+  String get estimateCoveredHint =>
+      'Mark what you won\'t pay for; for example, if you\'re staying with family or a friend.';
+
+  @override
+  String get estimateCoveredLodging => 'Lodging';
+
+  @override
+  String get estimateCoveredFood => 'Food';
+
+  @override
+  String get estimateCoveredIntercity => 'Round trip';
+
+  @override
+  String get estimateCoveredLocal => 'Local transport';
+
+  @override
+  String get estimateCoveredTag => 'Covered';
+
+  @override
+  String get estimateCoveredCaption => 'You already have this covered';
+
+  @override
+  String get estimateModeCovered =>
+      'Your round trip is already covered: we don\'t add it.';
+
+  @override
+  String get estimateErrorAllCovered =>
+      'Leave at least one cost to estimate or add an extra.';
+
+  @override
+  String get limitsHeaderTitle => 'Spending';
+
+  @override
+  String get limitsHeaderAccent => 'limits';
+
+  @override
+  String get pocketHeaderTitle => 'My personal';
+
+  @override
+  String get pocketHeaderAccent => 'pocket';
 
   @override
   String get estimateCardSubtitle => 'Work out what a trip would cost';
@@ -3026,6 +3221,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reminders: unlogged expenses, daily summary and closing, and a heads-up before each trip';
 
   @override
+  String get subscriptionsBenefitEstimate =>
+      'Detailed trip estimates: compare styles, season and cost per person';
+
+  @override
   String get premiumGateBadge => 'PREMIUM ONLY';
 
   @override
@@ -4410,4 +4609,287 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get securityWhenTitle => 'When most records happen';
+
+  @override
+  String get checklistTabTitle => 'Checklist';
+
+  @override
+  String get checklistTitle => 'Trip checklist';
+
+  @override
+  String checklistProgress(int done, int total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String get checklistAllDone => 'You\'re all set for your trip!';
+
+  @override
+  String checklistRemaining(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items left',
+      one: '1 item left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checklistEmptyTitle => 'Your checklist is empty';
+
+  @override
+  String get checklistEmptySubtitle =>
+      'Add the suggestions that fit your trip or write your own items.';
+
+  @override
+  String get checklistAddHint => 'Something you can\'t forget…';
+
+  @override
+  String get checklistAddButton => 'Add';
+
+  @override
+  String get checklistTitleRequired => 'Write the item';
+
+  @override
+  String get checklistTitleTooLong => '120 characters max';
+
+  @override
+  String get checklistSuggestionsTitle => 'Suggested for your trip';
+
+  @override
+  String get checklistSuggestionsSubtitle =>
+      'Based on your destination, transport, dates and lodging.';
+
+  @override
+  String checklistAddAll(int count) {
+    return 'Add all ($count)';
+  }
+
+  @override
+  String get checklistSuggestionsDone =>
+      'You\'ve gone through all the suggestions.';
+
+  @override
+  String checklistShowDismissed(int count) {
+    return 'Show dismissed again ($count)';
+  }
+
+  @override
+  String get checklistDismissTooltip => 'Not needed';
+
+  @override
+  String get checklistAddSuggestionTooltip => 'Add to my checklist';
+
+  @override
+  String get checklistEdit => 'Edit';
+
+  @override
+  String get checklistDelete => 'Delete';
+
+  @override
+  String get checklistEditTitle => 'Edit item';
+
+  @override
+  String get checklistSave => 'Save';
+
+  @override
+  String get checklistCancel => 'Cancel';
+
+  @override
+  String get checklistMoreTooltip => 'More options';
+
+  @override
+  String get checklistLoadError => 'Couldn\'t load the checklist.';
+
+  @override
+  String get checklistSaveError => 'Couldn\'t save the change. Try again.';
+
+  @override
+  String get checklistRetry => 'Retry';
+
+  @override
+  String get checklistReadOnly =>
+      'This trip is over: the checklist is read-only.';
+
+  @override
+  String get checklistReminderInfo =>
+      'We\'ll remind you 3 days before, 1 day before and on the morning you leave if anything is left.';
+
+  @override
+  String get checklistReminderOff =>
+      'Checklist reminders are turned off in Settings.';
+
+  @override
+  String get checklistReminderGateTitle => 'Checklist reminders';
+
+  @override
+  String get checklistReminderGateDescription =>
+      'With Premium we\'ll let you know before the trip if anything is left to pack or do.';
+
+  @override
+  String get checklistSummaryEmpty =>
+      'Build your checklist: we\'ll suggest what to bring and do before you leave.';
+
+  @override
+  String get checklistSummaryOpen => 'Open checklist';
+
+  @override
+  String get checklistCategoryDocumentos => 'Documents';
+
+  @override
+  String get checklistCategoryDinero => 'Money';
+
+  @override
+  String get checklistCategoryEquipaje => 'Luggage';
+
+  @override
+  String get checklistCategorySalud => 'Health';
+
+  @override
+  String get checklistCategoryTecnologia => 'Tech';
+
+  @override
+  String get checklistCategoryReservas => 'Bookings';
+
+  @override
+  String get checklistCategoryCasa => 'Home';
+
+  @override
+  String get checklistCategoryOtro => 'Other';
+
+  @override
+  String get checklistSugDocId => 'ID document (national ID or passport)';
+
+  @override
+  String get checklistSugDocLicense => 'Driver\'s license';
+
+  @override
+  String get checklistSugDocSoat =>
+      'Vehicle insurance (SOAT) and inspection up to date';
+
+  @override
+  String get checklistSugDocWork => 'Company documents';
+
+  @override
+  String get checklistSugMoneyCash => 'Cash for small expenses';
+
+  @override
+  String get checklistSugMoneyCards => 'Debit and credit cards';
+
+  @override
+  String get checklistSugMoneyBankNotice => 'Tell your bank you\'re traveling';
+
+  @override
+  String get checklistSugMoneyTolls => 'Cash for tolls';
+
+  @override
+  String get checklistSugBagPack => 'Pack your suitcase';
+
+  @override
+  String get checklistSugBagExtraClothes => 'Extra clothes or a laundry plan';
+
+  @override
+  String get checklistSugBagLiquids => 'Liquids in 100 ml containers';
+
+  @override
+  String get checklistSugBagSwimsuit => 'Swimsuit';
+
+  @override
+  String get checklistSugBagSunglasses => 'Sunglasses and a cap';
+
+  @override
+  String get checklistSugBagJacket => 'Jacket or warm clothes';
+
+  @override
+  String get checklistSugBagUmbrella => 'Umbrella or raincoat';
+
+  @override
+  String get checklistSugHealthMeds => 'Personal medication';
+
+  @override
+  String get checklistSugHealthSunscreen => 'Sunscreen';
+
+  @override
+  String get checklistSugHealthRepellent => 'Insect repellent';
+
+  @override
+  String get checklistSugTechCharger => 'Phone charger';
+
+  @override
+  String get checklistSugTechPowerbank => 'Charged power bank';
+
+  @override
+  String get checklistSugTechLaptop => 'Laptop and charger';
+
+  @override
+  String get checklistSugBookLodging => 'Confirm your lodging booking';
+
+  @override
+  String get checklistSugBookCheckin => 'Check in online';
+
+  @override
+  String get checklistSugBookBoardingPass => 'Download your boarding pass';
+
+  @override
+  String get checklistSugBookAirportEarly => 'Get to the airport 2 hours early';
+
+  @override
+  String get checklistSugBookBusTickets => 'Buy the bus tickets';
+
+  @override
+  String get checklistSugHomeUnplug =>
+      'Unplug appliances and turn off the water';
+
+  @override
+  String get checklistSugHomeCare => 'Arrange care for pets and plants';
+
+  @override
+  String get checklistSugOtherCarCheck =>
+      'Check the car\'s tires, oil and brakes';
+
+  @override
+  String get checklistSugOtherGroup =>
+      'Agree with the group on who brings what';
+
+  @override
+  String get checklistSugOtherItinerary =>
+      'Share your itinerary with someone you trust';
+
+  @override
+  String reminderChecklistTitle(int count, String destination) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items left for your trip to $destination',
+      one: '1 item left for your trip to $destination',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reminderChecklistMessage(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days to go: a good time to get things ready.',
+      one: 'You leave tomorrow: go over your checklist.',
+      zero: 'You leave today: make sure you\'re not forgetting anything.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reminderChecklistAction => 'View checklist';
+
+  @override
+  String get configChecklistReminderLabel => 'Checklist reminder';
+
+  @override
+  String get configChecklistReminderSubtitle =>
+      '3 days before, 1 day before and the morning you leave, if anything is left.';
+
+  @override
+  String get subscriptionsBenefitChecklist =>
+      'Reminders about your trip checklist before each trip';
 }

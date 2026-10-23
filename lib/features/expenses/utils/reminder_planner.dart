@@ -18,6 +18,10 @@ enum ReminderKind {
 
   /// CA9: el viaje empieza en 3 días / mañana.
   upcomingTrip,
+
+  /// HU-26: quedan pendientes sin marcar 3 días antes, 1 día antes o la
+  /// mañana de salida.
+  checklist,
 }
 
 /// Un recordatorio listo para mostrar. [key] identifica el aviso para
@@ -32,6 +36,7 @@ class BudgetReminder {
     this.daysUntil,
     this.hoursWithoutExpenses,
     this.endOfDay = false,
+    this.pendingItems,
   });
 
   final ReminderKind kind;
@@ -52,6 +57,9 @@ class BudgetReminder {
 
   /// Recordatorio de registro de las 11 PM (el día terminó sin gastos).
   final bool endOfDay;
+
+  /// Pendientes sin marcar de la lista del viaje (HU-26).
+  final int? pendingItems;
 }
 
 /// Horario de HU-11.
@@ -69,15 +77,20 @@ abstract final class ReminderSchedule {
 
   /// CA9: avisos 3 días y 1 día antes.
   static const tripReminderDays = [3, 1];
+
+  /// HU-26: el aviso del día de salida, desde las 7 AM.
+  static const checklistMorningHour = 7;
 }
 
-/// Decide qué recordatorios tocan ahora (HU-11 CA5, CA6, CA8, CA9).
+/// Decide qué recordatorios tocan ahora (HU-11 CA5, CA6, CA8, CA9 y
+/// los pendientes de HU-26).
 /// Función pura: el proveedor le pasa los viajes con sus gastos, las
 /// preferencias y lo que ya se mostró, y muestra lo que devuelva.
 ///
 /// - [shownKeys]: claves de recordatorios ya mostrados.
 /// - [lastNudge]: último recordatorio de registro mostrado por viaje
 ///   (CA5 vuelve a preguntar cada [reminderHours] horas, no una vez).
+/// - [checklistPending]: pendientes sin marcar por viaje (HU-26).
 List<BudgetReminder> planReminders({
   required DateTime now,
   required List<(Trip, List<Gasto>)> trips,
@@ -86,6 +99,8 @@ List<BudgetReminder> planReminders({
   required bool tripReminder,
   required Set<String> shownKeys,
   required Map<int, DateTime> lastNudge,
+  bool checklistReminder = false,
+  Map<int, int> checklistPending = const {},
 }) {
   final today = _date(now);
   final yesterday = today.subtract(const Duration(days: 1));
@@ -179,6 +194,29 @@ List<BudgetReminder> planReminders({
           key: key,
           trip: trip,
           daysUntil: daysUntil,
+        ));
+      }
+    }
+
+    // HU-26: pendientes sin marcar — a 3 días (o 2), el día antes y la
+    // mañana del día de salida.
+    final pendingItems = checklistPending[id] ?? 0;
+    if (checklistReminder && pendingItems > 0 && start != null && !start.isBefore(today)) {
+      final daysUntil = start.difference(today).inDays;
+      final bucket = switch (daysUntil) {
+        0 => now.hour >= ReminderSchedule.checklistMorningHour ? 0 : null,
+        1 => 1,
+        2 || 3 => 3,
+        _ => null,
+      };
+      final key = 'checklist${bucket}_$id';
+      if (bucket != null && !shownKeys.contains(key)) {
+        out.add(BudgetReminder(
+          kind: ReminderKind.checklist,
+          key: key,
+          trip: trip,
+          daysUntil: daysUntil,
+          pendingItems: pendingItems,
         ));
       }
     }

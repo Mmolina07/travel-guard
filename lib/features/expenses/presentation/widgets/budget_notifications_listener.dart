@@ -16,8 +16,8 @@ import '../../utils/reminder_planner.dart';
 /// HU-11: convierte en notificaciones (dentro de la app y, si se
 /// activó, del navegador) los umbrales del presupuesto de hoy que acaba
 /// de cruzar un viaje (CA1/CA2/CA7, `pendingAlerts`) y los recordatorios
-/// (CA5/CA6/CA8/CA9, `pendingReminders`). Solo para Premium (HU-24) y
-/// si "Mostrar alertas" está activo (CA4).
+/// (CA5/CA6/CA8/CA9 y pendientes de HU-26, `pendingReminders`). Solo
+/// para Premium (HU-24) y si "Mostrar alertas" está activo (CA4).
 class BudgetNotificationsListener extends StatefulWidget {
   const BudgetNotificationsListener({super.key, required this.child});
 
@@ -164,7 +164,8 @@ void notifyExpenseBudget(BuildContext context, {required Trip trip, required Dai
   context.read<BudgetAlertsProvider>().markNotified(trip.id, day.date, day.level);
 }
 
-/// Recordatorios de HU-11 (CA5, CA6, CA8, CA9) como notificación.
+/// Recordatorios de HU-11 (CA5, CA6, CA8, CA9) y de los pendientes del
+/// viaje (HU-26) como notificación.
 AppNotice buildReminderNotice(BuildContext context, BudgetReminder r) {
   final l10n = context.l10n;
   final trip = r.trip;
@@ -211,6 +212,12 @@ AppNotice buildReminderNotice(BuildContext context, BudgetReminder r) {
         l10n.reminderUpcomingTripMessage,
         l10n.reminderReviewBudget,
       ),
+    ReminderKind.checklist => (
+        Icons.checklist_rounded,
+        l10n.reminderChecklistTitle(r.pendingItems ?? 0, trip.destination),
+        l10n.reminderChecklistMessage(r.daysUntil ?? 0),
+        l10n.reminderChecklistAction,
+      ),
   };
   return AppNotice(
     // Un recordatorio de registro por viaje en pantalla: el nuevo
@@ -220,7 +227,7 @@ AppNotice buildReminderNotice(BuildContext context, BudgetReminder r) {
     icon: icon,
     title: title,
     message: message,
-    route: '/viajes/${trip.id}',
+    route: r.kind == ReminderKind.checklist ? '/viajes/${trip.id}?tab=pendientes' : '/viajes/${trip.id}',
     routeExtra: trip,
     actionLabel: action,
   );

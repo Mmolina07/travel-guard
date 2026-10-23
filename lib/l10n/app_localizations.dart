@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @estimateIntro.
   ///
   /// In es, this message translates to:
-  /// **'Cuéntanos a dónde vas y te damos un estimado del alojamiento, la comida y el transporte.'**
+  /// **'Cuéntanos a dónde vas, desde dónde sales y cómo viajas: te damos un estimado del hospedaje, la comida, el transporte y los extras.'**
   String get estimateIntro;
 
   /// No description provided for @estimateDestinationLabel.
@@ -1058,11 +1058,17 @@ abstract class AppLocalizations {
   /// **'DESTINO'**
   String get estimateDestinationLabel;
 
-  /// No description provided for @estimateDestinationHint.
+  /// No description provided for @estimateOriginLabel.
   ///
   /// In es, this message translates to:
-  /// **'Busca una ciudad'**
-  String get estimateDestinationHint;
+  /// **'¿DESDE DÓNDE SALES?'**
+  String get estimateOriginLabel;
+
+  /// No description provided for @estimateOriginHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Busca tu ciudad'**
+  String get estimateOriginHint;
 
   /// No description provided for @estimateDatesLabel.
   ///
@@ -1106,6 +1112,60 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} viajero} other{{count} viajeros}}'**
   String estimateTravelersCount(int count);
 
+  /// No description provided for @estimateModeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿CÓMO VIAJAS?'**
+  String get estimateModeLabel;
+
+  /// No description provided for @estimateModePlane.
+  ///
+  /// In es, this message translates to:
+  /// **'Avión'**
+  String get estimateModePlane;
+
+  /// No description provided for @estimateModeBus.
+  ///
+  /// In es, this message translates to:
+  /// **'Bus'**
+  String get estimateModeBus;
+
+  /// No description provided for @estimateModeCar.
+  ///
+  /// In es, this message translates to:
+  /// **'Carro'**
+  String get estimateModeCar;
+
+  /// No description provided for @estimateModeHours.
+  ///
+  /// In es, this message translates to:
+  /// **'~{hours} h'**
+  String estimateModeHours(String hours);
+
+  /// No description provided for @estimateModeUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No disponible'**
+  String get estimateModeUnavailable;
+
+  /// No description provided for @estimateModeNotRecommended.
+  ///
+  /// In es, this message translates to:
+  /// **'No recomendado'**
+  String get estimateModeNotRecommended;
+
+  /// No description provided for @estimateModePickCities.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige destino y origen para ver cómo puedes llegar.'**
+  String get estimateModePickCities;
+
+  /// No description provided for @estimateModeApproximate.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta ruta se calcula con la distancia entre las ciudades: el resultado es más aproximado.'**
+  String get estimateModeApproximate;
+
   /// No description provided for @estimateTripTypeLabel.
   ///
   /// In es, this message translates to:
@@ -1133,7 +1193,7 @@ abstract class AppLocalizations {
   /// No description provided for @estimateStyleStandardCaption.
   ///
   /// In es, this message translates to:
-  /// **'Hoteles 3-4★'**
+  /// **'Hoteles 3★'**
   String get estimateStyleStandardCaption;
 
   /// No description provided for @estimateStyleLuxuryTitle.
@@ -1145,14 +1205,56 @@ abstract class AppLocalizations {
   /// No description provided for @estimateStyleLuxuryCaption.
   ///
   /// In es, this message translates to:
-  /// **'Hoteles 5★ y experiencias'**
+  /// **'Hoteles 4-5★ y experiencias'**
   String get estimateStyleLuxuryCaption;
+
+  /// No description provided for @estimateExtrasLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'EXTRAS (OPCIONAL)'**
+  String get estimateExtrasLabel;
+
+  /// No description provided for @estimateExtraTours.
+  ///
+  /// In es, this message translates to:
+  /// **'Tours y actividades'**
+  String get estimateExtraTours;
+
+  /// No description provided for @estimateExtraNightlife.
+  ///
+  /// In es, this message translates to:
+  /// **'Rumba'**
+  String get estimateExtraNightlife;
+
+  /// No description provided for @estimateExtraSouvenirs.
+  ///
+  /// In es, this message translates to:
+  /// **'Souvenirs'**
+  String get estimateExtraSouvenirs;
 
   /// No description provided for @estimateErrorDestinationEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Escribe o elige un destino.'**
+  /// **'Elige un destino de la lista.'**
   String get estimateErrorDestinationEmpty;
+
+  /// No description provided for @estimateErrorOriginEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige desde dónde sales.'**
+  String get estimateErrorOriginEmpty;
+
+  /// No description provided for @estimateErrorOriginSame.
+  ///
+  /// In es, this message translates to:
+  /// **'El origen debe ser distinto al destino.'**
+  String get estimateErrorOriginSame;
+
+  /// No description provided for @estimateErrorModeEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige cómo vas a viajar.'**
+  String get estimateErrorModeEmpty;
 
   /// No description provided for @estimateErrorDatesEmpty.
   ///
@@ -1177,6 +1279,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'No pudimos calcular la estimación. Intenta de nuevo.'**
   String get estimateErrorGeneric;
+
+  /// No description provided for @estimateDataError.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos cargar los precios de referencia. Revisa tu conexión.'**
+  String get estimateDataError;
+
+  /// No description provided for @estimateRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get estimateRetry;
 
   /// No description provided for @estimateButton.
   ///
@@ -1211,19 +1325,19 @@ abstract class AppLocalizations {
   /// No description provided for @estimateLoadingStepLodging.
   ///
   /// In es, this message translates to:
-  /// **'Buscando alojamiento'**
+  /// **'Cargando precios de referencia'**
   String get estimateLoadingStepLodging;
 
   /// No description provided for @estimateLoadingStepFlights.
   ///
   /// In es, this message translates to:
-  /// **'Consultando vuelos'**
+  /// **'Calculando transporte y temporadas'**
   String get estimateLoadingStepFlights;
 
   /// No description provided for @estimateLoadingStepLocal.
   ///
   /// In es, this message translates to:
-  /// **'Calculando alimentación y transporte local'**
+  /// **'Sumando comida, transporte local y extras'**
   String get estimateLoadingStepLocal;
 
   /// No description provided for @estimateResultEyebrow.
@@ -1235,14 +1349,20 @@ abstract class AppLocalizations {
   /// No description provided for @estimateRangeBadge.
   ///
   /// In es, this message translates to:
-  /// **'RANGO ±15%'**
-  String get estimateRangeBadge;
+  /// **'RANGO ±{percent}%'**
+  String estimateRangeBadge(int percent);
 
   /// No description provided for @estimateHeroSubtitle.
   ///
   /// In es, this message translates to:
   /// **'{nights, plural, one{{nights} NOCHE} other{{nights} NOCHES}} · {travelers, plural, one{{travelers} VIAJERO} other{{travelers} VIAJEROS}} · {style}'**
   String estimateHeroSubtitle(int nights, int travelers, String style);
+
+  /// No description provided for @estimateHeroFrom.
+  ///
+  /// In es, this message translates to:
+  /// **'Saliendo de {origin} en {mode}'**
+  String estimateHeroFrom(String origin, String mode);
 
   /// No description provided for @estimateBreakdownTitle.
   ///
@@ -1253,14 +1373,14 @@ abstract class AppLocalizations {
   /// No description provided for @estimateLodgingTitle.
   ///
   /// In es, this message translates to:
-  /// **'Alojamiento'**
+  /// **'Hospedaje'**
   String get estimateLodgingTitle;
 
   /// No description provided for @estimateLodgingCaption.
   ///
   /// In es, this message translates to:
-  /// **'Promedio por noche × {nights, plural, one{{nights} noche} other{{nights} noches}}'**
-  String estimateLodgingCaption(int nights);
+  /// **'{rooms, plural, one{1 habitación} other{{rooms} habitaciones}} × {nights, plural, one{{nights} noche} other{{nights} noches}}'**
+  String estimateLodgingCaption(int rooms, int nights);
 
   /// No description provided for @estimateFoodTitle.
   ///
@@ -1283,14 +1403,20 @@ abstract class AppLocalizations {
   /// No description provided for @estimateTransportCaption.
   ///
   /// In es, this message translates to:
-  /// **'Vuelo + transporte local'**
+  /// **'Ida y vuelta + transporte local'**
   String get estimateTransportCaption;
 
-  /// No description provided for @estimateFlightLabel.
+  /// No description provided for @estimateIntercityLabel.
   ///
   /// In es, this message translates to:
-  /// **'Vuelo'**
-  String get estimateFlightLabel;
+  /// **'Ida y vuelta en {mode}'**
+  String estimateIntercityLabel(String mode);
+
+  /// No description provided for @estimateIntercityCarLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasolina y peajes ({vehicles, plural, one{1 carro} other{{vehicles} carros}})'**
+  String estimateIntercityCarLabel(int vehicles);
 
   /// No description provided for @estimateLocalTransportLabel.
   ///
@@ -1298,29 +1424,209 @@ abstract class AppLocalizations {
   /// **'Transporte local'**
   String get estimateLocalTransportLabel;
 
+  /// No description provided for @estimateExtrasTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Extras'**
+  String get estimateExtrasTitle;
+
+  /// No description provided for @estimateExtrasCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que elegiste agregar'**
+  String get estimateExtrasCaption;
+
   /// No description provided for @estimateSourcesIntro.
   ///
   /// In es, this message translates to:
-  /// **'Estimación basada en precios promedio de'**
+  /// **'Estimación basada en:'**
   String get estimateSourcesIntro;
 
-  /// No description provided for @estimateUpdatedLessThanHour.
+  /// No description provided for @estimateVerifiedOn.
   ///
   /// In es, this message translates to:
-  /// **'Datos actualizados hace menos de 1 hora'**
-  String get estimateUpdatedLessThanHour;
-
-  /// No description provided for @estimateUpdatedHoursAgo.
-  ///
-  /// In es, this message translates to:
-  /// **'Datos actualizados hace {hours, plural, one{1 hora} other{{hours} horas}}'**
-  String estimateUpdatedHoursAgo(int hours);
+  /// **'Precios verificados el {date}'**
+  String estimateVerifiedOn(String date);
 
   /// No description provided for @estimateDisclaimer.
   ///
   /// In es, this message translates to:
-  /// **'Los precios pueden variar ±15% según disponibilidad actual.'**
-  String get estimateDisclaimer;
+  /// **'Los precios pueden variar ±{percent}% según la temporada y la disponibilidad.'**
+  String estimateDisclaimer(int percent);
+
+  /// No description provided for @estimateDetailTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimación detallada'**
+  String get estimateDetailTitle;
+
+  /// No description provided for @estimateDetailGateDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Compara los 3 estilos, mira cuánto suma la temporada y el costo por persona y por día.'**
+  String get estimateDetailGateDescription;
+
+  /// No description provided for @estimatePerPerson.
+  ///
+  /// In es, this message translates to:
+  /// **'POR PERSONA'**
+  String get estimatePerPerson;
+
+  /// No description provided for @estimatePerDay.
+  ///
+  /// In es, this message translates to:
+  /// **'POR DÍA'**
+  String get estimatePerDay;
+
+  /// No description provided for @estimatePerPersonPerDay.
+  ///
+  /// In es, this message translates to:
+  /// **'PERSONA / DÍA'**
+  String get estimatePerPersonPerDay;
+
+  /// No description provided for @estimateSeasonTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Temporada alta'**
+  String get estimateSeasonTitle;
+
+  /// No description provided for @estimateSeasonBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus fechas caen en {seasons}. Eso suma {amount} al total (ya incluido).'**
+  String estimateSeasonBody(String seasons, String amount);
+
+  /// No description provided for @estimateSeasonNoneTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Temporada normal'**
+  String get estimateSeasonNoneTitle;
+
+  /// No description provided for @estimateSeasonNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus fechas no caen en temporada alta: buen momento para viajar.'**
+  String get estimateSeasonNone;
+
+  /// No description provided for @estimateCompareTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Compara estilos'**
+  String get estimateCompareTitle;
+
+  /// No description provided for @estimateCompareCurrent.
+  ///
+  /// In es, this message translates to:
+  /// **'TU ELECCIÓN'**
+  String get estimateCompareCurrent;
+
+  /// No description provided for @estimateCreateTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear viaje con esta estimación'**
+  String get estimateCreateTrip;
+
+  /// No description provided for @estimateTripName.
+  ///
+  /// In es, this message translates to:
+  /// **'Viaje a {destination}'**
+  String estimateTripName(String destination);
+
+  /// No description provided for @estimateRealSeal.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustado con {count, plural, one{1 viaje real} other{{count} viajes reales}} de TravelGuard a {city}'**
+  String estimateRealSeal(int count, String city);
+
+  /// No description provided for @estimateRealNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay suficientes viajes reales de TravelGuard a {city}: usamos solo los precios de referencia.'**
+  String estimateRealNone(String city);
+
+  /// No description provided for @estimateCoveredLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'YA TENGO CUBIERTO'**
+  String get estimateCoveredLabel;
+
+  /// No description provided for @estimateCoveredHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca lo que no vas a pagar; por ejemplo, si te quedas donde un familiar o un amigo.'**
+  String get estimateCoveredHint;
+
+  /// No description provided for @estimateCoveredLodging.
+  ///
+  /// In es, this message translates to:
+  /// **'Hospedaje'**
+  String get estimateCoveredLodging;
+
+  /// No description provided for @estimateCoveredFood.
+  ///
+  /// In es, this message translates to:
+  /// **'Alimentación'**
+  String get estimateCoveredFood;
+
+  /// No description provided for @estimateCoveredIntercity.
+  ///
+  /// In es, this message translates to:
+  /// **'Ida y vuelta'**
+  String get estimateCoveredIntercity;
+
+  /// No description provided for @estimateCoveredLocal.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte local'**
+  String get estimateCoveredLocal;
+
+  /// No description provided for @estimateCoveredTag.
+  ///
+  /// In es, this message translates to:
+  /// **'Cubierto'**
+  String get estimateCoveredTag;
+
+  /// No description provided for @estimateCoveredCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya lo tienes cubierto'**
+  String get estimateCoveredCaption;
+
+  /// No description provided for @estimateModeCovered.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya tienes la ida y vuelta cubierta: no la sumamos.'**
+  String get estimateModeCovered;
+
+  /// No description provided for @estimateErrorAllCovered.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja al menos un gasto por estimar o agrega un extra.'**
+  String get estimateErrorAllCovered;
+
+  /// No description provided for @limitsHeaderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Límites'**
+  String get limitsHeaderTitle;
+
+  /// No description provided for @limitsHeaderAccent.
+  ///
+  /// In es, this message translates to:
+  /// **'de gasto'**
+  String get limitsHeaderAccent;
+
+  /// No description provided for @pocketHeaderTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi bolsillo'**
+  String get pocketHeaderTitle;
+
+  /// No description provided for @pocketHeaderAccent.
+  ///
+  /// In es, this message translates to:
+  /// **'personal'**
+  String get pocketHeaderAccent;
 
   /// No description provided for @estimateCardSubtitle.
   ///
@@ -5276,6 +5582,12 @@ abstract class AppLocalizations {
   /// **'Recordatorios: gastos sin registrar, resumen y cierre del día, y aviso antes de cada viaje'**
   String get subscriptionsBenefitReminder;
 
+  /// No description provided for @subscriptionsBenefitEstimate.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimación detallada de viajes: compara estilos, temporada y costo por persona'**
+  String get subscriptionsBenefitEstimate;
+
   /// No description provided for @premiumGateBadge.
   ///
   /// In es, this message translates to:
@@ -7629,6 +7941,480 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cuándo hay más registros'**
   String get securityWhenTitle;
+
+  /// No description provided for @checklistTabTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendientes'**
+  String get checklistTabTitle;
+
+  /// No description provided for @checklistTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lista de pendientes'**
+  String get checklistTitle;
+
+  /// No description provided for @checklistProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} listos'**
+  String checklistProgress(int done, int total);
+
+  /// No description provided for @checklistAllDone.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Todo listo para tu viaje!'**
+  String get checklistAllDone;
+
+  /// No description provided for @checklistRemaining.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Te falta 1 pendiente} other{Te faltan {count} pendientes}}'**
+  String checklistRemaining(int count);
+
+  /// No description provided for @checklistEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu lista está vacía'**
+  String get checklistEmptyTitle;
+
+  /// No description provided for @checklistEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega las sugerencias que te sirvan o escribe tus propios pendientes.'**
+  String get checklistEmptySubtitle;
+
+  /// No description provided for @checklistAddHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Algo que no se te puede olvidar…'**
+  String get checklistAddHint;
+
+  /// No description provided for @checklistAddButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar'**
+  String get checklistAddButton;
+
+  /// No description provided for @checklistTitleRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe el pendiente'**
+  String get checklistTitleRequired;
+
+  /// No description provided for @checklistTitleTooLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Máximo 120 caracteres'**
+  String get checklistTitleTooLong;
+
+  /// No description provided for @checklistSuggestionsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugeridos para tu viaje'**
+  String get checklistSuggestionsTitle;
+
+  /// No description provided for @checklistSuggestionsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Según tu destino, transporte, fechas y hospedaje.'**
+  String get checklistSuggestionsSubtitle;
+
+  /// No description provided for @checklistAddAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar todas ({count})'**
+  String checklistAddAll(int count);
+
+  /// No description provided for @checklistSuggestionsDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya revisaste todas las sugerencias.'**
+  String get checklistSuggestionsDone;
+
+  /// No description provided for @checklistShowDismissed.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a mostrar descartadas ({count})'**
+  String checklistShowDismissed(int count);
+
+  /// No description provided for @checklistDismissTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'No aplica'**
+  String get checklistDismissTooltip;
+
+  /// No description provided for @checklistAddSuggestionTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar a mi lista'**
+  String get checklistAddSuggestionTooltip;
+
+  /// No description provided for @checklistEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar'**
+  String get checklistEdit;
+
+  /// No description provided for @checklistDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get checklistDelete;
+
+  /// No description provided for @checklistEditTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar pendiente'**
+  String get checklistEditTitle;
+
+  /// No description provided for @checklistSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar'**
+  String get checklistSave;
+
+  /// No description provided for @checklistCancel.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get checklistCancel;
+
+  /// No description provided for @checklistMoreTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Más opciones'**
+  String get checklistMoreTooltip;
+
+  /// No description provided for @checklistLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la lista de pendientes.'**
+  String get checklistLoadError;
+
+  /// No description provided for @checklistSaveError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar el cambio. Intenta de nuevo.'**
+  String get checklistSaveError;
+
+  /// No description provided for @checklistRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get checklistRetry;
+
+  /// No description provided for @checklistReadOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'El viaje terminó: la lista es de solo lectura.'**
+  String get checklistReadOnly;
+
+  /// No description provided for @checklistReminderInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Te recordaremos 3 días antes, 1 día antes y la mañana de salida si te quedan pendientes.'**
+  String get checklistReminderInfo;
+
+  /// No description provided for @checklistReminderOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Los recordatorios de pendientes están apagados en Configuración.'**
+  String get checklistReminderOff;
+
+  /// No description provided for @checklistReminderGateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorios de pendientes'**
+  String get checklistReminderGateTitle;
+
+  /// No description provided for @checklistReminderGateDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Con Premium te avisamos antes del viaje si te falta algo por empacar o hacer.'**
+  String get checklistReminderGateDescription;
+
+  /// No description provided for @checklistSummaryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Arma tu lista: te sugerimos qué llevar y qué hacer antes de salir.'**
+  String get checklistSummaryEmpty;
+
+  /// No description provided for @checklistSummaryOpen.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver lista'**
+  String get checklistSummaryOpen;
+
+  /// No description provided for @checklistCategoryDocumentos.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos'**
+  String get checklistCategoryDocumentos;
+
+  /// No description provided for @checklistCategoryDinero.
+  ///
+  /// In es, this message translates to:
+  /// **'Dinero'**
+  String get checklistCategoryDinero;
+
+  /// No description provided for @checklistCategoryEquipaje.
+  ///
+  /// In es, this message translates to:
+  /// **'Equipaje'**
+  String get checklistCategoryEquipaje;
+
+  /// No description provided for @checklistCategorySalud.
+  ///
+  /// In es, this message translates to:
+  /// **'Salud'**
+  String get checklistCategorySalud;
+
+  /// No description provided for @checklistCategoryTecnologia.
+  ///
+  /// In es, this message translates to:
+  /// **'Tecnología'**
+  String get checklistCategoryTecnologia;
+
+  /// No description provided for @checklistCategoryReservas.
+  ///
+  /// In es, this message translates to:
+  /// **'Reservas'**
+  String get checklistCategoryReservas;
+
+  /// No description provided for @checklistCategoryCasa.
+  ///
+  /// In es, this message translates to:
+  /// **'Casa'**
+  String get checklistCategoryCasa;
+
+  /// No description provided for @checklistCategoryOtro.
+  ///
+  /// In es, this message translates to:
+  /// **'Otro'**
+  String get checklistCategoryOtro;
+
+  /// No description provided for @checklistSugDocId.
+  ///
+  /// In es, this message translates to:
+  /// **'Documento de identidad (cédula o pasaporte)'**
+  String get checklistSugDocId;
+
+  /// No description provided for @checklistSugDocLicense.
+  ///
+  /// In es, this message translates to:
+  /// **'Licencia de conducción'**
+  String get checklistSugDocLicense;
+
+  /// No description provided for @checklistSugDocSoat.
+  ///
+  /// In es, this message translates to:
+  /// **'SOAT y tecnomecánica al día'**
+  String get checklistSugDocSoat;
+
+  /// No description provided for @checklistSugDocWork.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos de la empresa'**
+  String get checklistSugDocWork;
+
+  /// No description provided for @checklistSugMoneyCash.
+  ///
+  /// In es, this message translates to:
+  /// **'Efectivo para gastos pequeños'**
+  String get checklistSugMoneyCash;
+
+  /// No description provided for @checklistSugMoneyCards.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjetas débito y crédito'**
+  String get checklistSugMoneyCards;
+
+  /// No description provided for @checklistSugMoneyBankNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisar al banco que vas a viajar'**
+  String get checklistSugMoneyBankNotice;
+
+  /// No description provided for @checklistSugMoneyTolls.
+  ///
+  /// In es, this message translates to:
+  /// **'Efectivo para peajes'**
+  String get checklistSugMoneyTolls;
+
+  /// No description provided for @checklistSugBagPack.
+  ///
+  /// In es, this message translates to:
+  /// **'Empacar la maleta'**
+  String get checklistSugBagPack;
+
+  /// No description provided for @checklistSugBagExtraClothes.
+  ///
+  /// In es, this message translates to:
+  /// **'Ropa extra o plan de lavandería'**
+  String get checklistSugBagExtraClothes;
+
+  /// No description provided for @checklistSugBagLiquids.
+  ///
+  /// In es, this message translates to:
+  /// **'Líquidos en envases de 100 ml'**
+  String get checklistSugBagLiquids;
+
+  /// No description provided for @checklistSugBagSwimsuit.
+  ///
+  /// In es, this message translates to:
+  /// **'Vestido de baño'**
+  String get checklistSugBagSwimsuit;
+
+  /// No description provided for @checklistSugBagSunglasses.
+  ///
+  /// In es, this message translates to:
+  /// **'Gafas de sol y gorra'**
+  String get checklistSugBagSunglasses;
+
+  /// No description provided for @checklistSugBagJacket.
+  ///
+  /// In es, this message translates to:
+  /// **'Chaqueta o ropa abrigada'**
+  String get checklistSugBagJacket;
+
+  /// No description provided for @checklistSugBagUmbrella.
+  ///
+  /// In es, this message translates to:
+  /// **'Paraguas o impermeable'**
+  String get checklistSugBagUmbrella;
+
+  /// No description provided for @checklistSugHealthMeds.
+  ///
+  /// In es, this message translates to:
+  /// **'Medicamentos personales'**
+  String get checklistSugHealthMeds;
+
+  /// No description provided for @checklistSugHealthSunscreen.
+  ///
+  /// In es, this message translates to:
+  /// **'Bloqueador solar'**
+  String get checklistSugHealthSunscreen;
+
+  /// No description provided for @checklistSugHealthRepellent.
+  ///
+  /// In es, this message translates to:
+  /// **'Repelente de insectos'**
+  String get checklistSugHealthRepellent;
+
+  /// No description provided for @checklistSugTechCharger.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargador del celular'**
+  String get checklistSugTechCharger;
+
+  /// No description provided for @checklistSugTechPowerbank.
+  ///
+  /// In es, this message translates to:
+  /// **'Batería portátil cargada'**
+  String get checklistSugTechPowerbank;
+
+  /// No description provided for @checklistSugTechLaptop.
+  ///
+  /// In es, this message translates to:
+  /// **'Portátil y su cargador'**
+  String get checklistSugTechLaptop;
+
+  /// No description provided for @checklistSugBookLodging.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar la reserva del hospedaje'**
+  String get checklistSugBookLodging;
+
+  /// No description provided for @checklistSugBookCheckin.
+  ///
+  /// In es, this message translates to:
+  /// **'Hacer el check-in en línea'**
+  String get checklistSugBookCheckin;
+
+  /// No description provided for @checklistSugBookBoardingPass.
+  ///
+  /// In es, this message translates to:
+  /// **'Descargar el pasabordo'**
+  String get checklistSugBookBoardingPass;
+
+  /// No description provided for @checklistSugBookAirportEarly.
+  ///
+  /// In es, this message translates to:
+  /// **'Llegar 2 horas antes al aeropuerto'**
+  String get checklistSugBookAirportEarly;
+
+  /// No description provided for @checklistSugBookBusTickets.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprar los tiquetes de bus'**
+  String get checklistSugBookBusTickets;
+
+  /// No description provided for @checklistSugHomeUnplug.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconectar aparatos y cerrar las llaves'**
+  String get checklistSugHomeUnplug;
+
+  /// No description provided for @checklistSugHomeCare.
+  ///
+  /// In es, this message translates to:
+  /// **'Dejar quién cuide mascotas y plantas'**
+  String get checklistSugHomeCare;
+
+  /// No description provided for @checklistSugOtherCarCheck.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar llantas, aceite y frenos del carro'**
+  String get checklistSugOtherCarCheck;
+
+  /// No description provided for @checklistSugOtherGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Acordar con el grupo quién lleva qué'**
+  String get checklistSugOtherGroup;
+
+  /// No description provided for @checklistSugOtherItinerary.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir el itinerario con alguien de confianza'**
+  String get checklistSugOtherItinerary;
+
+  /// No description provided for @reminderChecklistTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Te falta 1 pendiente para tu viaje a {destination}} other{Te faltan {count} pendientes para tu viaje a {destination}}}'**
+  String reminderChecklistTitle(int count, String destination);
+
+  /// No description provided for @reminderChecklistMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, =0{Hoy sales de viaje: revisa que no se te olvide nada.} =1{Mañana sales de viaje: revisa tu lista.} other{Faltan {days} días: aprovecha para ir alistando todo.}}'**
+  String reminderChecklistMessage(int days);
+
+  /// No description provided for @reminderChecklistAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver pendientes'**
+  String get reminderChecklistAction;
+
+  /// No description provided for @configChecklistReminderLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorio de pendientes'**
+  String get configChecklistReminderLabel;
+
+  /// No description provided for @configChecklistReminderSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'3 días antes, 1 día antes y la mañana de salida, si te quedan pendientes.'**
+  String get configChecklistReminderSubtitle;
+
+  /// No description provided for @subscriptionsBenefitChecklist.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorios de tu lista de pendientes antes de cada viaje'**
+  String get subscriptionsBenefitChecklist;
 }
 
 class _AppLocalizationsDelegate

@@ -6,14 +6,25 @@ import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/models/pocket_models.dart';
 import '../../data/models/pocket_repository.dart';
+import '../../../../core/widgets/underline_field.dart';
+import '../../../../shell/app_shell.dart';
+import '../../../../shell/shell_page.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/ink_header.dart';
+import '../../../../widgets/load_error_box.dart';
+import 'trip_model.dart';
 
 class PersonalPocketScreen extends StatefulWidget {
   final int tripId;
   final String tripName;
   final int userId;
 
+  /// Viaje del resumen de presupuesto del sidebar (escritorio).
+  final Trip? trip;
+
   const PersonalPocketScreen({
     super.key,
+    this.trip,
     required this.tripId,
     required this.tripName,
     required this.userId,
@@ -111,169 +122,130 @@ class _PersonalPocketScreenState extends State<PersonalPocketScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: Text(context.l10n.pocketScreenTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    final l = context.l10n;
+    final pocket = _pocket;
+    return ShellPage(
+      section: AppSection.misViajes,
+      activeTrip: widget.trip,
+      header: (asCard) => InkHeader(
+        eyebrow: widget.tripName,
+        title: l.pocketHeaderTitle,
+        titleAccent: l.pocketHeaderAccent,
+        subtitle: l.pocketPrivateNote,
+        asCard: asCard,
+        onBack: () => Navigator.maybePop(context),
+        bottom: pocket == null ? null : _balance(pocket),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: _buildBody(),
-        ),
-      ),
+      body: _buildBody(),
+      action: pocket == null
+          ? null
+          : InkButton(
+              label: l.pocketAddMoneyButton,
+              icon: Icons.add,
+              expand: true,
+              onPressed: _addMoney,
+            ),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.ink));
-    }
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!, style: AppText.ui(13, color: AppColors.error)),
-            TextButton(onPressed: _load, child: Text(context.l10n.tripDetailRetryButton)),
-          ],
-        ),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 80),
+        child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
       );
     }
+    if (_error != null) {
+      return LoadErrorBox(message: _error!, onRetry: _load);
+    }
     final pocket = _pocket;
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Text(widget.tripName, style: AppText.display(26)),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            const Icon(Icons.lock_outline, size: 14, color: AppColors.textMuted),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(context.l10n.pocketPrivateNote,
-                  style: AppText.ui(12, color: AppColors.textMuted)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        if (pocket == null) _buildEmptyCard() else ..._buildPocket(pocket),
-      ],
-    );
+    return pocket == null ? _buildEmptyCard() : _movements(pocket);
   }
 
+  /// Estado vacío del sistema: tarjeta `wash` con título display y CTA.
   Widget _buildEmptyCard() {
+    final l = context.l10n;
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(26),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        boxShadow: AppShadow.card,
+        color: AppColors.wash,
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.account_balance_wallet_outlined, size: 32, color: AppColors.inkSoft),
-          const SizedBox(height: 12),
-          Text(context.l10n.pocketEmptyTitle, style: AppText.display(22)),
-          const SizedBox(height: 6),
-          Text(context.l10n.pocketEmptyDescription,
-              style: AppText.ui(13, color: AppColors.textMuted)),
-          const SizedBox(height: 18),
-          ElevatedButton(
-            onPressed: _createPocket,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.ink,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            ),
-            child: Text(context.l10n.pocketCreateButton),
+          Text(l.pocketEmptyTitle, style: AppText.display(30)),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Text(l.pocketEmptyDescription, style: AppText.ui(14, color: AppColors.textMuted)),
           ),
+          const SizedBox(height: 22),
+          InkButton(label: l.pocketCreateButton, icon: Icons.add, onPressed: _createPocket),
         ],
       ),
     );
   }
 
-  List<Widget> _buildPocket(PocketSummary pocket) {
-    Widget stat(String label, double value) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  /// Cifras del bolsillo dentro de la cabecera `ink`.
+  Widget _balance(PocketSummary pocket) {
+    final l = context.l10n;
+    Widget stat(String label, double value) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label.toUpperCase(), style: AppText.label(10, color: AppColors.textOnInk)),
+            const SizedBox(height: 4),
+            Text(context.formatMoney(value), style: AppText.ui(16, weight: FontWeight.w600, color: AppColors.paper)),
+          ],
+        );
+    return Wrap(
+      spacing: 34,
+      runSpacing: 14,
+      crossAxisAlignment: WrapCrossAlignment.end,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.pocketBalanceLabel.toUpperCase(), style: AppText.label(10, color: AppColors.mint)),
+            const SizedBox(height: 4),
+            Text(context.formatMoney(pocket.balance), style: AppText.display(44, color: AppColors.paper)),
+          ],
+        ),
+        stat(l.pocketAddedLabel, pocket.added),
+        stat(l.pocketSpentLabel, pocket.spent),
+      ],
+    );
+  }
+
+  Widget _movements(PocketSummary pocket) {
+    final l = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
+        boxShadow: AppShadow.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(label, style: AppText.label(10, color: AppColors.textOnInk)),
-              const SizedBox(height: 4),
-              Text(context.formatMoney(value),
-                  style: AppText.ui(16, weight: FontWeight.w600, color: AppColors.textOnInk)),
+              Expanded(child: Text(l.pocketMovementsTitle, style: AppText.display(26))),
+              Text('${pocket.deposits.length}', style: AppText.label(11, color: AppColors.inkSoft)),
             ],
           ),
-        );
-
-    return [
-      Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: AppColors.ink,
-          borderRadius: BorderRadius.circular(AppRadius.cardLg),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(context.l10n.pocketBalanceLabel,
-                style: AppText.label(10, color: AppColors.textOnInk)),
-            const SizedBox(height: 4),
-            Text(context.formatMoney(pocket.balance),
-                style: AppText.display(44, color: AppColors.paper)),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                stat(context.l10n.pocketAddedLabel, pocket.added),
-                stat(context.l10n.pocketSpentLabel, pocket.spent),
-              ],
-            ),
-          ],
-        ),
+          const SizedBox(height: 12),
+          if (pocket.deposits.isEmpty)
+            Text(l.pocketNoMovements, style: AppText.ui(13, color: AppColors.textMuted))
+          else
+            for (var i = 0; i < pocket.deposits.length; i++) ...[
+              _depositRow(pocket.deposits[i]),
+              if (i != pocket.deposits.length - 1) const Divider(height: 1, color: AppColors.line),
+            ],
+        ],
       ),
-      const SizedBox(height: 14),
-      ElevatedButton.icon(
-        onPressed: _addMoney,
-        icon: const Icon(Icons.add, size: 18),
-        label: Text(context.l10n.pocketAddMoneyButton),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.mint,
-          foregroundColor: AppColors.ink,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
-        ),
-      ),
-      const SizedBox(height: 20),
-      Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: AppShadow.card,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(context.l10n.pocketMovementsTitle, style: AppText.display(22)),
-            const SizedBox(height: 12),
-            if (pocket.deposits.isEmpty)
-              Text(context.l10n.pocketNoMovements,
-                  style: AppText.ui(13, color: AppColors.textMuted))
-            else
-              for (var i = 0; i < pocket.deposits.length; i++) ...[
-                _depositRow(pocket.deposits[i]),
-                if (i != pocket.deposits.length - 1)
-                  const Divider(height: 1, color: AppColors.line),
-              ],
-          ],
-        ),
-      ),
-    ];
+    );
   }
 
   Widget _depositRow(PocketDeposit d) {
@@ -285,10 +257,10 @@ class _PersonalPocketScreenState extends State<PersonalPocketScreen> {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: AppColors.mint.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.wash,
+              borderRadius: BorderRadius.circular(AppRadius.control),
             ),
-            child: const Icon(Icons.arrow_downward, size: 18, color: AppColors.ink),
+            child: const Icon(Icons.add, size: 18, color: AppColors.inkSoft),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -301,8 +273,12 @@ class _PersonalPocketScreenState extends State<PersonalPocketScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: AppText.ui(14, weight: FontWeight.w600),
                 ),
-                Text(DateFormat('dd/MM/yyyy HH:mm').format(d.createdAt.toLocal()),
-                    style: AppText.label(10)),
+                Text(
+                  DateFormat('d MMM · HH:mm', Localizations.localeOf(context).toString())
+                      .format(d.createdAt.toLocal())
+                      .toUpperCase(),
+                  style: AppText.label(10),
+                ),
               ],
             ),
           ),
@@ -346,40 +322,59 @@ class _AddMoneyDialogState extends State<_AddMoneyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AlertDialog(
-      title: Text(context.l10n.pocketAddMoneyTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _amount,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: context.l10n.pocketAmountLabel,
-              errorText: _error,
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+      titlePadding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+      contentPadding: const EdgeInsets.fromLTRB(28, 18, 28, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(28, 12, 28, 26),
+      title: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '${l.pocketHeaderTitle}\n', style: AppText.display(30)),
+            TextSpan(text: l.pocketAddMoneyTitle, style: AppText.displayItalic(30)),
+          ],
+        ),
+      ),
+      content: SizedBox(
+        width: 380,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UnderlineField(
+              label: l.pocketAmountLabel,
+              hint: '0',
+              controller: _amount,
+              autofocus: true,
+              emphasized: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onFieldSubmitted: (_) => _submit(),
             ),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            decoration: InputDecoration(
-              labelText: context.l10n.pocketNoteLabel,
-              hintText: context.l10n.pocketNoteHint,
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(_error!, style: AppText.ui(12, color: AppColors.error)),
+              ),
+            const SizedBox(height: 18),
+            UnderlineField(
+              label: l.pocketNoteLabel,
+              hint: l.pocketNoteHint,
+              controller: _note,
+              textCapitalization: TextCapitalization.sentences,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
-        TextButton(
+        InkButton(
+          label: l.tripDetailCancelButton,
+          variant: InkButtonVariant.secondary,
           onPressed: () => Navigator.pop(context),
-          child: Text(context.l10n.tripDetailCancelButton),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: Text(context.l10n.pocketAddConfirmButton),
-        ),
+        InkButton(label: l.pocketAddConfirmButton, onPressed: _submit),
       ],
     );
   }

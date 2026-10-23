@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/providers/app_auth_provider.dart';
+import '../../trips/data/checklist_repository.dart';
 import '../../trips/data/trip_repository.dart';
 import '../../trips/presentation/pages/trip_model.dart';
+import '../../trips/utils/budget_calculator.dart';
 import '../data/expense_repository.dart';
 import '../data/models/gasto_model.dart';
 import '../utils/daily_budget_calculator.dart';
@@ -41,16 +43,19 @@ class BudgetThresholdAlert {
 ///   consumido de los viajes en curso (al iniciar sesión, cada
 ///   [_refreshEvery], al cambiar de día y cuando una pantalla registra o
 ///   borra un gasto vía [refresh]).
-/// - CA5/CA6/CA8/CA9 (y TG-279): deja en [pendingReminders] lo que
-///   [planReminders] decida que toca ahora; `BudgetNotificationsListener`
-///   lo muestra y llama [consumeReminders] para no repetirlo. Además del
-///   refresco periódico, hay timers a las 11:00 PM, 11:59 PM y 12:01 AM.
+/// - CA5/CA6/CA8/CA9 (y TG-279) y los pendientes de HU-26: deja en
+///   [pendingReminders] lo que [planReminders] decida que toca ahora;
+///   `BudgetNotificationsListener` lo muestra y llama [consumeReminders]
+///   para no repetirlo. Además del refresco periódico, hay timers a las
+///   7:00 AM (HU-26), 11:00 PM, 11:59 PM y 12:01 AM.
 class BudgetAlertsProvider extends ChangeNotifier {
   BudgetAlertsProvider({
     TripRepository? tripRepository,
     ExpenseRepository? expenseRepository,
+    ChecklistRepository? checklistRepository,
   }) : _tripRepository = tripRepository ?? TripRepository(),
-       _expenseRepository = expenseRepository ?? ExpenseRepository();
+       _expenseRepository = expenseRepository ?? ExpenseRepository(),
+       _checklistRepository = checklistRepository ?? ChecklistRepository();
 
   static const Duration _refreshEvery = Duration(minutes: 15);
   static const String _prefsLevelPrefix = 'hu11_level_notified_';
@@ -60,6 +65,7 @@ class BudgetAlertsProvider extends ChangeNotifier {
 
   final TripRepository _tripRepository;
   final ExpenseRepository _expenseRepository;
+  final ChecklistRepository _checklistRepository;
 
   int? _turistaId;
   Timer? _refreshTimer;
@@ -74,6 +80,7 @@ class BudgetAlertsProvider extends ChangeNotifier {
   int _reminderHours = 4;
   bool _dailySummary = false;
   bool _tripReminder = true;
+  bool _checklistReminder = true;
 
   /// Recordatorios que tocan ahora (CA5, CA6, CA8, CA9), pendientes de
   /// mostrar.
@@ -84,10 +91,12 @@ class BudgetAlertsProvider extends ChangeNotifier {
   void updatePrefs(NotificationPrefsProvider prefs) {
     final changed = prefs.reminderHours != _reminderHours ||
         prefs.dailySummary != _dailySummary ||
-        prefs.tripReminder != _tripReminder;
+        prefs.tripReminder != _tripReminder ||
+        prefs.checklistReminder != _checklistReminder;
     _reminderHours = prefs.reminderHours;
     _dailySummary = prefs.dailySummary;
     _tripReminder = prefs.tripReminder;
+    _checklistReminder = prefs.checklistReminder;
     if (changed && _turistaId != null) Future.microtask(refresh);
   }
 
@@ -237,13 +246,15 @@ class BudgetAlertsProvider extends ChangeNotifier {
     return null;
   }
 
-  /// Vuelve a calcular en los momentos fijos de HU-11: 11:00 PM (CA6 y
-  /// chequeo final de gastos), 11:59 PM (CA8) y 12:01 AM (cambio de día).
+  /// Vuelve a calcular en los momentos fijos: 7:00 AM (pendientes del día
+  /// de salida, HU-26), 11:00 PM (CA6 y chequeo final de gastos),
+  /// 11:59 PM (CA8) y 12:01 AM (cambio de día).
   void _scheduleReminder() {
     _reminderTimer?.cancel();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final candidates = [
+      today.add(const Duration(hours: ReminderSchedule.checklistMorningHour)),
       today.add(const Duration(hours: ReminderSchedule.summaryHour)),
       today.add(const Duration(
         hours: ReminderSchedule.closingHour,
@@ -266,6 +277,7 @@ class BudgetAlertsProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingKeys = {for (final r in _pendingReminders) r.key};
+      final checklistPending = await _fetchChecklistPending(trips, now);
       final planned = planReminders(
         now: now,
         trips: [
@@ -275,6 +287,8 @@ class BudgetAlertsProvider extends ChangeNotifier {
         reminderHours: _reminderHours,
         dailySummary: _dailySummary,
         tripReminder: _tripReminder,
+        checklistReminder: _checklistReminder,
+        checklistPending: checklistPending,
         shownKeys: {...?prefs.getStringList(_prefsShownReminders)},
         lastNudge: {
           for (final t in trips)
@@ -294,6 +308,27 @@ class BudgetAlertsProvider extends ChangeNotifier {
       ];
     } catch (e, st) {
       debugPrint('BudgetAlertsProvider._planReminders error: $e\n$st');
+    }
+  }
+
+  /// HU-26: pendientes sin marcar de los viajes que empiezan en los
+  /// próximos 3 días (los únicos que pueden tener recordatorio). Si falla,
+  /// esos recordatorios simplemente no salen.
+  Future<Map<int, int>> _fetchChecklistPending(List<Trip> trips, DateTime now) async {
+    final turistaId = _turistaId;
+    if (!_checklistReminder || turistaId == null) return const {};
+    final today = DateTime(now.year, now.month, now.day);
+    final ids = [
+      for (final t in trips)
+        if (t.id != null)
+          if (parseDdMmYyyy(t.startDate) case final start?)
+            if (!start.isBefore(today) && start.difference(today).inDays <= 3) t.id!,
+    ];
+    try {
+      return await _checklistRepository.fetchPendingCounts(userId: turistaId, tripIds: ids);
+    } catch (e, st) {
+      debugPrint('BudgetAlertsProvider._fetchChecklistPending error: $e\n$st');
+      return const {};
     }
   }
 

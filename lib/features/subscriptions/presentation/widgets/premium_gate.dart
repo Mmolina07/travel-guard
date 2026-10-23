@@ -125,6 +125,8 @@ class PremiumGate extends StatelessWidget {
                 l10n.subscriptionsBenefitDailyAlerts,
                 l10n.subscriptionsBenefitOverspendWarning,
                 l10n.subscriptionsBenefitReminder,
+                l10n.subscriptionsBenefitChecklist,
+                l10n.subscriptionsBenefitEstimate,
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),

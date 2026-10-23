@@ -30,8 +30,47 @@ import '../../../../widgets/paper_top_bar.dart';
 /// devolviendo el `Trip` guardado, o `null` si se canceló — mismo
 /// contrato que tenían el `showGeneralDialog`/`Navigator.push` previos,
 /// así que ninguno de sus llamadores necesitó cambiar.
-Future<Trip?> showCreateTripDialog(BuildContext context) {
-  return context.push<Trip>('/crear');
+///
+/// [prefill] llena el formulario de antemano (HU-18: "Crear viaje con esta
+/// estimación"); el turista puede cambiar todo antes de guardar.
+Future<Trip?> showCreateTripDialog(BuildContext context, {CreateTripPrefill? prefill}) {
+  return context.push<Trip>('/crear', extra: prefill);
+}
+
+/// Datos con los que se abre el wizard ya lleno (HU-18). Los montos de las
+/// categorías se ponen en las filas que ya trae el formulario: [meals] y
+/// [transport] en las automáticas de comidas y traslados, el resto en
+/// "Tours con guía", "Discotecas" y "Souvenirs".
+class CreateTripPrefill {
+  final String name;
+  final String destination;
+  final DateTime start;
+  final DateTime end;
+  final int persons;
+  final double maxBudget;
+  final String lodgingType;
+  final double lodgingCost;
+  final double meals;
+  final double transport;
+  final double tours;
+  final double nightlife;
+  final double souvenirs;
+
+  const CreateTripPrefill({
+    required this.name,
+    required this.destination,
+    required this.start,
+    required this.end,
+    required this.persons,
+    required this.maxBudget,
+    required this.lodgingType,
+    required this.lodgingCost,
+    this.meals = 0,
+    this.transport = 0,
+    this.tours = 0,
+    this.nightlife = 0,
+    this.souvenirs = 0,
+  });
 }
 
 /// `Page` de la ruta `/crear` — diálogo de dos columnas (260:resto)
@@ -40,10 +79,12 @@ Future<Trip?> showCreateTripDialog(BuildContext context) {
 /// con la CTA fija del README. Vive aquí (y no en `app_router.dart`)
 /// porque necesita el widget privado `_CreateTripWizard`.
 Page<Trip> buildCreateTripPage(BuildContext context, GoRouterState state) {
+  final extra = state.extra;
+  final prefill = extra is CreateTripPrefill ? extra : null;
   if (context.isMobile) {
     return MaterialPage<Trip>(
       fullscreenDialog: true,
-      child: const _CreateTripWizard(asDialog: false),
+      child: _CreateTripWizard(asDialog: false, prefill: prefill),
     );
   }
   return CustomTransitionPage<Trip>(
@@ -55,7 +96,7 @@ Page<Trip> buildCreateTripPage(BuildContext context, GoRouterState state) {
     // `barrierColor` plano no permite por sí solo.
     barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 240),
-    child: const _CreateTripWizard(asDialog: true),
+    child: _CreateTripWizard(asDialog: true, prefill: prefill),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
       return FadeTransition(
@@ -70,9 +111,10 @@ Page<Trip> buildCreateTripPage(BuildContext context, GoRouterState state) {
 }
 
 class _CreateTripWizard extends StatefulWidget {
-  const _CreateTripWizard({required this.asDialog});
+  const _CreateTripWizard({required this.asDialog, this.prefill});
 
   final bool asDialog;
+  final CreateTripPrefill? prefill;
 
   @override
   State<_CreateTripWizard> createState() => _CreateTripWizardState();
@@ -174,7 +216,42 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
       CategoryFieldRow(nombre: 'Souvenirs'),
       CategoryFieldRow(nombre: 'Actividades pagas'),
     ]);
+    _applyPrefill();
   }
+
+  /// HU-18: llena los campos con la estimación. Las filas automáticas de
+  /// comidas/traslados aún no existen aquí; sus montos se ponen en
+  /// `didChangeDependencies`, después de `_syncServiceRows`.
+  void _applyPrefill() {
+    final p = widget.prefill;
+    if (p == null) return;
+    final date = DateFormat('dd/MM/yyyy');
+    _nameController.text = p.name;
+    _destinationController.text = p.destination;
+    _startDateController.text = date.format(p.start);
+    _endDateController.text = date.format(p.end);
+    _personsController.text = '${p.persons}';
+    _maxBudgetController.text = _amountText(p.maxBudget);
+    _lodgingCostController.text = _amountText(p.lodgingCost);
+    if (_lodgingTypes.contains(p.lodgingType)) _lodgingType = p.lodgingType;
+    _setRowAmount((r) => r.nombreController.text == 'Tours con guía', p.tours, categoriaGastoId: 3);
+    _setRowAmount((r) => r.nombreController.text == 'Discotecas', p.nightlife, categoriaGastoId: 3);
+    _setRowAmount((r) => r.nombreController.text == 'Souvenirs', p.souvenirs, categoriaGastoId: 4);
+  }
+
+  /// Ids de `categorias_gasto`: 1 Comida, 2 Movilidad, 3 Actividades,
+  /// 4 Compras — así el desglose de HU-13 compara contra gastos reales.
+  void _setRowAmount(bool Function(CategoryFieldRow) test, double amount, {required int categoriaGastoId}) {
+    if (amount <= 0) return;
+    for (final row in _categoryRows) {
+      if (!test(row)) continue;
+      row.montoController.text = _amountText(amount);
+      row.categoriaGastoId = categoriaGastoId;
+      return;
+    }
+  }
+
+  static String _amountText(double amount) => amount > 0 ? groupThousands(amount.round()) : '';
 
   bool _serviceRowsSynced = false;
 
@@ -185,6 +262,11 @@ class _CreateTripWizardState extends State<_CreateTripWizard> {
     if (!_serviceRowsSynced) {
       _serviceRowsSynced = true;
       _syncServiceRows();
+      final p = widget.prefill;
+      if (p != null) {
+        _setRowAmount((r) => r.autoKey == 'comidas', p.meals, categoriaGastoId: 1);
+        _setRowAmount((r) => r.autoKey == 'traslado', p.transport, categoriaGastoId: 2);
+      }
     }
   }
 

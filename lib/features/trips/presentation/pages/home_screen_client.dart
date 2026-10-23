@@ -30,7 +30,6 @@ import '../../../../widgets/hover_card.dart';
 import '../../../../widgets/place_card.dart';
 import '../../../../widgets/stagger_in.dart';
 import '../../../../widgets/trip_card.dart';
-import '../pages/budget_estimate_screen.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({super.key});
@@ -234,10 +233,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   void _openComercios() => context.go('/comercios');
 
-  void _openBudgetEstimator() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const BudgetEstimateScreen()),
-    );
+  Future<void> _openBudgetEstimator() async {
+    final trip = await context.push<Trip>('/estimar');
+    if (!mounted) return;
+    if (trip != null) setState(() => _trips.add(trip));
   }
 
   void _openTripDetail(Trip trip) {

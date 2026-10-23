@@ -5,7 +5,12 @@ import '../../../../core/l10n/l10n_extension.dart';
 import '../../../../core/settings/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../expenses/data/models/categoria_gasto_model.dart';
+import '../../../../shell/app_shell.dart';
+import '../../../../shell/shell_page.dart';
+import '../../../../widgets/ink_button.dart';
+import '../../../../widgets/ink_header.dart';
 import '../../data/limits_repository.dart';
+import 'trip_model.dart';
 
 class SpendingLimitsScreen extends StatefulWidget {
   final int tripId;
@@ -14,8 +19,12 @@ class SpendingLimitsScreen extends StatefulWidget {
   final Map<int, double> initialLimits;
   final Map<int, double> spentByCategory;
 
+  /// Viaje del resumen de presupuesto del sidebar (escritorio).
+  final Trip? trip;
+
   const SpendingLimitsScreen({
     super.key,
+    this.trip,
     required this.tripId,
     required this.tripName,
     required this.categorias,
@@ -81,92 +90,39 @@ class _SpendingLimitsScreenState extends State<SpendingLimitsScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
-      backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        title: Text(l.limitsScreenTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.ink,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return ShellPage(
+      section: AppSection.misViajes,
+      activeTrip: widget.trip,
+      header: (asCard) => InkHeader(
+        eyebrow: '${l.limitsTripLabel} · ${widget.tripName}',
+        title: l.limitsHeaderTitle,
+        titleAccent: l.limitsHeaderAccent,
+        subtitle: l.limitsScreenSubtitle,
+        asCard: asCard,
+        onBack: () => Navigator.maybePop(context),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-            children: [
-              Text(l.limitsTripLabel, style: AppText.label(10, color: AppColors.textLabel)),
-              const SizedBox(height: 6),
-              Text(widget.tripName, style: AppText.display(32)),
-              const SizedBox(height: 8),
-              Text(l.limitsScreenSubtitle, style: AppText.ui(13, color: AppColors.textMuted)),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.card + 2),
-                  boxShadow: AppShadow.card,
-                ),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < widget.categorias.length; i++) ...[
-                      _row(widget.categorias[i]),
-                      if (i != widget.categorias.length - 1)
-                        const Divider(height: 1, color: AppColors.line),
-                    ],
-                  ],
-                ),
-              ),
+      body: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card + 2),
+          boxShadow: AppShadow.card,
+        ),
+        child: Column(
+          children: [
+            for (var i = 0; i < widget.categorias.length; i++) ...[
+              _row(widget.categorias[i]),
+              if (i != widget.categorias.length - 1) const Divider(height: 1, color: AppColors.line),
             ],
-          ),
+          ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.paper,
-          border: Border(top: BorderSide(color: AppColors.line)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: SafeArea(
-          top: false,
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.ink,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.ink.withValues(alpha: 0.55),
-                    disabledForegroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_saving) ...[
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      Text(l.limitsSaveButton,
-                          style: AppText.ui(15, weight: FontWeight.w700, color: Colors.white)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+      action: InkButton(
+        label: l.limitsSaveButton,
+        loading: _saving,
+        expand: true,
+        trailingArrow: true,
+        onPressed: _saving ? null : _save,
       ),
     );
   }
@@ -194,8 +150,8 @@ class _SpendingLimitsScreenState extends State<SpendingLimitsScreen> {
                 Text(c.nombre, style: AppText.ui(14, weight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(
-                  context.l10n.limitsSpentSoFar(context.formatMoney(spent)),
-                  style: AppText.ui(12, color: AppColors.textMuted),
+                  context.l10n.limitsSpentSoFar(context.formatMoney(spent)).toUpperCase(),
+                  style: AppText.label(10, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -214,16 +170,16 @@ class _SpendingLimitsScreenState extends State<SpendingLimitsScreen> {
                 hintText: context.l10n.limitsFieldHint,
                 hintStyle: AppText.ui(13, color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.wash,
+                fillColor: AppColors.paperDeep,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  borderRadius: BorderRadius.circular(AppRadius.dateField),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.control),
-                  borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
+                  borderRadius: BorderRadius.circular(AppRadius.dateField),
+                  borderSide: const BorderSide(color: AppColors.ink, width: 2),
                 ),
               ),
             ),
