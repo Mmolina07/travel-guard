@@ -1,5 +1,36 @@
 # Notas de configuración — Auth y persistencia (TG-92, TG-97, TG-102, TG-123, TG-124)
 
+## Mapa de incidencia delictiva histórica por comuna
+
+Arquitectura, actualización de datos y decisiones: `docs/seguridad/README.md`.
+
+1. Corre en el SQL Editor, en este orden (solo crean objetos `seguridad_*`,
+   no tocan nada existente):
+   - `docs/db/hu_seguridad_medellin.sql`: fuentes, comunas, importaciones,
+     config.
+   - `docs/db/hu_seguridad_medellin_agregados.sql`: cambia a guardar solo
+     agregados (~7 MB) en vez de los ~326 mil hurtos uno a uno (~140 MB),
+     porque el plan gratis tiene 500 MB y ya se usaban ~307 MB.
+   - `docs/db/hu_seguridad_medellin_estadisticas.sql`: funciones
+     `seguridad_*` de solo lectura que llama la app (totales por comuna,
+     por modalidad, evolución, día × hora, metadatos de la fuente).
+   - `docs/db/hu_seguridad_medellin_indice.sql`: `seguridad_indice_comunas()`,
+     el índice 0–100 del mapa (método en `docs/seguridad/indice_incidencia.md`).
+2. Importa los datos oficiales desde tu computador (no desde la app). La
+   llave es la *secret* / service role de Supabase → Settings → API Keys;
+   nunca va en el código ni en el repo:
+
+   ```
+   SUPABASE_SERVICE_ROLE_KEY=<llave> dart run tool/importar_seguridad.dart
+   ```
+
+   Baja el CSV de MEData (~124 MB), lo agrega por comuna y sube ~57 mil
+   filas. Se puede volver a correr: deja Supabase igual a la última versión
+   de la fuente. `--dry-run` hace todo sin escribir; `--csv <ruta>` usa un
+   CSV ya descargado; `--solo-comunas` solo actualiza los polígonos.
+3. La app solo lee `seguridad_agregado_mensual` / `seguridad_agregado_horario`.
+3. Período y rangos de color del índice: `UPDATE seguridad_config SET …`.
+
 ## HU-22 / TG-291: pagos con Mercado Pago (Checkout API)
 
 1. Corre en el SQL Editor, en este orden:

@@ -3699,4 +3699,171 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get floatingNavBarAddExpenseSemanticLabel => 'Add expense';
+
+  @override
+  String get securityLayerToggle => 'Crime incidence';
+
+  @override
+  String get securityIndexTitle => 'Historical crime incidence index';
+
+  @override
+  String securityLegendSubtitle(String period) {
+    return 'Street theft · $period';
+  }
+
+  @override
+  String get securityLevelLow => 'Low';
+
+  @override
+  String get securityLevelMedium => 'Medium';
+
+  @override
+  String get securityLevelHigh => 'High';
+
+  @override
+  String get securityLevelVeryHigh => 'Very high';
+
+  @override
+  String get securityNoData => 'No security data has been loaded yet.';
+
+  @override
+  String get securityLoadError => 'Couldn\'t load the crime incidence layer.';
+
+  @override
+  String securityComunaLabel(String code) {
+    return 'Comuna $code';
+  }
+
+  @override
+  String securityCorregimientoLabel(String code) {
+    return 'Corregimiento $code';
+  }
+
+  @override
+  String securityLevelBadge(String level) {
+    return '$level level';
+  }
+
+  @override
+  String securityRecordsCount(String count) {
+    return '$count recorded street thefts';
+  }
+
+  @override
+  String securityRankComunas(int position, int total) {
+    return 'Rank $position of $total comunas';
+  }
+
+  @override
+  String securityRankCorregimientos(int position, int total) {
+    return 'Rank $position of $total corregimientos';
+  }
+
+  @override
+  String securityGroupShare(String percent) {
+    return '$percent% of its group\'s records';
+  }
+
+  @override
+  String get securityTopModalities => 'Main theft types';
+
+  @override
+  String get securityModalitiesError => 'Couldn\'t load the theft types.';
+
+  @override
+  String get securityPeriodLabel => 'Period analyzed';
+
+  @override
+  String get securitySourceLabel => 'Source';
+
+  @override
+  String get securityDisclaimer =>
+      'Based on historical police records: it does not measure the current risk of a place. Areas with more people around accumulate more records.';
+
+  @override
+  String get securityHistoryTitle => 'History';
+
+  @override
+  String get securityHistoryButton => 'See history';
+
+  @override
+  String get securityHistoryLoadError => 'Couldn\'t load the history.';
+
+  @override
+  String get securityIndexShort => 'Index';
+
+  @override
+  String get securityRecordsInPeriod => 'Records in period';
+
+  @override
+  String get securityAnnualTitle => 'Records per year';
+
+  @override
+  String securityAnnualNote(String year, String month) {
+    return '$year includes data up to $month. The source has far fewer records before 2015: compare those years with caution.';
+  }
+
+  @override
+  String get securityMonthlyTitle => 'Records per month';
+
+  @override
+  String get securityYearTableTitle => 'Year-over-year comparison';
+
+  @override
+  String get securityYearColumn => 'Year';
+
+  @override
+  String get securityRecordsColumn => 'Records';
+
+  @override
+  String get securityChangeColumn => 'Change';
+
+  @override
+  String get securityPartialYear => 'partial';
+
+  @override
+  String get securityByModality => 'By theft type';
+
+  @override
+  String get securityOtherModalities => 'Other';
+
+  @override
+  String get securityDayHourTitle => 'Records by day and hour';
+
+  @override
+  String securityDayHourSubtitle(String years) {
+    return 'Reported hour · $years';
+  }
+
+  @override
+  String get securityDayHourNote =>
+      'The hour is the one reported by the victim: most records fall on the hour or half hour, so they are grouped into one-hour slots. Includes the full years of the period.';
+
+  @override
+  String get securityDayHourUnavailable =>
+      'The source does not report the time of the events, so this analysis is not available.';
+
+  @override
+  String get securityDayHourFewer => 'Fewer';
+
+  @override
+  String get securityDayHourMore => 'More';
+
+  @override
+  String get securityTopSlots => 'Busiest time slots';
+
+  @override
+  String get securityByWeekday => 'By day of week';
+
+  @override
+  String securityCellTooltip(String day, String hour, String count) {
+    return '$day $hour: $count records';
+  }
+
+  @override
+  String get mapScreenLocationUnavailable =>
+      'We couldn\'t get your location. Check that your browser or phone has location permission (on Mac, also in System Settings → Privacy → Location Services) and try again.';
+
+  @override
+  String get securityWhenTitle => 'When most records happen';
 }

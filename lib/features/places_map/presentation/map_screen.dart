@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 
 import '../data/location_service.dart';
 import '../data/models/category_visuals.dart';
@@ -20,6 +21,11 @@ import '../../../widgets/load_error_box.dart';
 import '../../../widgets/map_style.dart';
 import '../../../widgets/paper_top_bar.dart';
 import '../../../widgets/user_location_marker.dart';
+import '../../security_insights/data/models/comuna_geo.dart';
+import '../../security_insights/presentation/comuna_polygons.dart';
+import '../../security_insights/presentation/widgets/comuna_incidencia_sheet.dart';
+import '../../security_insights/presentation/widgets/security_layer_controls.dart';
+import '../../security_insights/providers/security_map_provider.dart';
 import '../../trips/presentation/pages/create_trip_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -62,6 +68,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _ignoreNextCameraMove = false;
 
   bool get _isLoading => _isLoadingPlaces || _isLoadingLocation;
+
+  /// Comuna con la ficha de incidencia abierta: se resalta en el mapa.
+  String? _comunaSeleccionada;
 
   // TG-289: los cambios de los comercios llegan en tiempo real.
   StreamSubscription<PlacesChange>? _realtimeSub;
@@ -152,17 +161,32 @@ class _MapScreenState extends State<MapScreen> {
         _locationFailure = result.failure;
         _isLoadingLocation = false;
       });
+      // Hay permiso pero no llegó posición a tiempo: se sigue escuchando
+      // por si llega después, sin dejar el mapa bloqueado mientras tanto.
+      if (result.failure == LocationFailureReason.unavailable) {
+        _watchPositionUpdates();
+      }
     }
   }
 
   void _watchPositionUpdates() {
     _positionSub?.cancel();
-    _positionSub = _locationService.watchPosition().listen((position) {
-      if (!mounted) return;
-      final latLng = LatLng(position.latitude, position.longitude);
-      setState(() => _userLatLng = latLng);
-      _followUserIfNeeded(latLng);
-    });
+    _positionSub = _locationService.watchPosition().listen(
+      (position) {
+        if (!mounted) return;
+        final latLng = LatLng(position.latitude, position.longitude);
+        setState(() {
+          _userLatLng = latLng;
+          // Llegó una posición después de un primer intento fallido.
+          if (_locationFailure == LocationFailureReason.unavailable) {
+            _locationFailure = null;
+          }
+        });
+        _followUserIfNeeded(latLng);
+      },
+      // Un error del GPS en vivo no borra la última posición conocida.
+      onError: (Object e) => debugPrint('MapScreen.watchPosition error: $e'),
+    );
   }
 
   void _followUserIfNeeded(LatLng latLng) {
@@ -306,6 +330,8 @@ class _MapScreenState extends State<MapScreen> {
         return context.l10n.mapScreenActionAllow;
       case LocationFailureReason.permissionDeniedForever:
         return context.l10n.mapScreenActionSettings;
+      case LocationFailureReason.unavailable:
+        return context.l10n.comercioRetry;
     }
   }
 
@@ -316,6 +342,7 @@ class _MapScreenState extends State<MapScreen> {
       case LocationFailureReason.permissionDeniedForever:
         return _locationService.openAppSettings();
       case LocationFailureReason.permissionDenied:
+      case LocationFailureReason.unavailable:
         return _retryLocation();
     }
   }
@@ -328,6 +355,8 @@ class _MapScreenState extends State<MapScreen> {
         return context.l10n.mapScreenLocationPermissionDenied;
       case LocationFailureReason.permissionDeniedForever:
         return context.l10n.mapScreenLocationPermissionDeniedForever;
+      case LocationFailureReason.unavailable:
+        return context.l10n.mapScreenLocationUnavailable;
     }
   }
 
@@ -340,6 +369,29 @@ class _MapScreenState extends State<MapScreen> {
       distanceLabel: _formatDistance(_distanceMeters(place)),
     );
   }
+
+  Future<void> _showComuna(ComunaGeo comuna) async {
+    final security = context.read<SecurityMapProvider>();
+    final indice = security.indiceDe(comuna.codigo);
+    final metadatos = security.metadatos;
+    if (indice == null || metadatos == null) return;
+    setState(() => _comunaSeleccionada = comuna.codigo);
+    await ComunaIncidenciaSheet.show(
+      context,
+      indice: indice,
+      metadatos: metadatos,
+      repository: security.repository,
+    );
+    if (mounted) setState(() => _comunaSeleccionada = null);
+  }
+
+  final _polygonsCache = ComunaPolygonsCache();
+
+  Set<Polygon> _polygons(SecurityMapProvider security) => _polygonsCache.get(
+        security,
+        onTap: _showComuna,
+        seleccionada: _comunaSeleccionada,
+      );
 
   void _handleSideNav(AppSection section) {
     switch (section) {
@@ -441,6 +493,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildMapCard(double height) {
+    final security = context.watch<SecurityMapProvider>();
     return Container(
       height: height,
       decoration: BoxDecoration(
@@ -469,6 +522,7 @@ class _MapScreenState extends State<MapScreen> {
                 }
               },
               markers: _markers,
+              polygons: _polygons(security),
               myLocationEnabled: false,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
@@ -490,6 +544,11 @@ class _MapScreenState extends State<MapScreen> {
                   onRetry: _retryPlaces,
                 ),
               ),
+            const Positioned(
+              left: 18,
+              bottom: 18,
+              child: SecurityLayerControls(),
+            ),
             Positioned(
               right: 18,
               bottom: 18,
@@ -514,6 +573,7 @@ class _MapScreenState extends State<MapScreen> {
   // con una sola esquina grande como las cabeceras del handoff.
 
   Widget _buildMobile(BuildContext context) {
+    final security = context.watch<SecurityMapProvider>();
     return Scaffold(
       backgroundColor: AppColors.paper,
       body: Stack(
@@ -540,6 +600,7 @@ class _MapScreenState extends State<MapScreen> {
                 }
               },
               markers: _markers,
+              polygons: _polygons(security),
               // El indicador nativo de "mi ubicación" queda apagado a
               // propósito: usamos nuestro propio marcador y un botón de
               // "seguir" con la lógica de pausa/reanudar.
@@ -557,6 +618,11 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           Positioned(top: 0, left: 0, right: 0, child: _buildMobileTopPanel()),
+          const Positioned(
+            left: 18,
+            bottom: 18,
+            child: SafeArea(top: false, child: SecurityLayerControls()),
+          ),
           Positioned(
             right: 18,
             bottom: 18,

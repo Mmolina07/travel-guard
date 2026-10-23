@@ -1605,5 +1605,144 @@
   "tripFinishedReadOnlyNotice": "Este viaje ya terminó: no se pueden agregar gastos ni editar el presupuesto.",
   "tripFinishedBadge": "Viaje terminado",
   "homeClientNoOpenTripsSnackbar": "No tienes viajes activos o próximos. Los viajes que ya terminaron no admiten gastos nuevos.",
-  "floatingNavBarAddExpenseSemanticLabel": "Agregar gasto"
+  "floatingNavBarAddExpenseSemanticLabel": "Agregar gasto",
+  "securityLayerToggle": "Incidencia delictiva",
+  "securityIndexTitle": "Índice histórico de incidencia delictiva",
+  "securityLegendSubtitle": "Hurtos a persona · {period}",
+  "@securityLegendSubtitle": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "securityLevelLow": "Bajo",
+  "securityLevelMedium": "Medio",
+  "securityLevelHigh": "Alto",
+  "securityLevelVeryHigh": "Muy alto",
+  "securityNoData": "Todavía no hay datos de seguridad cargados.",
+  "securityLoadError": "No se pudo cargar la capa de incidencia delictiva.",
+  "securityComunaLabel": "Comuna {code}",
+  "@securityComunaLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "securityCorregimientoLabel": "Corregimiento {code}",
+  "@securityCorregimientoLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "securityLevelBadge": "Nivel {level}",
+  "@securityLevelBadge": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "securityRecordsCount": "{count} hurtos a persona registrados",
+  "@securityRecordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "securityRankComunas": "Puesto {position} de {total} comunas",
+  "@securityRankComunas": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "securityRankCorregimientos": "Puesto {position} de {total} corregimientos",
+  "@securityRankCorregimientos": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "securityGroupShare": "{percent} % de los registros de su grupo",
+  "@securityGroupShare": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "securityTopModalities": "Principales modalidades",
+  "securityModalitiesError": "No se pudieron cargar las modalidades.",
+  "securityPeriodLabel": "Período analizado",
+  "securitySourceLabel": "Fuente",
+  "securityDisclaimer": "Basado en registros históricos de la Policía: no mide el riesgo actual de un lugar. Las zonas con más gente circulando acumulan más registros.",
+  "securityHistoryTitle": "Histórico",
+  "securityHistoryButton": "Ver histórico",
+  "securityHistoryLoadError": "No se pudo cargar el histórico.",
+  "securityIndexShort": "Índice",
+  "securityRecordsInPeriod": "Registros en el período",
+  "securityAnnualTitle": "Registros por año",
+  "securityAnnualNote": "{year} incluye datos hasta {month}. La fuente tiene muchos menos registros antes de 2015: compara esos años con cautela.",
+  "@securityAnnualNote": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "securityMonthlyTitle": "Registros por mes",
+  "securityYearTableTitle": "Comparación por año",
+  "securityYearColumn": "Año",
+  "securityRecordsColumn": "Registros",
+  "securityChangeColumn": "Variación",
+  "securityPartialYear": "parcial",
+  "securityByModality": "Por modalidad",
+  "securityOtherModalities": "Otras",
+  "securityDayHourTitle": "Registros por día y hora",
+  "securityDayHourSubtitle": "Hora reportada · {years}",
+  "@securityDayHourSubtitle": {
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "securityDayHourNote": "La hora es la que reportó la víctima: la mayoría de los registros quedan en la hora en punto o y media, por eso se agrupan en franjas de una hora. Incluye los años completos del período.",
+  "securityDayHourUnavailable": "La fuente no reporta la hora de los hechos, así que este análisis no está disponible.",
+  "securityDayHourFewer": "Menos",
+  "securityDayHourMore": "Más",
+  "securityTopSlots": "Franjas con más registros",
+  "securityByWeekday": "Por día de la semana",
+  "securityCellTooltip": "{day} {hour}: {count} registros",
+  "@securityCellTooltip": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "hour": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mapScreenLocationUnavailable": "No pudimos obtener tu ubicación. Revisa que el navegador o el teléfono tengan permiso de ubicación (en Mac también en Ajustes del Sistema → Privacidad → Localización) e inténtalo de nuevo.",
+  "securityWhenTitle": "Cuándo hay más registros"
 }

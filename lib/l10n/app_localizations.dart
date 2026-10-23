@@ -6465,6 +6465,288 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Agregar gasto'**
   String get floatingNavBarAddExpenseSemanticLabel;
+
+  /// No description provided for @securityLayerToggle.
+  ///
+  /// In es, this message translates to:
+  /// **'Incidencia delictiva'**
+  String get securityLayerToggle;
+
+  /// No description provided for @securityIndexTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Índice histórico de incidencia delictiva'**
+  String get securityIndexTitle;
+
+  /// No description provided for @securityLegendSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hurtos a persona · {period}'**
+  String securityLegendSubtitle(String period);
+
+  /// No description provided for @securityLevelLow.
+  ///
+  /// In es, this message translates to:
+  /// **'Bajo'**
+  String get securityLevelLow;
+
+  /// No description provided for @securityLevelMedium.
+  ///
+  /// In es, this message translates to:
+  /// **'Medio'**
+  String get securityLevelMedium;
+
+  /// No description provided for @securityLevelHigh.
+  ///
+  /// In es, this message translates to:
+  /// **'Alto'**
+  String get securityLevelHigh;
+
+  /// No description provided for @securityLevelVeryHigh.
+  ///
+  /// In es, this message translates to:
+  /// **'Muy alto'**
+  String get securityLevelVeryHigh;
+
+  /// No description provided for @securityNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no hay datos de seguridad cargados.'**
+  String get securityNoData;
+
+  /// No description provided for @securityLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la capa de incidencia delictiva.'**
+  String get securityLoadError;
+
+  /// No description provided for @securityComunaLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Comuna {code}'**
+  String securityComunaLabel(String code);
+
+  /// No description provided for @securityCorregimientoLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Corregimiento {code}'**
+  String securityCorregimientoLabel(String code);
+
+  /// No description provided for @securityLevelBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Nivel {level}'**
+  String securityLevelBadge(String level);
+
+  /// No description provided for @securityRecordsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} hurtos a persona registrados'**
+  String securityRecordsCount(String count);
+
+  /// No description provided for @securityRankComunas.
+  ///
+  /// In es, this message translates to:
+  /// **'Puesto {position} de {total} comunas'**
+  String securityRankComunas(int position, int total);
+
+  /// No description provided for @securityRankCorregimientos.
+  ///
+  /// In es, this message translates to:
+  /// **'Puesto {position} de {total} corregimientos'**
+  String securityRankCorregimientos(int position, int total);
+
+  /// No description provided for @securityGroupShare.
+  ///
+  /// In es, this message translates to:
+  /// **'{percent} % de los registros de su grupo'**
+  String securityGroupShare(String percent);
+
+  /// No description provided for @securityTopModalities.
+  ///
+  /// In es, this message translates to:
+  /// **'Principales modalidades'**
+  String get securityTopModalities;
+
+  /// No description provided for @securityModalitiesError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar las modalidades.'**
+  String get securityModalitiesError;
+
+  /// No description provided for @securityPeriodLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Período analizado'**
+  String get securityPeriodLabel;
+
+  /// No description provided for @securitySourceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Fuente'**
+  String get securitySourceLabel;
+
+  /// No description provided for @securityDisclaimer.
+  ///
+  /// In es, this message translates to:
+  /// **'Basado en registros históricos de la Policía: no mide el riesgo actual de un lugar. Las zonas con más gente circulando acumulan más registros.'**
+  String get securityDisclaimer;
+
+  /// No description provided for @securityHistoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Histórico'**
+  String get securityHistoryTitle;
+
+  /// No description provided for @securityHistoryButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver histórico'**
+  String get securityHistoryButton;
+
+  /// No description provided for @securityHistoryLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar el histórico.'**
+  String get securityHistoryLoadError;
+
+  /// No description provided for @securityIndexShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Índice'**
+  String get securityIndexShort;
+
+  /// No description provided for @securityRecordsInPeriod.
+  ///
+  /// In es, this message translates to:
+  /// **'Registros en el período'**
+  String get securityRecordsInPeriod;
+
+  /// No description provided for @securityAnnualTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Registros por año'**
+  String get securityAnnualTitle;
+
+  /// No description provided for @securityAnnualNote.
+  ///
+  /// In es, this message translates to:
+  /// **'{year} incluye datos hasta {month}. La fuente tiene muchos menos registros antes de 2015: compara esos años con cautela.'**
+  String securityAnnualNote(String year, String month);
+
+  /// No description provided for @securityMonthlyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Registros por mes'**
+  String get securityMonthlyTitle;
+
+  /// No description provided for @securityYearTableTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparación por año'**
+  String get securityYearTableTitle;
+
+  /// No description provided for @securityYearColumn.
+  ///
+  /// In es, this message translates to:
+  /// **'Año'**
+  String get securityYearColumn;
+
+  /// No description provided for @securityRecordsColumn.
+  ///
+  /// In es, this message translates to:
+  /// **'Registros'**
+  String get securityRecordsColumn;
+
+  /// No description provided for @securityChangeColumn.
+  ///
+  /// In es, this message translates to:
+  /// **'Variación'**
+  String get securityChangeColumn;
+
+  /// No description provided for @securityPartialYear.
+  ///
+  /// In es, this message translates to:
+  /// **'parcial'**
+  String get securityPartialYear;
+
+  /// No description provided for @securityByModality.
+  ///
+  /// In es, this message translates to:
+  /// **'Por modalidad'**
+  String get securityByModality;
+
+  /// No description provided for @securityOtherModalities.
+  ///
+  /// In es, this message translates to:
+  /// **'Otras'**
+  String get securityOtherModalities;
+
+  /// No description provided for @securityDayHourTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Registros por día y hora'**
+  String get securityDayHourTitle;
+
+  /// No description provided for @securityDayHourSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora reportada · {years}'**
+  String securityDayHourSubtitle(String years);
+
+  /// No description provided for @securityDayHourNote.
+  ///
+  /// In es, this message translates to:
+  /// **'La hora es la que reportó la víctima: la mayoría de los registros quedan en la hora en punto o y media, por eso se agrupan en franjas de una hora. Incluye los años completos del período.'**
+  String get securityDayHourNote;
+
+  /// No description provided for @securityDayHourUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'La fuente no reporta la hora de los hechos, así que este análisis no está disponible.'**
+  String get securityDayHourUnavailable;
+
+  /// No description provided for @securityDayHourFewer.
+  ///
+  /// In es, this message translates to:
+  /// **'Menos'**
+  String get securityDayHourFewer;
+
+  /// No description provided for @securityDayHourMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Más'**
+  String get securityDayHourMore;
+
+  /// No description provided for @securityTopSlots.
+  ///
+  /// In es, this message translates to:
+  /// **'Franjas con más registros'**
+  String get securityTopSlots;
+
+  /// No description provided for @securityByWeekday.
+  ///
+  /// In es, this message translates to:
+  /// **'Por día de la semana'**
+  String get securityByWeekday;
+
+  /// No description provided for @securityCellTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'{day} {hour}: {count} registros'**
+  String securityCellTooltip(String day, String hour, String count);
+
+  /// No description provided for @mapScreenLocationUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos obtener tu ubicación. Revisa que el navegador o el teléfono tengan permiso de ubicación (en Mac también en Ajustes del Sistema → Privacidad → Localización) e inténtalo de nuevo.'**
+  String get mapScreenLocationUnavailable;
+
+  /// No description provided for @securityWhenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuándo hay más registros'**
+  String get securityWhenTitle;
 }
 
 class _AppLocalizationsDelegate

@@ -14,6 +14,7 @@ import 'features/expenses/presentation/widgets/budget_notifications_listener.dar
 import 'features/expenses/providers/budget_alerts_provider.dart';
 import 'features/expenses/providers/notification_prefs_provider.dart';
 import 'features/places_map/providers/comercio_panel_provider.dart';
+import 'features/security_insights/providers/security_map_provider.dart';
 import 'features/subscriptions/providers/subscription_provider.dart';
 import 'features/trips/providers/trip_provider.dart';
 import 'l10n/app_localizations.dart';
@@ -69,6 +70,8 @@ class MyApp extends StatelessWidget {
           create: (_) => ComercioPanelProvider(),
           update: (_, auth, panel) => panel!..updateAuth(auth),
         ),
+        // Capa de incidencia delictiva del mapa (datos públicos, para todos).
+        ChangeNotifierProvider(create: (_) => SecurityMapProvider()),
       ],
       child: _RoutedApp(),
     );

@@ -3712,4 +3712,173 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get floatingNavBarAddExpenseSemanticLabel => 'Agregar gasto';
+
+  @override
+  String get securityLayerToggle => 'Incidencia delictiva';
+
+  @override
+  String get securityIndexTitle => 'Índice histórico de incidencia delictiva';
+
+  @override
+  String securityLegendSubtitle(String period) {
+    return 'Hurtos a persona · $period';
+  }
+
+  @override
+  String get securityLevelLow => 'Bajo';
+
+  @override
+  String get securityLevelMedium => 'Medio';
+
+  @override
+  String get securityLevelHigh => 'Alto';
+
+  @override
+  String get securityLevelVeryHigh => 'Muy alto';
+
+  @override
+  String get securityNoData => 'Todavía no hay datos de seguridad cargados.';
+
+  @override
+  String get securityLoadError =>
+      'No se pudo cargar la capa de incidencia delictiva.';
+
+  @override
+  String securityComunaLabel(String code) {
+    return 'Comuna $code';
+  }
+
+  @override
+  String securityCorregimientoLabel(String code) {
+    return 'Corregimiento $code';
+  }
+
+  @override
+  String securityLevelBadge(String level) {
+    return 'Nivel $level';
+  }
+
+  @override
+  String securityRecordsCount(String count) {
+    return '$count hurtos a persona registrados';
+  }
+
+  @override
+  String securityRankComunas(int position, int total) {
+    return 'Puesto $position de $total comunas';
+  }
+
+  @override
+  String securityRankCorregimientos(int position, int total) {
+    return 'Puesto $position de $total corregimientos';
+  }
+
+  @override
+  String securityGroupShare(String percent) {
+    return '$percent % de los registros de su grupo';
+  }
+
+  @override
+  String get securityTopModalities => 'Principales modalidades';
+
+  @override
+  String get securityModalitiesError =>
+      'No se pudieron cargar las modalidades.';
+
+  @override
+  String get securityPeriodLabel => 'Período analizado';
+
+  @override
+  String get securitySourceLabel => 'Fuente';
+
+  @override
+  String get securityDisclaimer =>
+      'Basado en registros históricos de la Policía: no mide el riesgo actual de un lugar. Las zonas con más gente circulando acumulan más registros.';
+
+  @override
+  String get securityHistoryTitle => 'Histórico';
+
+  @override
+  String get securityHistoryButton => 'Ver histórico';
+
+  @override
+  String get securityHistoryLoadError => 'No se pudo cargar el histórico.';
+
+  @override
+  String get securityIndexShort => 'Índice';
+
+  @override
+  String get securityRecordsInPeriod => 'Registros en el período';
+
+  @override
+  String get securityAnnualTitle => 'Registros por año';
+
+  @override
+  String securityAnnualNote(String year, String month) {
+    return '$year incluye datos hasta $month. La fuente tiene muchos menos registros antes de 2015: compara esos años con cautela.';
+  }
+
+  @override
+  String get securityMonthlyTitle => 'Registros por mes';
+
+  @override
+  String get securityYearTableTitle => 'Comparación por año';
+
+  @override
+  String get securityYearColumn => 'Año';
+
+  @override
+  String get securityRecordsColumn => 'Registros';
+
+  @override
+  String get securityChangeColumn => 'Variación';
+
+  @override
+  String get securityPartialYear => 'parcial';
+
+  @override
+  String get securityByModality => 'Por modalidad';
+
+  @override
+  String get securityOtherModalities => 'Otras';
+
+  @override
+  String get securityDayHourTitle => 'Registros por día y hora';
+
+  @override
+  String securityDayHourSubtitle(String years) {
+    return 'Hora reportada · $years';
+  }
+
+  @override
+  String get securityDayHourNote =>
+      'La hora es la que reportó la víctima: la mayoría de los registros quedan en la hora en punto o y media, por eso se agrupan en franjas de una hora. Incluye los años completos del período.';
+
+  @override
+  String get securityDayHourUnavailable =>
+      'La fuente no reporta la hora de los hechos, así que este análisis no está disponible.';
+
+  @override
+  String get securityDayHourFewer => 'Menos';
+
+  @override
+  String get securityDayHourMore => 'Más';
+
+  @override
+  String get securityTopSlots => 'Franjas con más registros';
+
+  @override
+  String get securityByWeekday => 'Por día de la semana';
+
+  @override
+  String securityCellTooltip(String day, String hour, String count) {
+    return '$day $hour: $count registros';
+  }
+
+  @override
+  String get mapScreenLocationUnavailable =>
+      'No pudimos obtener tu ubicación. Revisa que el navegador o el teléfono tengan permiso de ubicación (en Mac también en Ajustes del Sistema → Privacidad → Localización) e inténtalo de nuevo.';
+
+  @override
+  String get securityWhenTitle => 'Cuándo hay más registros';
 }

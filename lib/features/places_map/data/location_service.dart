@@ -1,9 +1,21 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// Resultado de intentar obtener la ubicación del turista (HU-07,
-/// TG-145/146/147/155): distingue los tres motivos por los que puede
-/// fallar para que la UI muestre el mensaje/acción correcta en cada caso.
-enum LocationFailureReason { serviceDisabled, permissionDenied, permissionDeniedForever }
+/// TG-145/146/147/155): distingue los motivos por los que puede fallar
+/// para que la UI muestre el mensaje/acción correcta en cada caso.
+///
+/// [unavailable]: hay permiso pero el dispositivo no entregó una posición
+/// a tiempo (p.ej. Chrome en Mac sin acceso a Localización en los ajustes
+/// del sistema: la petición del navegador nunca responde).
+enum LocationFailureReason {
+  serviceDisabled,
+  permissionDenied,
+  permissionDeniedForever,
+  unavailable,
+}
 
 class LocationResult {
   final Position? position;
@@ -47,12 +59,54 @@ class LocationService {
       );
     }
 
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
-    );
-    return LocationResult.success(position);
+    try {
+      final position = await _firstFix();
+      return position == null
+          ? const LocationResult.failure(LocationFailureReason.unavailable)
+          : LocationResult.success(position);
+    } on PermissionDeniedException {
+      return const LocationResult.failure(
+        LocationFailureReason.permissionDenied,
+      );
+    } on LocationServiceDisabledException {
+      return const LocationResult.failure(
+        LocationFailureReason.serviceDisabled,
+      );
+    }
+  }
+
+  /// Sin `timeLimit` la petición de alta precisión puede no responder
+  /// nunca (en el navegador sobre todo) y el mapa se quedaba cargando.
+  /// Se intenta precisa, luego aproximada (WiFi/red, más rápida), y en
+  /// móvil la última posición conocida.
+  Future<Position?> _firstFix() async {
+    for (final (accuracy, limit) in const [
+      (LocationAccuracy.high, Duration(seconds: 10)),
+      (LocationAccuracy.low, Duration(seconds: 10)),
+    ]) {
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: LocationSettings(
+            accuracy: accuracy,
+            timeLimit: limit,
+          ),
+        );
+      } on PermissionDeniedException {
+        rethrow;
+      } on LocationServiceDisabledException {
+        rethrow;
+      } catch (e) {
+        // TimeoutException o posición no disponible: siguiente intento.
+        debugPrint('LocationService: sin posición ($accuracy): $e');
+      }
+    }
+    if (kIsWeb) return null; // el navegador no tiene "última conocida".
+    try {
+      return await Geolocator.getLastKnownPosition();
+    } catch (e) {
+      debugPrint('LocationService.getLastKnownPosition error: $e');
+      return null;
+    }
   }
 
   Future<bool> openLocationSettings() => Geolocator.openLocationSettings();

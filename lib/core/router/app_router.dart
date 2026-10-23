@@ -27,6 +27,7 @@ import '../../../features/subscriptions/presentation/pages/subscriptions_screen.
 import '../../features/subscriptions/data/models/suscripcion_model.dart';
 import '../../features/subscriptions/presentation/pages/my_subscription_screen.dart';
 import '../../features/subscriptions/presentation/pages/payment_result_screen.dart';
+import '../../features/security_insights/presentation/pages/security_history_screen.dart';
 
 /// Enrutado real de Fase 5 (`WEB_LAYOUT.md`): URLs por vista, botón
 /// atrás del navegador funcional y `/crear` como ruta de diálogo. Antes
@@ -227,6 +228,17 @@ class AppRouter {
           builder: (context, state) {
             setPageTitle('TravelGuard · Mapa');
             return const MapScreen();
+          },
+        ),
+        // Histórico de incidencia delictiva de una comuna ('01'…'90').
+        GoRoute(
+          path: '/seguridad/comuna/:codigo',
+          name: 'seguridadComuna',
+          builder: (context, state) {
+            setPageTitle('TravelGuard · Histórico de incidencia');
+            return SecurityHistoryScreen(
+              codigo: state.pathParameters['codigo']!,
+            );
           },
         ),
         GoRoute(
