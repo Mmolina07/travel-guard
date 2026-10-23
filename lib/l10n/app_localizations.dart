@@ -812,6 +812,666 @@ abstract class AppLocalizations {
   /// **'Agregar'**
   String get addExpenseAddButton;
 
+  /// No description provided for @addExpenseTimeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Hora'**
+  String get addExpenseTimeLabel;
+
+  /// No description provided for @addExpensePlaceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Establecimiento (opcional)'**
+  String get addExpensePlaceLabel;
+
+  /// No description provided for @addExpensePlaceHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Restaurante El Sabor'**
+  String get addExpensePlaceHint;
+
+  /// No description provided for @addExpensePaidByLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quién pagó?'**
+  String get addExpensePaidByLabel;
+
+  /// No description provided for @addExpensePaidWithTripMoney.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagado con dinero del viaje'**
+  String get addExpensePaidWithTripMoney;
+
+  /// No description provided for @addExpensePaidTripMoneyOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió del fondo común del viaje'**
+  String get addExpensePaidTripMoneyOn;
+
+  /// No description provided for @addExpensePaidTripMoneyOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Salió del bolsillo personal'**
+  String get addExpensePaidTripMoneyOff;
+
+  /// No description provided for @addExpensePaymentSourceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Con qué dinero pagas?'**
+  String get addExpensePaymentSourceLabel;
+
+  /// No description provided for @addExpenseSourceTrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Dinero del viaje'**
+  String get addExpenseSourceTrip;
+
+  /// No description provided for @addExpenseSourcePocket.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi bolsillo'**
+  String get addExpenseSourcePocket;
+
+  /// No description provided for @addExpenseSourceBalance.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible: {amount}'**
+  String addExpenseSourceBalance(String amount);
+
+  /// No description provided for @addExpenseSourceNoPocket.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún sin bolsillo'**
+  String get addExpenseSourceNoPocket;
+
+  /// No description provided for @addExpensePocketMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes bolsillo en este viaje. Créalo desde \"Mi bolsillo\".'**
+  String get addExpensePocketMissing;
+
+  /// No description provided for @addExpensePocketInsufficient.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu bolsillo solo tiene {balance} disponible.'**
+  String addExpensePocketInsufficient(String balance);
+
+  /// No description provided for @pocketButtonLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi bolsillo'**
+  String get pocketButtonLabel;
+
+  /// No description provided for @pocketScreenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi bolsillo personal'**
+  String get pocketScreenTitle;
+
+  /// No description provided for @pocketPrivateNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo tú puedes ver este bolsillo.'**
+  String get pocketPrivateNote;
+
+  /// No description provided for @pocketEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes bolsillo en este viaje'**
+  String get pocketEmptyTitle;
+
+  /// No description provided for @pocketEmptyDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu bolsillo para guardar dinero propio y pagar gastos del viaje desde él.'**
+  String get pocketEmptyDescription;
+
+  /// No description provided for @pocketCreateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear mi bolsillo'**
+  String get pocketCreateButton;
+
+  /// No description provided for @pocketBalanceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'SALDO DISPONIBLE'**
+  String get pocketBalanceLabel;
+
+  /// No description provided for @pocketAddedLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'AGREGADO'**
+  String get pocketAddedLabel;
+
+  /// No description provided for @pocketSpentLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'GASTADO'**
+  String get pocketSpentLabel;
+
+  /// No description provided for @pocketAddMoneyButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar dinero'**
+  String get pocketAddMoneyButton;
+
+  /// No description provided for @pocketAddMoneyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar dinero al bolsillo'**
+  String get pocketAddMoneyTitle;
+
+  /// No description provided for @pocketAmountLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Monto'**
+  String get pocketAmountLabel;
+
+  /// No description provided for @pocketNoteLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nota (opcional)'**
+  String get pocketNoteLabel;
+
+  /// No description provided for @pocketNoteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Efectivo para compras'**
+  String get pocketNoteHint;
+
+  /// No description provided for @pocketAddConfirmButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar'**
+  String get pocketAddConfirmButton;
+
+  /// No description provided for @pocketMovementsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos'**
+  String get pocketMovementsTitle;
+
+  /// No description provided for @pocketNoMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no has agregado dinero.'**
+  String get pocketNoMovements;
+
+  /// No description provided for @pocketLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar tu bolsillo.'**
+  String get pocketLoadError;
+
+  /// No description provided for @pocketSaveError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar. Intenta de nuevo.'**
+  String get pocketSaveError;
+
+  /// No description provided for @pocketCreatedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Bolsillo creado'**
+  String get pocketCreatedSnackbar;
+
+  /// No description provided for @pocketDepositAddedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Se agregó {amount} a tu bolsillo'**
+  String pocketDepositAddedSnackbar(String amount);
+
+  /// No description provided for @estimateScreenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimar presupuesto'**
+  String get estimateScreenTitle;
+
+  /// No description provided for @estimateEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'ESTIMADOR DE PRESUPUESTO'**
+  String get estimateEyebrow;
+
+  /// No description provided for @estimateTitleLine1.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto costará'**
+  String get estimateTitleLine1;
+
+  /// No description provided for @estimateTitleLine2.
+  ///
+  /// In es, this message translates to:
+  /// **'tu viaje?'**
+  String get estimateTitleLine2;
+
+  /// No description provided for @estimateIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuéntanos a dónde vas y te damos un estimado del alojamiento, la comida y el transporte.'**
+  String get estimateIntro;
+
+  /// No description provided for @estimateDestinationLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'DESTINO'**
+  String get estimateDestinationLabel;
+
+  /// No description provided for @estimateDestinationHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Busca una ciudad'**
+  String get estimateDestinationHint;
+
+  /// No description provided for @estimateDatesLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'FECHAS DEL VIAJE'**
+  String get estimateDatesLabel;
+
+  /// No description provided for @estimateDatesPlaceholder.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona ida y vuelta'**
+  String get estimateDatesPlaceholder;
+
+  /// No description provided for @estimateDatePickerHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Fechas del viaje'**
+  String get estimateDatePickerHelp;
+
+  /// No description provided for @estimateDatePickerSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get estimateDatePickerSave;
+
+  /// No description provided for @estimateDurationSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'{days, plural, one{{days} día} other{{days} días}} · {nights, plural, one{{nights} noche} other{{nights} noches}}'**
+  String estimateDurationSummary(int days, int nights);
+
+  /// No description provided for @estimateTravelersLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'VIAJEROS'**
+  String get estimateTravelersLabel;
+
+  /// No description provided for @estimateTravelersCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, one{{count} viajero} other{{count} viajeros}}'**
+  String estimateTravelersCount(int count);
+
+  /// No description provided for @estimateTripTypeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'TIPO DE VIAJE'**
+  String get estimateTripTypeLabel;
+
+  /// No description provided for @estimateStyleEconomyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Económico'**
+  String get estimateStyleEconomyTitle;
+
+  /// No description provided for @estimateStyleEconomyCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Hostales y comida local'**
+  String get estimateStyleEconomyCaption;
+
+  /// No description provided for @estimateStyleStandardTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estándar'**
+  String get estimateStyleStandardTitle;
+
+  /// No description provided for @estimateStyleStandardCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoteles 3-4★'**
+  String get estimateStyleStandardCaption;
+
+  /// No description provided for @estimateStyleLuxuryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lujo'**
+  String get estimateStyleLuxuryTitle;
+
+  /// No description provided for @estimateStyleLuxuryCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Hoteles 5★ y experiencias'**
+  String get estimateStyleLuxuryCaption;
+
+  /// No description provided for @estimateErrorDestinationEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe o elige un destino.'**
+  String get estimateErrorDestinationEmpty;
+
+  /// No description provided for @estimateErrorDatesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona las fechas de tu viaje.'**
+  String get estimateErrorDatesEmpty;
+
+  /// No description provided for @estimateErrorDatesTooShort.
+  ///
+  /// In es, this message translates to:
+  /// **'El viaje debe tener al menos 1 noche.'**
+  String get estimateErrorDatesTooShort;
+
+  /// No description provided for @estimateErrorDatesTooLong.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ahora solo estimamos viajes de hasta 30 días.'**
+  String get estimateErrorDatesTooLong;
+
+  /// No description provided for @estimateErrorGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'No pudimos calcular la estimación. Intenta de nuevo.'**
+  String get estimateErrorGeneric;
+
+  /// No description provided for @estimateButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimar presupuesto'**
+  String get estimateButton;
+
+  /// No description provided for @estimateButtonLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimando…'**
+  String get estimateButtonLoading;
+
+  /// No description provided for @estimateButtonNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva estimación'**
+  String get estimateButtonNew;
+
+  /// No description provided for @estimateLoadingEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'CONSULTANDO PRECIOS'**
+  String get estimateLoadingEyebrow;
+
+  /// No description provided for @estimateLoadingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Armando tu estimación'**
+  String get estimateLoadingTitle;
+
+  /// No description provided for @estimateLoadingStepLodging.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscando alojamiento'**
+  String get estimateLoadingStepLodging;
+
+  /// No description provided for @estimateLoadingStepFlights.
+  ///
+  /// In es, this message translates to:
+  /// **'Consultando vuelos'**
+  String get estimateLoadingStepFlights;
+
+  /// No description provided for @estimateLoadingStepLocal.
+  ///
+  /// In es, this message translates to:
+  /// **'Calculando alimentación y transporte local'**
+  String get estimateLoadingStepLocal;
+
+  /// No description provided for @estimateResultEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'PRESUPUESTO ESTIMADO'**
+  String get estimateResultEyebrow;
+
+  /// No description provided for @estimateRangeBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'RANGO ±15%'**
+  String get estimateRangeBadge;
+
+  /// No description provided for @estimateHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{nights, plural, one{{nights} NOCHE} other{{nights} NOCHES}} · {travelers, plural, one{{travelers} VIAJERO} other{{travelers} VIAJEROS}} · {style}'**
+  String estimateHeroSubtitle(int nights, int travelers, String style);
+
+  /// No description provided for @estimateBreakdownTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Desglose'**
+  String get estimateBreakdownTitle;
+
+  /// No description provided for @estimateLodgingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alojamiento'**
+  String get estimateLodgingTitle;
+
+  /// No description provided for @estimateLodgingCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Promedio por noche × {nights, plural, one{{nights} noche} other{{nights} noches}}'**
+  String estimateLodgingCaption(int nights);
+
+  /// No description provided for @estimateFoodTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Alimentación'**
+  String get estimateFoodTitle;
+
+  /// No description provided for @estimateFoodCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Promedio diario × {days, plural, one{{days} día} other{{days} días}}'**
+  String estimateFoodCaption(int days);
+
+  /// No description provided for @estimateTransportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte'**
+  String get estimateTransportTitle;
+
+  /// No description provided for @estimateTransportCaption.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelo + transporte local'**
+  String get estimateTransportCaption;
+
+  /// No description provided for @estimateFlightLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Vuelo'**
+  String get estimateFlightLabel;
+
+  /// No description provided for @estimateLocalTransportLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte local'**
+  String get estimateLocalTransportLabel;
+
+  /// No description provided for @estimateSourcesIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimación basada en precios promedio de'**
+  String get estimateSourcesIntro;
+
+  /// No description provided for @estimateUpdatedLessThanHour.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos actualizados hace menos de 1 hora'**
+  String get estimateUpdatedLessThanHour;
+
+  /// No description provided for @estimateUpdatedHoursAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'Datos actualizados hace {hours, plural, one{1 hora} other{{hours} horas}}'**
+  String estimateUpdatedHoursAgo(int hours);
+
+  /// No description provided for @estimateDisclaimer.
+  ///
+  /// In es, this message translates to:
+  /// **'Los precios pueden variar ±15% según disponibilidad actual.'**
+  String get estimateDisclaimer;
+
+  /// No description provided for @estimateCardSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Calcula el costo de un viaje'**
+  String get estimateCardSubtitle;
+
+  /// No description provided for @estimateCardDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Descubre cuánto costaría un viaje antes de planearlo.'**
+  String get estimateCardDescription;
+
+  /// No description provided for @estimateCardButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimar'**
+  String get estimateCardButton;
+
+  /// No description provided for @limitsTabTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Límites'**
+  String get limitsTabTitle;
+
+  /// No description provided for @limitsConfigureButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurar límites'**
+  String get limitsConfigureButton;
+
+  /// No description provided for @limitsScreenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurar límites'**
+  String get limitsScreenTitle;
+
+  /// No description provided for @limitsTripLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'VIAJE'**
+  String get limitsTripLabel;
+
+  /// No description provided for @limitsScreenSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Define el máximo que quieres gastar en cada categoría de este viaje. Déjalo vacío si no quieres límite.'**
+  String get limitsScreenSubtitle;
+
+  /// No description provided for @limitsFieldHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin límite'**
+  String get limitsFieldHint;
+
+  /// No description provided for @limitsSpentSoFar.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastado: {amount}'**
+  String limitsSpentSoFar(String amount);
+
+  /// No description provided for @limitsSaveButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar límites'**
+  String get limitsSaveButton;
+
+  /// No description provided for @limitsSavedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Límites guardados'**
+  String get limitsSavedSnackbar;
+
+  /// No description provided for @limitsSaveError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron guardar los límites. Intenta de nuevo.'**
+  String get limitsSaveError;
+
+  /// No description provided for @limitsProgressTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Progreso por categoría'**
+  String get limitsProgressTitle;
+
+  /// No description provided for @limitsProgressAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'{spent} de {limit}'**
+  String limitsProgressAmount(String spent, String limit);
+
+  /// No description provided for @limitsOverBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Superaste el límite por {amount}'**
+  String limitsOverBy(String amount);
+
+  /// No description provided for @limitsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan {amount}'**
+  String limitsLeft(String amount);
+
+  /// No description provided for @limitsEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no defines límites'**
+  String get limitsEmptyTitle;
+
+  /// No description provided for @limitsEmptyDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Configura un máximo por categoría y sigue tu gasto en tiempo real.'**
+  String get limitsEmptyDescription;
+
+  /// No description provided for @limitsReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte de cumplimiento'**
+  String get limitsReportTitle;
+
+  /// No description provided for @limitsColCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'CATEGORÍA'**
+  String get limitsColCategory;
+
+  /// No description provided for @limitsColLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'LÍMITE'**
+  String get limitsColLimit;
+
+  /// No description provided for @limitsColSpent.
+  ///
+  /// In es, this message translates to:
+  /// **'GASTO'**
+  String get limitsColSpent;
+
+  /// No description provided for @limitsColCompliance.
+  ///
+  /// In es, this message translates to:
+  /// **'% CUMPLIMIENTO'**
+  String get limitsColCompliance;
+
+  /// No description provided for @limitsTotalRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Total'**
+  String get limitsTotalRow;
+
   /// No description provided for @mapScreenUserHereLabel.
   ///
   /// In es, this message translates to:
@@ -3011,6 +3671,228 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Grupo'**
   String get tripDetailTabGrupo;
+
+  /// No description provided for @tripDetailTabAnalisis.
+  ///
+  /// In es, this message translates to:
+  /// **'Análisis'**
+  String get tripDetailTabAnalisis;
+
+  /// No description provided for @analysisDailyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparativa diaria'**
+  String get analysisDailyTitle;
+
+  /// No description provided for @analysisInvalidTripDates.
+  ///
+  /// In es, this message translates to:
+  /// **'Las fechas del viaje no son válidas.'**
+  String get analysisInvalidTripDates;
+
+  /// No description provided for @analysisColDay.
+  ///
+  /// In es, this message translates to:
+  /// **'DÍA'**
+  String get analysisColDay;
+
+  /// No description provided for @analysisColDailyBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'PRESUPUESTO DIARIO'**
+  String get analysisColDailyBudget;
+
+  /// No description provided for @analysisColActual.
+  ///
+  /// In es, this message translates to:
+  /// **'GASTO REAL'**
+  String get analysisColActual;
+
+  /// No description provided for @analysisColDifference.
+  ///
+  /// In es, this message translates to:
+  /// **'DIFERENCIA'**
+  String get analysisColDifference;
+
+  /// No description provided for @analysisColPctSpent.
+  ///
+  /// In es, this message translates to:
+  /// **'% GASTADO'**
+  String get analysisColPctSpent;
+
+  /// No description provided for @analysisDayLabelDate.
+  ///
+  /// In es, this message translates to:
+  /// **'Día {n} · {date}'**
+  String analysisDayLabelDate(int n, String date);
+
+  /// No description provided for @analysisDayLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Día {n}'**
+  String analysisDayLabel(int n);
+
+  /// No description provided for @analysisByCategoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Por categoría'**
+  String get analysisByCategoryTitle;
+
+  /// No description provided for @analysisNoCategoriesYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay categorías ni gastos para comparar.'**
+  String get analysisNoCategoriesYet;
+
+  /// No description provided for @analysisColCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'CATEGORÍA'**
+  String get analysisColCategory;
+
+  /// No description provided for @analysisColBudgeted.
+  ///
+  /// In es, this message translates to:
+  /// **'PRESUPUESTADO'**
+  String get analysisColBudgeted;
+
+  /// No description provided for @analysisBudgetedVsActual.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuestado vs real'**
+  String get analysisBudgetedVsActual;
+
+  /// No description provided for @analysisLegendBudgeted.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuestado'**
+  String get analysisLegendBudgeted;
+
+  /// No description provided for @analysisLegendActual.
+  ///
+  /// In es, this message translates to:
+  /// **'Real'**
+  String get analysisLegendActual;
+
+  /// No description provided for @analysisCategorySaved.
+  ///
+  /// In es, this message translates to:
+  /// **'{category}: Ahorraste {amount} en esta categoría'**
+  String analysisCategorySaved(String category, String amount);
+
+  /// No description provided for @analysisCategoryExceeded.
+  ///
+  /// In es, this message translates to:
+  /// **'{category}: Excediste por {amount} en esta categoría'**
+  String analysisCategoryExceeded(String category, String amount);
+
+  /// No description provided for @analysisTopCategoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría con más gasto'**
+  String get analysisTopCategoryTitle;
+
+  /// No description provided for @analysisTopCategoryEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Registra gastos para ver este análisis.'**
+  String get analysisTopCategoryEmpty;
+
+  /// No description provided for @analysisTopCategorySummary.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastaste más en: {summary}'**
+  String analysisTopCategorySummary(String summary);
+
+  /// No description provided for @analysisTopPlacesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Top 3 establecimientos'**
+  String get analysisTopPlacesTitle;
+
+  /// No description provided for @analysisTopPlacesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega descripciones a tus gastos para ver dónde gastas más.'**
+  String get analysisTopPlacesEmpty;
+
+  /// No description provided for @analysisPeakHoursTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Horarios de mayor gasto'**
+  String get analysisPeakHoursTitle;
+
+  /// No description provided for @analysisPeakHoursEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin datos de horario todavía.'**
+  String get analysisPeakHoursEmpty;
+
+  /// No description provided for @analysisPeakHoursSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'Más gasto entre: {ranges}'**
+  String analysisPeakHoursSummary(String ranges);
+
+  /// No description provided for @analysisAnd.
+  ///
+  /// In es, this message translates to:
+  /// **' y '**
+  String get analysisAnd;
+
+  /// No description provided for @analysisBetweenDaysTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Comparativa entre días'**
+  String get analysisBetweenDaysTitle;
+
+  /// No description provided for @analysisAverageTrailing.
+  ///
+  /// In es, this message translates to:
+  /// **'Promedio {amount}'**
+  String analysisAverageTrailing(String amount);
+
+  /// No description provided for @analysisNoExpensesYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay gastos registrados.'**
+  String get analysisNoExpensesYet;
+
+  /// No description provided for @analysisDailyAverageLegend.
+  ///
+  /// In es, this message translates to:
+  /// **'Promedio diario'**
+  String get analysisDailyAverageLegend;
+
+  /// No description provided for @analysisPerPersonTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gasto por persona'**
+  String get analysisPerPersonTitle;
+
+  /// No description provided for @analysisNoParticipants.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay participantes cargados.'**
+  String get analysisNoParticipants;
+
+  /// No description provided for @analysisUnassigned.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin asignar'**
+  String get analysisUnassigned;
+
+  /// No description provided for @analysisTripMoneyAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Dinero del viaje: {amount}'**
+  String analysisTripMoneyAmount(String amount);
+
+  /// No description provided for @analysisPocketAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'Bolsillo personal: {amount}'**
+  String analysisPocketAmount(String amount);
 
   /// No description provided for @tripDetailBreadcrumbHome.
   ///
