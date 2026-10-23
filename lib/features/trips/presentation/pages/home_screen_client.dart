@@ -17,6 +17,7 @@ import '../../../expenses/utils/daily_budget_calculator.dart';
 import '../../../subscriptions/providers/subscription_provider.dart';
 import '../../../places_map/data/models/map_place.dart';
 import '../../../places_map/data/places_map_repository.dart';
+import '../../data/models/pocket_repository.dart';
 import '../../data/trip_repository.dart';
 import '../../utils/budget_calculator.dart';
 import '../../../../core/l10n/l10n_extension.dart';
@@ -29,6 +30,7 @@ import '../../../../widgets/hover_card.dart';
 import '../../../../widgets/place_card.dart';
 import '../../../../widgets/stagger_in.dart';
 import '../../../../widgets/trip_card.dart';
+import '../pages/budget_estimate_screen.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({super.key});
@@ -232,6 +234,12 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
 
   void _openComercios() => context.go('/comercios');
 
+  void _openBudgetEstimator() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const BudgetEstimateScreen()),
+    );
+  }
+
   void _openTripDetail(Trip trip) {
     context.go('/viajes/${trip.id}', extra: trip);
   }
@@ -357,12 +365,29 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     final startDate = parseDdMmYyyy(trip.startDate) ?? DateTime.now();
     final endDateRaw = parseDdMmYyyy(trip.endDate) ?? startDate;
 
+    // Saldo de MI bolsillo (null si aún no lo he creado), igual que en el
+    // detalle del viaje.
+    final userId = context.read<AppAuthProvider>().usuario?.id;
+    double? pocketBalance;
+    if (userId != null) {
+      try {
+        final pocket = await PocketRepository().fetchMyPocket(tripId: trip.id!, userId: userId);
+        pocketBalance = pocket?.balance;
+      } catch (e, st) {
+        debugPrint('HomeScreenClient._addExpenseToTrip fetchMyPocket error: $e\n$st');
+      }
+    }
+    if (!mounted) return;
+
     final result = await AddExpenseSheet.show(
       context,
       categorias: categorias,
       tripStartDate: startDate,
       tripEndDate: endDateRaw.isBefore(startDate) ? startDate : endDateRaw,
       dailyBudget: dailyBudget,
+      currentUserId: userId,
+      tripBalance: trip.maxBudget - (trip.getTotalSpent() + (_gastosPorViaje[trip.id!] ?? 0)),
+      pocketBalance: pocketBalance,
     );
     if (result == null || !mounted) return;
 
@@ -373,6 +398,9 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
         monto: result.monto,
         fecha: result.fecha,
         descripcion: result.descripcion,
+        establecimiento: result.establecimiento,
+        pagadoPorId: result.pagadoPorId,
+        pagadoConDineroViaje: result.pagadoConDineroViaje,
       );
       if (!mounted) return;
       setState(() {
@@ -594,7 +622,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(flex: mapaFlex, child: SizedBox()),
+              Expanded(
+                flex: mapaFlex,
+                child: StaggerIn(index: 3, child: _EstimarCard(onTap: _openBudgetEstimator)),
+              ),
             ],
           ),
         ),
@@ -845,8 +876,10 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
             _buildDailyBudgetAlerts(),
             _buildMobileActionGrid(),
             const SizedBox(height: 12),
+            StaggerIn(index: 2, child: _EstimarCard(onTap: _openBudgetEstimator)),
+            const SizedBox(height: 12),
             StaggerIn(
-              index: 2,
+              index: 3,
               child: _ProximoGastoCard(trip: _nextTrip, onTap: _quickAddExpense),
             ),
             const SizedBox(height: 34),
@@ -1056,6 +1089,52 @@ class _MapaCard extends StatelessWidget {
                 Text(
                   context.l10n.homeClientMapCardPlacesCount(placesCount),
                   style: AppText.ui(12, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EstimarCard extends StatelessWidget {
+  const _EstimarCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverCard(
+      onTap: onTap,
+      color: AppColors.mint,
+      radius: 28,
+      padding: const EdgeInsets.all(24),
+      child: SizedBox(
+        height: 116,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ink,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(Icons.calculate_outlined, color: AppColors.mint, size: 18),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.l10n.estimateScreenTitle, style: AppText.display(22, color: AppColors.ink)),
+                const SizedBox(height: 4),
+                Text(
+                  context.l10n.estimateCardSubtitle,
+                  style: AppText.ui(12, color: AppColors.ink),
                 ),
               ],
             ),

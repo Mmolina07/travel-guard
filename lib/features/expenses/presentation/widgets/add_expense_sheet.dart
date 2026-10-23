@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../widgets/ink_button.dart';
 import '../../../../widgets/pressable.dart';
+import '../../../trips/data/models/trip_collaborator.dart';
 import '../../data/models/categoria_gasto_model.dart';
 import '../../data/receipt_ocr_service.dart';
 import '../../providers/notification_prefs_provider.dart';
@@ -20,14 +21,20 @@ import 'receipt_scanner.dart';
 class NewExpenseData {
   final CategoriaGasto categoria;
   final double monto;
-  final DateTime fecha;
+  final DateTime fecha; // incluye la hora elegida
   final String? descripcion;
+  final String? establecimiento;
+  final int? pagadoPorId;
+  final bool pagadoConDineroViaje;
 
   const NewExpenseData({
     required this.categoria,
     required this.monto,
     required this.fecha,
     this.descripcion,
+    this.establecimiento,
+    this.pagadoPorId,
+    this.pagadoConDineroViaje = true,
   });
 }
 
@@ -38,6 +45,10 @@ class AddExpenseSheet extends StatefulWidget {
   final List<CategoriaGasto> categorias;
   final DateTime tripStartDate;
   final DateTime tripEndDate;
+  final List<TripCollaborator> miembros;
+  final int? currentUserId;
+  final double tripBalance; // saldo disponible del dinero del viaje
+  final double? pocketBalance; // saldo de TU bolsillo (null = aún no lo creaste)
 
   /// HU-11 (TG-278): si viene, el formulario advierte en vivo cuando el
   /// monto haría pasar el presupuesto diario de la fecha elegida, y
@@ -50,6 +61,10 @@ class AddExpenseSheet extends StatefulWidget {
     required this.tripStartDate,
     required this.tripEndDate,
     this.dailyBudget,
+    this.miembros = const [],
+    this.currentUserId,
+    this.tripBalance = 0,
+    this.pocketBalance,
   });
 
   static Future<NewExpenseData?> show(
@@ -58,6 +73,10 @@ class AddExpenseSheet extends StatefulWidget {
     required DateTime tripStartDate,
     required DateTime tripEndDate,
     DailyBudgetCalculator? dailyBudget,
+    List<TripCollaborator> miembros = const [],
+    int? currentUserId,
+    double tripBalance = 0,
+    double? pocketBalance,
   }) {
     return showModalBottomSheet<NewExpenseData>(
       context: context,
@@ -67,6 +86,10 @@ class AddExpenseSheet extends StatefulWidget {
         tripStartDate: tripStartDate,
         tripEndDate: tripEndDate,
         dailyBudget: dailyBudget,
+        miembros: miembros,
+        currentUserId: currentUserId,
+        tripBalance: tripBalance,
+        pocketBalance: pocketBalance,
       ),
     );
   }
@@ -80,6 +103,10 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   late DateTime _fecha;
+  final TextEditingController _placeController = TextEditingController();
+  late TimeOfDay _hora;
+  int? _pagadoPorId;
+  bool _pagadoConDineroViaje = true;
   String? _descriptionError;
   String? _amountError;
 
@@ -98,12 +125,18 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             today.isAfter(widget.tripEndDate))
         ? widget.tripStartDate
         : today;
+    _hora = TimeOfDay.fromDateTime(DateTime.now());
+    final ids = widget.miembros.map((m) => m.usuarioId).toSet();
+    _pagadoPorId = ids.contains(widget.currentUserId)
+        ? widget.currentUserId
+        : (widget.miembros.isNotEmpty ? widget.miembros.first.usuarioId : null);
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _placeController.dispose();
     super.dispose();
   }
 
@@ -115,6 +148,11 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       lastDate: widget.tripEndDate,
     );
     if (picked != null) setState(() => _fecha = picked);
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(context: context, initialTime: _hora);
+    if (picked != null) setState(() => _hora = picked);
   }
 
   /// Escanea un recibo y llena solo los campos que se pudieron leer; el
@@ -151,6 +189,9 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
         final name = data.establishment!;
         _descriptionController.text = name.length > 200 ? name.substring(0, 200) : name;
         _descriptionError = null;
+        // `gastos.establecimiento` es varchar(150) (lo usa "Top 3
+        // establecimientos").
+        _placeController.text = name.length > 150 ? name.substring(0, 150) : name;
       }
       final categoria = _categoriaNamed(data.categoryName) ?? _categoriaNamed('Otros');
       if (categoria != null) _selectedCategoria = categoria;
@@ -201,6 +242,8 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
   /// si no hay calculadora, el monto todavía no es válido o el turista
   /// apagó "Mostrar alertas" (HU-11 CA4: se registra sin avisos).
   DailyBudgetStatus? get _projectedDay {
+    // Lo pagado con el bolsillo no cuenta contra el presupuesto del viaje.
+    if (!_pagadoConDineroViaje) return null;
     final calc = widget.dailyBudget;
     final amount = parseThousands(_amountController.text)?.toDouble();
     if (calc == null || amount == null || amount <= 0) return null;
@@ -257,21 +300,51 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       return;
     }
 
+    if (!_pagadoConDineroViaje) {
+      final balance = widget.pocketBalance;
+      if (balance == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.addExpensePocketMissing),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      if (amount > balance) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.addExpensePocketInsufficient(context.formatMoney(balance))),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+    }
+
     final projected = _projectedDay;
     if (projected != null && projected.level == DailyBudgetLevel.exceeded) {
       if (!await _confirmOverBudget(projected) || !mounted) return;
     }
     if (!mounted) return;
 
+    final fechaConHora = DateTime(
+      _fecha.year, _fecha.month, _fecha.day, _hora.hour, _hora.minute,
+    );
+    final place = _placeController.text.trim();
+
     Navigator.pop(
       context,
       NewExpenseData(
         categoria: _selectedCategoria,
         monto: amount,
-        fecha: _fecha,
+        fecha: fechaConHora,
         descripcion: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
+        establecimiento: place.isEmpty ? null : place,
+        pagadoPorId: _pagadoConDineroViaje ? _pagadoPorId : widget.currentUserId,
+        pagadoConDineroViaje: _pagadoConDineroViaje,
       ),
     );
   }
@@ -324,6 +397,107 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       );
     }
     return AnimatedSwitcher(duration: AppMotion.toggle, child: content);
+  }
+
+  Widget _sourceOption({
+    required bool selected,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color subtitleColor = AppColors.textMuted,
+  }) {
+    return Expanded(
+      child: Pressable(
+        onTap: onTap,
+        semanticLabel: title,
+        child: AnimatedContainer(
+          duration: AppMotion.toggle,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.wash : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(
+              color: selected ? AppColors.ink : AppColors.hair,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 18, color: AppColors.ink),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.ui(13, weight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(subtitle, style: AppText.ui(12, color: subtitleColor)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Selector de fuente de pago: dinero del viaje o bolsillo personal.
+  Widget _buildPaymentSourceSelector() {
+    final amount = parseThousands(_amountController.text)?.toDouble() ?? 0;
+    final pocket = widget.pocketBalance;
+    final pocketSelected = !_pagadoConDineroViaje;
+    final pocketShort = pocketSelected && pocket != null && amount > pocket;
+
+    String? hint;
+    if (pocketSelected && pocket == null) {
+      hint = context.l10n.addExpensePocketMissing;
+    } else if (pocketShort) {
+      hint = context.l10n.addExpensePocketInsufficient(context.formatMoney(pocket));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FieldLabel(context.l10n.addExpensePaymentSourceLabel),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sourceOption(
+              selected: _pagadoConDineroViaje,
+              icon: Icons.luggage_outlined,
+              title: context.l10n.addExpenseSourceTrip,
+              subtitle: context.l10n.addExpenseSourceBalance(context.formatMoney(widget.tripBalance)),
+              onTap: () => setState(() => _pagadoConDineroViaje = true),
+            ),
+            const SizedBox(width: 10),
+            _sourceOption(
+              selected: pocketSelected,
+              icon: Icons.account_balance_wallet_outlined,
+              title: context.l10n.addExpenseSourcePocket,
+              subtitle: pocket == null
+                  ? context.l10n.addExpenseSourceNoPocket
+                  : context.l10n.addExpenseSourceBalance(context.formatMoney(pocket)),
+              subtitleColor: pocketShort ? AppColors.error : AppColors.textMuted,
+              onTap: () => setState(() {
+                _pagadoConDineroViaje = false;
+                _pagadoPorId = widget.currentUserId;
+              }),
+            ),
+          ],
+        ),
+        if (hint != null) ...[
+          const SizedBox(height: 8),
+          Text(hint, style: AppText.ui(12, weight: FontWeight.w600, color: AppColors.error)),
+        ],
+      ],
+    );
   }
 
   @override
@@ -418,16 +592,86 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           _buildDailyBudgetWarning(),
           const SizedBox(height: 18),
 
-          FieldLabel(l10n.addExpenseDateLabel),
-          Pressable(
-            onTap: _pickDate,
-            semanticLabel: l10n.addExpenseDateLabel,
-            child: InputDecorator(
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today_outlined)),
-              child: Text(DateFormat('dd/MM/yyyy').format(_fecha), style: AppText.ui(15)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FieldLabel(l10n.addExpenseDateLabel),
+                    Pressable(
+                      onTap: _pickDate,
+                      semanticLabel: l10n.addExpenseDateLabel,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today_outlined)),
+                        child: Text(DateFormat('dd/MM/yyyy').format(_fecha), style: AppText.ui(15)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FieldLabel(l10n.addExpenseTimeLabel),
+                    Pressable(
+                      onTap: _pickTime,
+                      semanticLabel: l10n.addExpenseTimeLabel,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(prefixIcon: Icon(Icons.access_time)),
+                        child: Text(
+                          _hora.format(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.ui(15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          FieldLabel(l10n.addExpensePlaceLabel),
+          TextField(
+            controller: _placeController,
+            maxLength: 150,
+            inputFormatters: [AppInputFormatters.safeText],
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.storefront_outlined),
+              hintText: l10n.addExpensePlaceHint,
+              counterText: '',
             ),
           ),
           const SizedBox(height: 18),
+
+          _buildPaymentSourceSelector(),
+          const SizedBox(height: 18),
+
+          // "¿Quién pagó?" solo aplica al dinero del viaje; con el bolsillo
+          // siempre eres tú.
+          if (_pagadoConDineroViaje && widget.miembros.isNotEmpty) ...[
+            FieldLabel(l10n.addExpensePaidByLabel),
+            DropdownButtonFormField<int>(
+              initialValue: _pagadoPorId,
+              decoration: const InputDecoration(prefixIcon: Icon(Icons.person_outline)),
+              items: widget.miembros
+                  .map((m) => DropdownMenuItem(
+                        value: m.usuarioId,
+                        child: Text(m.nombreCompleto, style: AppText.ui(15)),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _pagadoPorId = v),
+            ),
+            const SizedBox(height: 18),
+          ],
 
           FieldLabel(l10n.addExpenseDescriptionLabel),
           TextField(

@@ -12,6 +12,9 @@ class Gasto {
   final String? descripcion;
   final double monto;
   final DateTime fecha;
+  final String? establecimiento;
+  final int? pagadoPorId;
+  final bool pagadoConDineroViaje;
 
   /// Cuándo se registró (`created_at`, hora local) — HU-11 CA5 mide desde
   /// aquí las horas sin registrar gastos.
@@ -26,6 +29,9 @@ class Gasto {
     required this.monto,
     required this.fecha,
     this.createdAt,
+    this.establecimiento,
+    this.pagadoPorId,
+    this.pagadoConDineroViaje = true,
   });
 
   factory Gasto.fromMap(Map<String, dynamic> map) {
@@ -41,6 +47,9 @@ class Gasto {
       createdAt: map['created_at'] == null
           ? null
           : DateTime.tryParse(map['created_at'] as String)?.toLocal(),
+      establecimiento: map['establecimiento'] as String?,
+      pagadoPorId: map['pagado_por_id'] as int?,
+      pagadoConDineroViaje: (map['pagado_con_dinero_viaje'] as bool?) ?? true,
     );
   }
 

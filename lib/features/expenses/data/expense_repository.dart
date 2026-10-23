@@ -78,6 +78,9 @@ class ExpenseRepository {
     required double monto,
     required DateTime fecha,
     String? descripcion,
+    String? establecimiento,
+    int? pagadoPorId,
+    bool pagadoConDineroViaje = true,
   }) async {
     final row = await _client
         .from('gastos')
@@ -85,9 +88,17 @@ class ExpenseRepository {
           'viaje_id': viajeId,
           'categoria_id': categoriaId,
           'monto': monto,
+          // `fecha` es `date` y la hora va en `hora` (`time`), ambas en hora
+          // local: con `toUtc()` un gasto de las 8 pm en Colombia quedaba
+          // guardado al día siguiente.
           'fecha': _toIsoDate(fecha),
+          'hora': '${_two(fecha.hour)}:${_two(fecha.minute)}:00',
           if (descripcion != null && descripcion.trim().isNotEmpty)
             'descripcion': descripcion.trim(),
+          if (establecimiento != null && establecimiento.trim().isNotEmpty)
+            'establecimiento': establecimiento.trim(),
+          if (pagadoPorId != null) 'pagado_por_id': pagadoPorId,
+          'pagado_con_dinero_viaje': pagadoConDineroViaje,
         })
         .select('*, categorias_gasto(nombre)')
         .single();
@@ -97,6 +108,8 @@ class ExpenseRepository {
   Future<void> deleteGasto(int id) async {
     await _client.from('gastos').delete().eq('id', id);
   }
+
+  String _two(int n) => n.toString().padLeft(2, '0');
 
   String _toIsoDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');

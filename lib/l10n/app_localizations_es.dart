@@ -390,6 +390,423 @@ class AppLocalizationsEs extends AppLocalizations {
   String get addExpenseAddButton => 'Agregar';
 
   @override
+  String get addExpenseTimeLabel => 'Hora';
+
+  @override
+  String get addExpensePlaceLabel => 'Establecimiento (opcional)';
+
+  @override
+  String get addExpensePlaceHint => 'Ej. Restaurante El Sabor';
+
+  @override
+  String get addExpensePaidByLabel => '¿Quién pagó?';
+
+  @override
+  String get addExpensePaidWithTripMoney => 'Pagado con dinero del viaje';
+
+  @override
+  String get addExpensePaidTripMoneyOn => 'Salió del fondo común del viaje';
+
+  @override
+  String get addExpensePaidTripMoneyOff => 'Salió del bolsillo personal';
+
+  @override
+  String get addExpensePaymentSourceLabel => '¿Con qué dinero pagas?';
+
+  @override
+  String get addExpenseSourceTrip => 'Dinero del viaje';
+
+  @override
+  String get addExpenseSourcePocket => 'Mi bolsillo';
+
+  @override
+  String addExpenseSourceBalance(String amount) {
+    return 'Disponible: $amount';
+  }
+
+  @override
+  String get addExpenseSourceNoPocket => 'Aún sin bolsillo';
+
+  @override
+  String get addExpensePocketMissing =>
+      'Aún no tienes bolsillo en este viaje. Créalo desde \"Mi bolsillo\".';
+
+  @override
+  String addExpensePocketInsufficient(String balance) {
+    return 'Tu bolsillo solo tiene $balance disponible.';
+  }
+
+  @override
+  String get pocketButtonLabel => 'Mi bolsillo';
+
+  @override
+  String get pocketScreenTitle => 'Mi bolsillo personal';
+
+  @override
+  String get pocketPrivateNote => 'Solo tú puedes ver este bolsillo.';
+
+  @override
+  String get pocketEmptyTitle => 'Aún no tienes bolsillo en este viaje';
+
+  @override
+  String get pocketEmptyDescription =>
+      'Crea tu bolsillo para guardar dinero propio y pagar gastos del viaje desde él.';
+
+  @override
+  String get pocketCreateButton => 'Crear mi bolsillo';
+
+  @override
+  String get pocketBalanceLabel => 'SALDO DISPONIBLE';
+
+  @override
+  String get pocketAddedLabel => 'AGREGADO';
+
+  @override
+  String get pocketSpentLabel => 'GASTADO';
+
+  @override
+  String get pocketAddMoneyButton => 'Agregar dinero';
+
+  @override
+  String get pocketAddMoneyTitle => 'Agregar dinero al bolsillo';
+
+  @override
+  String get pocketAmountLabel => 'Monto';
+
+  @override
+  String get pocketNoteLabel => 'Nota (opcional)';
+
+  @override
+  String get pocketNoteHint => 'Ej. Efectivo para compras';
+
+  @override
+  String get pocketAddConfirmButton => 'Agregar';
+
+  @override
+  String get pocketMovementsTitle => 'Movimientos';
+
+  @override
+  String get pocketNoMovements => 'Aún no has agregado dinero.';
+
+  @override
+  String get pocketLoadError => 'No se pudo cargar tu bolsillo.';
+
+  @override
+  String get pocketSaveError => 'No se pudo guardar. Intenta de nuevo.';
+
+  @override
+  String get pocketCreatedSnackbar => 'Bolsillo creado';
+
+  @override
+  String pocketDepositAddedSnackbar(String amount) {
+    return 'Se agregó $amount a tu bolsillo';
+  }
+
+  @override
+  String get estimateScreenTitle => 'Estimar presupuesto';
+
+  @override
+  String get estimateEyebrow => 'ESTIMADOR DE PRESUPUESTO';
+
+  @override
+  String get estimateTitleLine1 => '¿Cuánto costará';
+
+  @override
+  String get estimateTitleLine2 => 'tu viaje?';
+
+  @override
+  String get estimateIntro =>
+      'Cuéntanos a dónde vas y te damos un estimado del alojamiento, la comida y el transporte.';
+
+  @override
+  String get estimateDestinationLabel => 'DESTINO';
+
+  @override
+  String get estimateDestinationHint => 'Busca una ciudad';
+
+  @override
+  String get estimateDatesLabel => 'FECHAS DEL VIAJE';
+
+  @override
+  String get estimateDatesPlaceholder => 'Selecciona ida y vuelta';
+
+  @override
+  String get estimateDatePickerHelp => 'Fechas del viaje';
+
+  @override
+  String get estimateDatePickerSave => 'Listo';
+
+  @override
+  String estimateDurationSummary(int days, int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '$days día',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights noches',
+      one: '$nights noche',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get estimateTravelersLabel => 'VIAJEROS';
+
+  @override
+  String estimateTravelersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count viajeros',
+      one: '$count viajero',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get estimateTripTypeLabel => 'TIPO DE VIAJE';
+
+  @override
+  String get estimateStyleEconomyTitle => 'Económico';
+
+  @override
+  String get estimateStyleEconomyCaption => 'Hostales y comida local';
+
+  @override
+  String get estimateStyleStandardTitle => 'Estándar';
+
+  @override
+  String get estimateStyleStandardCaption => 'Hoteles 3-4★';
+
+  @override
+  String get estimateStyleLuxuryTitle => 'Lujo';
+
+  @override
+  String get estimateStyleLuxuryCaption => 'Hoteles 5★ y experiencias';
+
+  @override
+  String get estimateErrorDestinationEmpty => 'Escribe o elige un destino.';
+
+  @override
+  String get estimateErrorDatesEmpty => 'Selecciona las fechas de tu viaje.';
+
+  @override
+  String get estimateErrorDatesTooShort =>
+      'El viaje debe tener al menos 1 noche.';
+
+  @override
+  String get estimateErrorDatesTooLong =>
+      'Por ahora solo estimamos viajes de hasta 30 días.';
+
+  @override
+  String get estimateErrorGeneric =>
+      'No pudimos calcular la estimación. Intenta de nuevo.';
+
+  @override
+  String get estimateButton => 'Estimar presupuesto';
+
+  @override
+  String get estimateButtonLoading => 'Estimando…';
+
+  @override
+  String get estimateButtonNew => 'Nueva estimación';
+
+  @override
+  String get estimateLoadingEyebrow => 'CONSULTANDO PRECIOS';
+
+  @override
+  String get estimateLoadingTitle => 'Armando tu estimación';
+
+  @override
+  String get estimateLoadingStepLodging => 'Buscando alojamiento';
+
+  @override
+  String get estimateLoadingStepFlights => 'Consultando vuelos';
+
+  @override
+  String get estimateLoadingStepLocal =>
+      'Calculando alimentación y transporte local';
+
+  @override
+  String get estimateResultEyebrow => 'PRESUPUESTO ESTIMADO';
+
+  @override
+  String get estimateRangeBadge => 'RANGO ±15%';
+
+  @override
+  String estimateHeroSubtitle(int nights, int travelers, String style) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights NOCHES',
+      one: '$nights NOCHE',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      travelers,
+      locale: localeName,
+      other: '$travelers VIAJEROS',
+      one: '$travelers VIAJERO',
+    );
+    return '$_temp0 · $_temp1 · $style';
+  }
+
+  @override
+  String get estimateBreakdownTitle => 'Desglose';
+
+  @override
+  String get estimateLodgingTitle => 'Alojamiento';
+
+  @override
+  String estimateLodgingCaption(int nights) {
+    String _temp0 = intl.Intl.pluralLogic(
+      nights,
+      locale: localeName,
+      other: '$nights noches',
+      one: '$nights noche',
+    );
+    return 'Promedio por noche × $_temp0';
+  }
+
+  @override
+  String get estimateFoodTitle => 'Alimentación';
+
+  @override
+  String estimateFoodCaption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '$days día',
+    );
+    return 'Promedio diario × $_temp0';
+  }
+
+  @override
+  String get estimateTransportTitle => 'Transporte';
+
+  @override
+  String get estimateTransportCaption => 'Vuelo + transporte local';
+
+  @override
+  String get estimateFlightLabel => 'Vuelo';
+
+  @override
+  String get estimateLocalTransportLabel => 'Transporte local';
+
+  @override
+  String get estimateSourcesIntro => 'Estimación basada en precios promedio de';
+
+  @override
+  String get estimateUpdatedLessThanHour =>
+      'Datos actualizados hace menos de 1 hora';
+
+  @override
+  String estimateUpdatedHoursAgo(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours horas',
+      one: '1 hora',
+    );
+    return 'Datos actualizados hace $_temp0';
+  }
+
+  @override
+  String get estimateDisclaimer =>
+      'Los precios pueden variar ±15% según disponibilidad actual.';
+
+  @override
+  String get estimateCardSubtitle => 'Calcula el costo de un viaje';
+
+  @override
+  String get estimateCardDescription =>
+      'Descubre cuánto costaría un viaje antes de planearlo.';
+
+  @override
+  String get estimateCardButton => 'Estimar';
+
+  @override
+  String get limitsTabTitle => 'Límites';
+
+  @override
+  String get limitsConfigureButton => 'Configurar límites';
+
+  @override
+  String get limitsScreenTitle => 'Configurar límites';
+
+  @override
+  String get limitsTripLabel => 'VIAJE';
+
+  @override
+  String get limitsScreenSubtitle =>
+      'Define el máximo que quieres gastar en cada categoría de este viaje. Déjalo vacío si no quieres límite.';
+
+  @override
+  String get limitsFieldHint => 'Sin límite';
+
+  @override
+  String limitsSpentSoFar(String amount) {
+    return 'Gastado: $amount';
+  }
+
+  @override
+  String get limitsSaveButton => 'Guardar límites';
+
+  @override
+  String get limitsSavedSnackbar => 'Límites guardados';
+
+  @override
+  String get limitsSaveError =>
+      'No se pudieron guardar los límites. Intenta de nuevo.';
+
+  @override
+  String get limitsProgressTitle => 'Progreso por categoría';
+
+  @override
+  String limitsProgressAmount(String spent, String limit) {
+    return '$spent de $limit';
+  }
+
+  @override
+  String limitsOverBy(String amount) {
+    return 'Superaste el límite por $amount';
+  }
+
+  @override
+  String limitsLeft(String amount) {
+    return 'Te quedan $amount';
+  }
+
+  @override
+  String get limitsEmptyTitle => 'Aún no defines límites';
+
+  @override
+  String get limitsEmptyDescription =>
+      'Configura un máximo por categoría y sigue tu gasto en tiempo real.';
+
+  @override
+  String get limitsReportTitle => 'Reporte de cumplimiento';
+
+  @override
+  String get limitsColCategory => 'CATEGORÍA';
+
+  @override
+  String get limitsColLimit => 'LÍMITE';
+
+  @override
+  String get limitsColSpent => 'GASTO';
+
+  @override
+  String get limitsColCompliance => '% CUMPLIMIENTO';
+
+  @override
+  String get limitsTotalRow => 'Total';
+
+  @override
   String get mapScreenUserHereLabel => 'Tú estás aquí';
 
   @override
@@ -1658,6 +2075,138 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripDetailTabGrupo => 'Grupo';
+
+  @override
+  String get tripDetailTabAnalisis => 'Análisis';
+
+  @override
+  String get analysisDailyTitle => 'Comparativa diaria';
+
+  @override
+  String get analysisInvalidTripDates => 'Las fechas del viaje no son válidas.';
+
+  @override
+  String get analysisColDay => 'DÍA';
+
+  @override
+  String get analysisColDailyBudget => 'PRESUPUESTO DIARIO';
+
+  @override
+  String get analysisColActual => 'GASTO REAL';
+
+  @override
+  String get analysisColDifference => 'DIFERENCIA';
+
+  @override
+  String get analysisColPctSpent => '% GASTADO';
+
+  @override
+  String analysisDayLabelDate(int n, String date) {
+    return 'Día $n · $date';
+  }
+
+  @override
+  String analysisDayLabel(int n) {
+    return 'Día $n';
+  }
+
+  @override
+  String get analysisByCategoryTitle => 'Por categoría';
+
+  @override
+  String get analysisNoCategoriesYet =>
+      'Aún no hay categorías ni gastos para comparar.';
+
+  @override
+  String get analysisColCategory => 'CATEGORÍA';
+
+  @override
+  String get analysisColBudgeted => 'PRESUPUESTADO';
+
+  @override
+  String get analysisBudgetedVsActual => 'Presupuestado vs real';
+
+  @override
+  String get analysisLegendBudgeted => 'Presupuestado';
+
+  @override
+  String get analysisLegendActual => 'Real';
+
+  @override
+  String analysisCategorySaved(String category, String amount) {
+    return '$category: Ahorraste $amount en esta categoría';
+  }
+
+  @override
+  String analysisCategoryExceeded(String category, String amount) {
+    return '$category: Excediste por $amount en esta categoría';
+  }
+
+  @override
+  String get analysisTopCategoryTitle => 'Categoría con más gasto';
+
+  @override
+  String get analysisTopCategoryEmpty =>
+      'Registra gastos para ver este análisis.';
+
+  @override
+  String analysisTopCategorySummary(String summary) {
+    return 'Gastaste más en: $summary';
+  }
+
+  @override
+  String get analysisTopPlacesTitle => 'Top 3 establecimientos';
+
+  @override
+  String get analysisTopPlacesEmpty =>
+      'Agrega descripciones a tus gastos para ver dónde gastas más.';
+
+  @override
+  String get analysisPeakHoursTitle => 'Horarios de mayor gasto';
+
+  @override
+  String get analysisPeakHoursEmpty => 'Sin datos de horario todavía.';
+
+  @override
+  String analysisPeakHoursSummary(String ranges) {
+    return 'Más gasto entre: $ranges';
+  }
+
+  @override
+  String get analysisAnd => ' y ';
+
+  @override
+  String get analysisBetweenDaysTitle => 'Comparativa entre días';
+
+  @override
+  String analysisAverageTrailing(String amount) {
+    return 'Promedio $amount';
+  }
+
+  @override
+  String get analysisNoExpensesYet => 'Aún no hay gastos registrados.';
+
+  @override
+  String get analysisDailyAverageLegend => 'Promedio diario';
+
+  @override
+  String get analysisPerPersonTitle => 'Gasto por persona';
+
+  @override
+  String get analysisNoParticipants => 'No hay participantes cargados.';
+
+  @override
+  String get analysisUnassigned => 'Sin asignar';
+
+  @override
+  String analysisTripMoneyAmount(String amount) {
+    return 'Dinero del viaje: $amount';
+  }
+
+  @override
+  String analysisPocketAmount(String amount) {
+    return 'Bolsillo personal: $amount';
+  }
 
   @override
   String get tripDetailBreadcrumbHome => 'INICIO / MIS VIAJES';
