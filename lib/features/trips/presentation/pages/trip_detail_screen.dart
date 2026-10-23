@@ -28,6 +28,8 @@ import 'create_trip_screen.dart';
 import 'edit_trip_budget_screen.dart';
 import 'personal_pocket_screen.dart';
 import '../../data/models/pocket_repository.dart';
+import '../pages/spending_limits_screen.dart';
+import '../../data/limits_repository.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final Trip trip;
@@ -45,6 +47,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   final ExpenseRepository _expenseRepository = ExpenseRepository();
   final TripRepository _tripRepository = TripRepository();
   final PocketRepository _pocketRepository = PocketRepository();
+  final LimitsRepository _limitsRepository = LimitsRepository();
+  Map<int, double> _limites = {};
 
   List<Gasto> _gastos = [];
   List<CategoriaGasto> _categorias = [];
@@ -73,11 +77,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   void initState() {
     super.initState();
     trip = widget.trip;
-    _tabController = TabController(length: 6, vsync: this)
+    _tabController = TabController(length: 7, vsync: this)
       ..addListener(() => setState(() {}));
     _currentUserId = context.read<AppAuthProvider>().usuario?.id;
     _loadGastos();
     _loadGrupo();
+    _loadLimites();
   }
   @override
   void dispose() {
@@ -550,6 +555,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             Tab(text: context.l10n.tripDetailTabGastos),
             Tab(text: context.l10n.tripDetailTabGrupo),
             Tab(text: context.l10n.tripDetailTabAnalisis),
+            Tab(text: context.l10n.limitsTabTitle),
           ],
         ),
         const SizedBox(height: 24),
@@ -559,7 +565,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           2 => _buildTransporteTab(),
           3 => _buildGastosTab(totalSpent: totalSpent, remaining: remaining),
           4 => _buildGrupoTab(),
-          _=> _buildAnalisisTab(),
+          5=> _buildAnalisisTab(),
+          _ => _buildLimitesTab(),
         },
       ],
     );
@@ -2076,6 +2083,233 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             ),
           ],
         ],
+      ),
+    );
+  }
+
+    // ─── Tab: Límites ───
+
+  Future<void> _loadLimites() async {
+    if (trip.id == null) return;
+    try {
+      final data = await _limitsRepository.fetchLimits(trip.id!);
+      if (!mounted) return;
+      setState(() => _limites = data);
+    } catch (e, st) {
+      debugPrint('TripDetailScreen._loadLimites error: $e\n$st');
+    }
+  }
+
+  Map<int, double> _gastoPorCategoriaId() {
+    final map = <int, double>{};
+    for (final g in _gastos) {
+      final id = g.categoria.id;
+      map[id] = (map[id] ?? 0) + g.monto;
+    }
+    return map;
+  }
+
+  Future<void> _openLimitsConfig() async {
+    if (trip.id == null) {
+      _showSnack(context.l10n.tripDetailTripNotSavedSnackbar);
+      return;
+    }
+    if (_categorias.isEmpty) {
+      _showSnack(context.l10n.tripDetailCategoriesLoadErrorSnackbar);
+      return;
+    }
+    final result = await Navigator.push<Map<int, double>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SpendingLimitsScreen(
+          tripId: trip.id!,
+          tripName: trip.name,
+          categorias: _categorias,
+          initialLimits: _limites,
+          spentByCategory: _gastoPorCategoriaId(),
+        ),
+      ),
+    );
+    if (result != null && mounted) setState(() => _limites = result);
+  }
+
+  Widget _buildLimitesTab() {
+    if (_isLoadingGastos) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator(color: AppColors.ink)),
+      );
+    }
+    final withLimit = _categorias.where((c) => (_limites[c.id] ?? 0) > 0).toList();
+    final spent = _gastoPorCategoriaId();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: _openLimitsConfig,
+            icon: const Icon(Icons.tune, size: 18),
+            label: Text(context.l10n.limitsConfigureButton),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.ink,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildLimitProgressCard(withLimit, spent),
+        if (withLimit.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildLimitReportCard(withLimit, spent),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildLimitProgressCard(List<CategoriaGasto> cats, Map<int, double> spent) {
+    final l = context.l10n;
+    if (cats.isEmpty) {
+      return _SectionCard(
+        title: l.limitsEmptyTitle,
+        child: Text(l.limitsEmptyDescription, style: AppText.ui(13, color: AppColors.textMuted)),
+      );
+    }
+    return _SectionCard(
+      title: l.limitsProgressTitle,
+      child: Column(
+        children: [
+          for (final c in cats)
+            Builder(builder: (_) {
+              final limit = _limites[c.id]!;
+              final s = spent[c.id] ?? 0.0;
+              final over = s > limit;
+              final color = over ? AppColors.error : _savingGreen;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: c.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(c.icon, size: 18, color: c.color),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(c.nombre, style: AppText.ui(14, weight: FontWeight.w600)),
+                        ),
+                        Text(
+                          l.limitsProgressAmount(context.formatMoney(s), context.formatMoney(limit)),
+                          style: AppText.ui(13, weight: FontWeight.w700, color: color),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    BudgetBar(progress: (s / limit).clamp(0.0, 1.0), height: 8, fill: color),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(over ? Icons.error_outline : Icons.check_circle_outline, size: 14, color: color),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            over
+                                ? l.limitsOverBy(context.formatMoney(s - limit))
+                                : l.limitsLeft(context.formatMoney(limit - s)),
+                            style: AppText.ui(12, weight: FontWeight.w600, color: color),
+                          ),
+                        ),
+                        Text('${(s / limit * 100).round()}%', style: AppText.label(10)),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitReportCard(List<CategoriaGasto> cats, Map<int, double> spent) {
+    final l = context.l10n;
+
+    Widget h(String t, {TextAlign align = TextAlign.left}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          child: Text(t, textAlign: align, style: AppText.label(10, color: AppColors.textLabel)),
+        );
+    Widget c(String t,
+            {Color color = AppColors.ink, FontWeight w = FontWeight.w500, TextAlign align = TextAlign.left}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child: Text(t, textAlign: align, style: AppText.ui(13, weight: w, color: color)),
+        );
+
+    var totalLimit = 0.0;
+    var totalSpent = 0.0;
+    final rows = <TableRow>[
+      TableRow(
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line))),
+        children: [
+          h(l.limitsColCategory),
+          h(l.limitsColLimit, align: TextAlign.right),
+          h(l.limitsColSpent, align: TextAlign.right),
+          h(l.limitsColCompliance, align: TextAlign.right),
+        ],
+      ),
+    ];
+    for (final cat in cats) {
+      final limit = _limites[cat.id]!;
+      final s = spent[cat.id] ?? 0.0;
+      totalLimit += limit;
+      totalSpent += s;
+      final pct = s / limit * 100;
+      final over = s > limit;
+      rows.add(TableRow(
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.line, width: 0.5))),
+        children: [
+          c(cat.nombre, w: FontWeight.w600),
+          c(context.formatMoney(limit), align: TextAlign.right),
+          c(context.formatMoney(s), w: FontWeight.w600, align: TextAlign.right),
+          c('${pct.toStringAsFixed(1)}%',
+              color: over ? AppColors.error : _savingGreen, w: FontWeight.w700, align: TextAlign.right),
+        ],
+      ));
+    }
+    final totalPct = totalLimit > 0 ? totalSpent / totalLimit * 100 : 0.0;
+    rows.add(TableRow(
+      children: [
+        c(l.limitsTotalRow, w: FontWeight.w700),
+        c(context.formatMoney(totalLimit), w: FontWeight.w700, align: TextAlign.right),
+        c(context.formatMoney(totalSpent), w: FontWeight.w700, align: TextAlign.right),
+        c('${totalPct.toStringAsFixed(1)}%',
+            color: totalSpent > totalLimit ? AppColors.error : _savingGreen,
+            w: FontWeight.w700,
+            align: TextAlign.right),
+      ],
+    ));
+
+    return _SectionCard(
+      title: l.limitsReportTitle,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 520),
+          child: Table(
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            children: rows,
+          ),
+        ),
       ),
     );
   }

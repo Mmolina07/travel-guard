@@ -729,6 +729,83 @@ class AppLocalizationsEs extends AppLocalizations {
   String get estimateCardButton => 'Estimar';
 
   @override
+  String get limitsTabTitle => 'Límites';
+
+  @override
+  String get limitsConfigureButton => 'Configurar límites';
+
+  @override
+  String get limitsScreenTitle => 'Configurar límites';
+
+  @override
+  String get limitsTripLabel => 'VIAJE';
+
+  @override
+  String get limitsScreenSubtitle =>
+      'Define el máximo que quieres gastar en cada categoría de este viaje. Déjalo vacío si no quieres límite.';
+
+  @override
+  String get limitsFieldHint => 'Sin límite';
+
+  @override
+  String limitsSpentSoFar(String amount) {
+    return 'Gastado: $amount';
+  }
+
+  @override
+  String get limitsSaveButton => 'Guardar límites';
+
+  @override
+  String get limitsSavedSnackbar => 'Límites guardados';
+
+  @override
+  String get limitsSaveError =>
+      'No se pudieron guardar los límites. Intenta de nuevo.';
+
+  @override
+  String get limitsProgressTitle => 'Progreso por categoría';
+
+  @override
+  String limitsProgressAmount(String spent, String limit) {
+    return '$spent de $limit';
+  }
+
+  @override
+  String limitsOverBy(String amount) {
+    return 'Superaste el límite por $amount';
+  }
+
+  @override
+  String limitsLeft(String amount) {
+    return 'Te quedan $amount';
+  }
+
+  @override
+  String get limitsEmptyTitle => 'Aún no defines límites';
+
+  @override
+  String get limitsEmptyDescription =>
+      'Configura un máximo por categoría y sigue tu gasto en tiempo real.';
+
+  @override
+  String get limitsReportTitle => 'Reporte de cumplimiento';
+
+  @override
+  String get limitsColCategory => 'CATEGORÍA';
+
+  @override
+  String get limitsColLimit => 'LÍMITE';
+
+  @override
+  String get limitsColSpent => 'GASTO';
+
+  @override
+  String get limitsColCompliance => '% CUMPLIMIENTO';
+
+  @override
+  String get limitsTotalRow => 'Total';
+
+  @override
   String get mapScreenUserHereLabel => 'Tú estás aquí';
 
   @override

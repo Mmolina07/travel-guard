@@ -1340,6 +1340,138 @@ abstract class AppLocalizations {
   /// **'Estimar'**
   String get estimateCardButton;
 
+  /// No description provided for @limitsTabTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Límites'**
+  String get limitsTabTitle;
+
+  /// No description provided for @limitsConfigureButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurar límites'**
+  String get limitsConfigureButton;
+
+  /// No description provided for @limitsScreenTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Configurar límites'**
+  String get limitsScreenTitle;
+
+  /// No description provided for @limitsTripLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'VIAJE'**
+  String get limitsTripLabel;
+
+  /// No description provided for @limitsScreenSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Define el máximo que quieres gastar en cada categoría de este viaje. Déjalo vacío si no quieres límite.'**
+  String get limitsScreenSubtitle;
+
+  /// No description provided for @limitsFieldHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin límite'**
+  String get limitsFieldHint;
+
+  /// No description provided for @limitsSpentSoFar.
+  ///
+  /// In es, this message translates to:
+  /// **'Gastado: {amount}'**
+  String limitsSpentSoFar(String amount);
+
+  /// No description provided for @limitsSaveButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar límites'**
+  String get limitsSaveButton;
+
+  /// No description provided for @limitsSavedSnackbar.
+  ///
+  /// In es, this message translates to:
+  /// **'Límites guardados'**
+  String get limitsSavedSnackbar;
+
+  /// No description provided for @limitsSaveError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron guardar los límites. Intenta de nuevo.'**
+  String get limitsSaveError;
+
+  /// No description provided for @limitsProgressTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Progreso por categoría'**
+  String get limitsProgressTitle;
+
+  /// No description provided for @limitsProgressAmount.
+  ///
+  /// In es, this message translates to:
+  /// **'{spent} de {limit}'**
+  String limitsProgressAmount(String spent, String limit);
+
+  /// No description provided for @limitsOverBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Superaste el límite por {amount}'**
+  String limitsOverBy(String amount);
+
+  /// No description provided for @limitsLeft.
+  ///
+  /// In es, this message translates to:
+  /// **'Te quedan {amount}'**
+  String limitsLeft(String amount);
+
+  /// No description provided for @limitsEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no defines límites'**
+  String get limitsEmptyTitle;
+
+  /// No description provided for @limitsEmptyDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Configura un máximo por categoría y sigue tu gasto en tiempo real.'**
+  String get limitsEmptyDescription;
+
+  /// No description provided for @limitsReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte de cumplimiento'**
+  String get limitsReportTitle;
+
+  /// No description provided for @limitsColCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'CATEGORÍA'**
+  String get limitsColCategory;
+
+  /// No description provided for @limitsColLimit.
+  ///
+  /// In es, this message translates to:
+  /// **'LÍMITE'**
+  String get limitsColLimit;
+
+  /// No description provided for @limitsColSpent.
+  ///
+  /// In es, this message translates to:
+  /// **'GASTO'**
+  String get limitsColSpent;
+
+  /// No description provided for @limitsColCompliance.
+  ///
+  /// In es, this message translates to:
+  /// **'% CUMPLIMIENTO'**
+  String get limitsColCompliance;
+
+  /// No description provided for @limitsTotalRow.
+  ///
+  /// In es, this message translates to:
+  /// **'Total'**
+  String get limitsTotalRow;
+
   /// No description provided for @mapScreenUserHereLabel.
   ///
   /// In es, this message translates to:
