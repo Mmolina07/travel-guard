@@ -30,6 +30,7 @@ import '../../../../widgets/hover_card.dart';
 import '../../../../widgets/place_card.dart';
 import '../../../../widgets/stagger_in.dart';
 import '../../../../widgets/trip_card.dart';
+import '../../data/limits_repository.dart';
 
 class HomeScreenClient extends StatefulWidget {
   const HomeScreenClient({super.key});
@@ -378,6 +379,23 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
     }
     if (!mounted) return;
 
+    // HU-19 CA3: límites del viaje y lo ya gastado por categoría, para el
+    // aviso al registrar. Si falla, se registra igual, solo sin el aviso.
+    Map<int, double> limits = {};
+    final spentByCat = <int, double>{};
+    try {
+      limits = await LimitsRepository().fetchLimits(trip.id!);
+      if (limits.isNotEmpty) {
+        final gastos = await _expenseRepository.fetchGastosDelViaje(trip.id!);
+        for (final g in gastos) {
+          spentByCat[g.categoria.id] = (spentByCat[g.categoria.id] ?? 0) + g.monto;
+        }
+      }
+    } catch (e, st) {
+      debugPrint('HomeScreenClient._addExpenseToTrip limites error: $e\n$st');
+    }
+    if (!mounted) return;
+
     final result = await AddExpenseSheet.show(
       context,
       categorias: categorias,
@@ -387,6 +405,8 @@ class _HomeScreenClientState extends State<HomeScreenClient> {
       currentUserId: userId,
       tripBalance: trip.maxBudget - (trip.getTotalSpent() + (_gastosPorViaje[trip.id!] ?? 0)),
       pocketBalance: pocketBalance,
+      categoryLimits: limits,          // NUEVO
+      spentByCategory: spentByCat,     // NUEVO
     );
     if (result == null || !mounted) return;
 

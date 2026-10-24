@@ -1778,6 +1778,30 @@ abstract class AppLocalizations {
   /// **'Total'**
   String get limitsTotalRow;
 
+  /// No description provided for @limitDialogTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Límite de {category}'**
+  String limitDialogTitle(String category);
+
+  /// No description provided for @limitDialogReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Has alcanzado tu límite en esta categoría. ¿Continuar?'**
+  String get limitDialogReached;
+
+  /// No description provided for @limitDialogWillExceed.
+  ///
+  /// In es, this message translates to:
+  /// **'Este gasto superará tu límite en {category} por {amount}. ¿Continuar?'**
+  String limitDialogWillExceed(String category, String amount);
+
+  /// No description provided for @limitDialogContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get limitDialogContinue;
+
   /// No description provided for @mapScreenUserHereLabel.
   ///
   /// In es, this message translates to:

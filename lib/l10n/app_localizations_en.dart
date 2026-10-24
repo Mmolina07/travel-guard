@@ -997,6 +997,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get limitsTotalRow => 'Total';
 
   @override
+  String limitDialogTitle(String category) {
+    return '$category limit';
+  }
+
+  @override
+  String get limitDialogReached =>
+      'You\'ve reached your limit in this category. Continue?';
+
+  @override
+  String limitDialogWillExceed(String category, String amount) {
+    return 'This expense will put you over your $category limit by $amount. Continue?';
+  }
+
+  @override
+  String get limitDialogContinue => 'Continue';
+
+  @override
   String get mapScreenUserHereLabel => 'You are here';
 
   @override

@@ -361,6 +361,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       currentUserId: _currentUserId,
       tripBalance: tripBalance,      // NUEVO
       pocketBalance: pocketBalance,  // NUEVO
+      categoryLimits: _limites,                      // NUEVO
+      spentByCategory: _gastoPorCategoriaId(), 
     );
     if (result == null || !mounted) return;
 
