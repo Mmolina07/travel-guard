@@ -62,7 +62,13 @@ class ShellPage extends StatelessWidget {
                       border: Border(top: BorderSide(color: AppColors.line)),
                     ),
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                    child: SafeArea(top: false, child: action!),
+                    // `bottomNavigationBar` no acota la altura: sin el
+                    // `Column` mínimo, el `InkButton` expandido (Container
+                    // con `alignment`) ocupa toda la pantalla.
+                    child: SafeArea(
+                      top: false,
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [action!]),
+                    ),
                   ),
           );
         }
