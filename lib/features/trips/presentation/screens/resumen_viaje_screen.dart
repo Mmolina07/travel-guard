@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/trip_provider.dart';
 import '../widgets/resumen_viaje.dart';
 import '../widgets/desglose_presupuesto.dart';
+import '../widgets/comparativa_presupuesto_widget.dart'; // <-- 1. Añadimos la importación del widget de la HU-17
 
 class ResumenViajeScreen extends StatelessWidget {
   const ResumenViajeScreen({super.key});
@@ -66,6 +67,12 @@ class ResumenViajeScreen extends StatelessWidget {
           ResumenViaje(viaje: viajeActivo),
           const SizedBox(height: 8),
           DesglosePresupuesto(viaje: viajeActivo),
+          const SizedBox(height: 8),
+          // <-- 2. Añadimos el widget de comparativa de la HU-17
+          ComparativaPresupuestoWidget(
+            viaje: viajeActivo,
+            gastos: const [], // Reemplaza esta lista vacía por tus gastos reales desde tu provider o gestor de estado si aplica
+          ),
         ],
       ),
     );

@@ -418,4 +418,5 @@ class TripEstimator {
         math.cos(rad(a.latitud)) * math.cos(rad(b.latitud)) * math.pow(math.sin(dLon / 2), 2);
     return 2 * earthKm * math.asin(math.sqrt(h));
   }
+  
 }
